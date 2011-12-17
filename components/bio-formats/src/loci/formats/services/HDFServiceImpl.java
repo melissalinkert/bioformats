@@ -46,6 +46,9 @@ import ncsa.hdf.object.HObject;
 import ncsa.hdf.object.h4.H4File;
 import ncsa.hdf.object.h5.H5File;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Utility class for working with HDF files.  Uses reflection to
  * call the HDF-Java library.
@@ -62,6 +65,9 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
     "HDF-Java is required to read HDF file. " +
     "Please obtain the necessary JAR files from " +
     "http://loci.wisc.edu/bio-formats/bio-formats-java-library.\n";
+
+  protected static final Logger LOGGER =
+    LoggerFactory.getLogger(HDFServiceImpl.class);
 
   // -- Fields --
 
@@ -82,6 +88,8 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
   public HDFServiceImpl() {
     // One check from each package
     checkClassDependency(ncsa.hdf.object.FileFormat.class);
+    checkClassDependency(ncsa.hdf.object.h4.H4File.class);
+    checkClassDependency(ncsa.hdf.object.h5.H5File.class);
   }
 
   /* (non-Javadoc)
@@ -95,6 +103,7 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
       hdfFile.open();
     }
     catch (Exception e) {
+      LOGGER.debug("", e);
       hdfFile = new H4File(file);
       try {
         hdfFile.open();
@@ -178,6 +187,7 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
       }
     }
     catch (Exception e) {
+      LOGGER.debug("Failed to retrieve attribute " + path, e);
     }
     return null;
   }
@@ -186,11 +196,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableValue(java.lang.String)
    */
   public Object getVariableValue(String name) throws ServiceException {
+    // TODO
     try {
       HObject object = hdfFile.get(name);
     }
     catch (Exception e) {
-
+      LOGGER.debug("Failed to retrieve variable " + name, e);
     }
     return null;
   }
@@ -201,11 +212,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
   public Object getArray(String path, int[] origin, int[] shape)
     throws ServiceException
   {
+    // TODO
     try {
       HObject object = hdfFile.get(path);
     }
     catch (Exception e) {
-
+      LOGGER.debug("Failed to retrieve array " + path, e);
     }
     return null;
   }
@@ -214,11 +226,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableAttributes(java.lang.String)
    */
   public Hashtable<String, Object> getVariableAttributes(String name) {
+    // TODO
     try {
       HObject object = hdfFile.get(name);
     }
     catch (Exception e) {
-
+      LOGGER.debug("Failed to retrieve variable attributes " + name, e);
     }
     return null;
   }
@@ -234,6 +247,14 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
     currentFile = null;
     attributeList = null;
     variableList = null;
+    if (hdfFile != null) {
+      try {
+        hdfFile.close();
+      }
+      catch (Exception e) {
+        LOGGER.debug("Failed to close HDF file", e);
+      }
+    }
     hdfFile = null;
   }
 
@@ -269,7 +290,7 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
             }
           }
           catch (Exception e) {
-
+            LOGGER.debug("Failed to parse attributes", e);
           }
         }
         /*

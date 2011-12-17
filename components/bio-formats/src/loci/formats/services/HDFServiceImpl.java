@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package loci.formats.services;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -38,6 +39,8 @@ import loci.common.services.AbstractService;
 import loci.common.services.ServiceException;
 
 import ncsa.hdf.hdf5lib.exceptions.HDF5LibraryException;
+import ncsa.hdf.object.Attribute;
+import ncsa.hdf.object.Datatype;
 import ncsa.hdf.object.FileFormat;
 import ncsa.hdf.object.HObject;
 import ncsa.hdf.object.h4.H4File;
@@ -55,7 +58,10 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
 
   // -- Constants --
 
-  public static final String NO_HDF_MSG = "";
+  public static final String NO_HDF_MSG =
+    "HDF-Java is required to read HDF file. " +
+    "Please obtain the necessary JAR files from " +
+    "http://loci.wisc.edu/bio-formats/bio-formats-java-library.\n";
 
   // -- Fields --
 
@@ -97,6 +103,9 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
         throw new IOException(exc);
       }
     }
+    attributeList = new Vector<String>();
+    variableList = new Vector<String>();
+    buildPathLists();
   }
 
   /* (non-Javadoc)
@@ -124,7 +133,52 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getAttributeValue(java.lang.String)
    */
   public String getAttributeValue(String path) {
-    HObject object = findObject(path);
+    try {
+      int lastSeparator = path.lastIndexOf(File.separator);
+      String realPath = path.substring(0, lastSeparator);
+      String attribute = path.substring(lastSeparator + 1);
+      HObject object = FileFormat.findObject(hdfFile, realPath);
+
+      List attributes = object.getMetadata();
+      Attribute attr = null;
+      for (Object o : attributes) {
+        attr = (Attribute) o;
+        if (attr.getName().equals(attribute)) {
+          Datatype type = attr.getType();
+          Object value = attr.getValue();
+
+          int typeClass = type.getDatatypeClass();
+
+          if (value instanceof String[]) {
+            StringBuffer v = new StringBuffer();
+            String[] s = (String[]) value;
+            for (int i=0; i<s.length; i++) {
+              v.append(s[i]);
+              if (i < s.length - 1) {
+                v.append(", ");
+              }
+            }
+            return v.toString();
+          }
+          else if (value instanceof double[]) {
+            StringBuffer v = new StringBuffer();
+            double[] s = (double[]) value;
+            for (int i=0; i<s.length; i++) {
+              v.append(s[i]);
+              if (i < s.length - 1) {
+                v.append(", ");
+              }
+            }
+            return v.toString();
+          }
+          else {
+            return value.toString();
+          }
+        }
+      }
+    }
+    catch (Exception e) {
+    }
     return null;
   }
 
@@ -132,7 +186,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableValue(java.lang.String)
    */
   public Object getVariableValue(String name) throws ServiceException {
-    HObject object = findObject(name);
+    try {
+      HObject object = hdfFile.get(name);
+    }
+    catch (Exception e) {
+
+    }
     return null;
   }
 
@@ -142,7 +201,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
   public Object getArray(String path, int[] origin, int[] shape)
     throws ServiceException
   {
-    HObject object = findObject(path);
+    try {
+      HObject object = hdfFile.get(path);
+    }
+    catch (Exception e) {
+
+    }
     return null;
   }
 
@@ -150,7 +214,12 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableAttributes(java.lang.String)
    */
   public Hashtable<String, Object> getVariableAttributes(String name) {
-    HObject object = findObject(name);
+    try {
+      HObject object = hdfFile.get(name);
+    }
+    catch (Exception e) {
+
+    }
     return null;
   }
 
@@ -170,29 +239,49 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
 
   // -- Helper methods --
 
-  private HObject findObject(String name) {
-    return findObject(name, hdfFile.getRootNode());
+  private void buildPathLists() {
+    TreeNode root = hdfFile.getRootNode();
+    buildPathLists(root);
   }
 
-  private HObject findObject(String name, TreeNode root) {
+  private void buildPathLists(TreeNode root) {
     if (root == null) {
-      return null;
+      return;
     }
     DefaultMutableTreeNode node = null;
-    HObject object = null;
     Enumeration children = root.children();
+    HObject object = null;
     while (children.hasMoreElements()) {
       node = (DefaultMutableTreeNode) children.nextElement();
-      object = (HObject) node.getUserObject();
-      String path = object.getFullName();
-      if (path.equals(name)) {
-        return object;
+      if (node.isLeaf()) {
+        object = (HObject) node.getUserObject();
+        String path = object.getFullName();
+
+        if (object.hasAttribute()) {
+          // add things to attributes list
+          try {
+            List metadata = object.getMetadata();
+            for (Object o : metadata) {
+              if (o instanceof Attribute) {
+                attributeList.add(
+                  path + File.separator + ((Attribute) o).getName());
+              }
+            }
+          }
+          catch (Exception e) {
+
+          }
+        }
+        /*
+        else if (object instanceof ) {
+          variableList.add(path);
+        }
+        */
       }
-      else if (name.startsWith(path)) {
-        return findObject(name, node);
+      else {
+        buildPathLists(node);
       }
     }
-    return null;
   }
 
 }

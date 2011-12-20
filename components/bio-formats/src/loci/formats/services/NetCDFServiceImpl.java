@@ -191,6 +191,10 @@ public class NetCDFServiceImpl extends AbstractService
     return group.findDimension(variableName).getLength();
   }
 
+  public long[] getDimensions(String name) {
+    return null;
+  }
+
   /* (non-Javadoc)
    * @see loci.formats.NetCDFService#close()
    */

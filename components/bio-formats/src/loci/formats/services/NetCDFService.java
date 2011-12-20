@@ -121,6 +121,13 @@ public interface NetCDFService extends Service {
   public int getDimension(String path);
 
   /**
+   * Retrieves the dimensions of a variable.
+   * @param path HDF path to the variable.
+   * @return Array containing the lengths of the dimension.
+   */
+  public long[] getDimensions(String path);
+
+  /**
    * Closes and resets the service.
    * @throws IOException If there is an error closing the file.
    */

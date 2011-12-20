@@ -40,8 +40,10 @@ import loci.common.services.ServiceException;
 
 import ncsa.hdf.hdf5lib.exceptions.HDF5LibraryException;
 import ncsa.hdf.object.Attribute;
+import ncsa.hdf.object.Dataset;
 import ncsa.hdf.object.Datatype;
 import ncsa.hdf.object.FileFormat;
+import ncsa.hdf.object.Group;
 import ncsa.hdf.object.HObject;
 import ncsa.hdf.object.h4.H4File;
 import ncsa.hdf.object.h5.H5File;
@@ -196,9 +198,15 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableValue(java.lang.String)
    */
   public Object getVariableValue(String name) throws ServiceException {
-    // TODO
     try {
-      HObject object = hdfFile.get(name);
+      HObject object = FileFormat.findObject(hdfFile, name);
+
+      if (object instanceof Dataset) {
+        return ((Dataset) object).getData();
+      }
+      else if (object instanceof Group) {
+        throw new ServiceException("Groups not supported (" + name + ")");
+      }
     }
     catch (Exception e) {
       LOGGER.debug("Failed to retrieve variable " + name, e);
@@ -214,7 +222,7 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
   {
     // TODO
     try {
-      HObject object = hdfFile.get(path);
+      HObject object = FileFormat.findObject(hdfFile, path);
     }
     catch (Exception e) {
       LOGGER.debug("Failed to retrieve array " + path, e);
@@ -226,9 +234,26 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
    * @see loci.formats.NetCDFService#getVariableAttributes(java.lang.String)
    */
   public Hashtable<String, Object> getVariableAttributes(String name) {
-    // TODO
     try {
-      HObject object = hdfFile.get(name);
+      HObject object = FileFormat.findObject(hdfFile, name);
+      Hashtable<String, Object> attributes = new Hashtable<String, Object>();
+      if (object.hasAttribute()) {
+        // add things to attributes list
+        try {
+          List metadata = object.getMetadata();
+          for (Object o : metadata) {
+            if (o instanceof Attribute) {
+              Attribute a = (Attribute) o;
+              attributes.put(a.getName(),
+                getAttributeValue(name + File.separator + a.getName()));
+            }
+          }
+        }
+        catch (Exception e) {
+          LOGGER.debug("Failed to parse attributes", e);
+        }
+      }
+      return attributes;
     }
     catch (Exception e) {
       LOGGER.debug("Failed to retrieve variable attributes " + name, e);
@@ -238,6 +263,23 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
 
   public int getDimension(String name) {
     return 0;
+  }
+
+  public long[] getDimensions(String name) {
+    try {
+      HObject object = FileFormat.findObject(hdfFile, name);
+
+      if (object instanceof Dataset) {
+        return ((Dataset) object).getDims();
+      }
+      else if (object instanceof Group) {
+        throw new ServiceException("Groups not supported (" + name + ")");
+      }
+    }
+    catch (Exception e) {
+      LOGGER.debug("Failed to retrieve dimensions " + name, e);
+    }
+    return null;
   }
 
   /* (non-Javadoc)
@@ -293,11 +335,8 @@ public class HDFServiceImpl extends AbstractService implements NetCDFService {
             LOGGER.debug("Failed to parse attributes", e);
           }
         }
-        /*
-        else if (object instanceof ) {
-          variableList.add(path);
-        }
-        */
+
+        variableList.add(path);
       }
       else {
         buildPathLists(node);

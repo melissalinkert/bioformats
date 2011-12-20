@@ -29,6 +29,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import loci.common.DataTools;
+import loci.common.RandomAccessInputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
@@ -53,7 +54,7 @@ public class MINCReader extends FormatReader {
   // -- Fields --
 
   private NetCDFService netcdf;
-  private byte[][][] pixelData;
+  private RandomAccessInputStream pixelData;
 
   // -- Constructor --
 
@@ -74,17 +75,16 @@ public class MINCReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     int bpp = FormatTools.getBytesPerPixel(getPixelType());
+    int rgb = getRGBChannelCount();
 
-    if (no < pixelData.length) {
-      for (int row=0; row<h; row++) {
-        int srcRow = getSizeY() - (row + y) - 1;
-        if (srcRow < pixelData[no].length &&
-          x + w <= pixelData[no][srcRow].length)
-        {
-          System.arraycopy(pixelData[no][srcRow], x * bpp, buf,
-            row * w * bpp, w * bpp);
-        }
-      }
+    long pointer = (long) no * FormatTools.getPlaneSize(this);
+
+    pixelData.seek(pointer + (getSizeY() - y - h) * bpp * getSizeX() * rgb);
+
+    for (int row=h-1; row>=0; row--) {
+      pixelData.skipBytes(x * bpp * rgb);
+      pixelData.read(buf, row * w * bpp * rgb, w * bpp * rgb);
+      pixelData.skipBytes((getSizeX() - w - x) * bpp * rgb);
     }
 
     return buf;
@@ -95,6 +95,9 @@ public class MINCReader extends FormatReader {
     super.close(fileOnly);
     if (!fileOnly) {
       if (netcdf != null) netcdf.close();
+      if (pixelData != null) {
+        pixelData.close();
+      }
       pixelData = null;
     }
   }
@@ -157,69 +160,46 @@ public class MINCReader extends FormatReader {
 
     try {
       Object pixels = netcdf.getVariableValue("/image");
-      if (pixels instanceof byte[][][]) {
+      byte[] pix = null;
+      if (pixels instanceof byte[]) {
         core[0].pixelType = FormatTools.UINT8;
-        pixelData = (byte[][][]) pixels;
+        pix = (byte[]) pixels;
       }
-      else if (pixels instanceof short[][][]) {
+      else if (pixels instanceof short[]) {
         core[0].pixelType = FormatTools.UINT16;
 
-        short[][][] s = (short[][][]) pixels;
-        pixelData = new byte[s.length][][];
-        for (int i=0; i<s.length; i++) {
-          pixelData[i] = new byte[s[i].length][];
-          for (int j=0; j<s[i].length; j++) {
-            pixelData[i][j] =
-              DataTools.shortsToBytes(s[i][j], isLittleEndian());
-          }
-        }
+        short[] s = (short[]) pixels;
+        pix = DataTools.shortsToBytes(s, isLittleEndian());
       }
-      else if (pixels instanceof int[][][]) {
+      else if (pixels instanceof int[]) {
         core[0].pixelType = FormatTools.UINT32;
 
-        int[][][] s = (int[][][]) pixels;
-        pixelData = new byte[s.length][][];
-        for (int i=0; i<s.length; i++) {
-          pixelData[i] = new byte[s[i].length][];
-          for (int j=0; j<s[i].length; j++) {
-            pixelData[i][j] = DataTools.intsToBytes(s[i][j], isLittleEndian());
-          }
-        }
+        int[] s = (int[]) pixels;
+        pix = DataTools.intsToBytes(s, isLittleEndian());
       }
-      else if (pixels instanceof float[][][]) {
+      else if (pixels instanceof float[]) {
         core[0].pixelType = FormatTools.FLOAT;
 
-        float[][][] s = (float[][][]) pixels;
-        pixelData = new byte[s.length][][];
-        for (int i=0; i<s.length; i++) {
-          pixelData[i] = new byte[s[i].length][];
-          for (int j=0; j<s[i].length; j++) {
-            pixelData[i][j] =
-              DataTools.floatsToBytes(s[i][j], isLittleEndian());
-          }
-        }
+        float[] s = (float[]) pixels;
+        pix = DataTools.floatsToBytes(s, isLittleEndian());
       }
-      else if (pixels instanceof double[][][]) {
+      else if (pixels instanceof double[]) {
         core[0].pixelType = FormatTools.DOUBLE;
 
-        double[][][] s = (double[][][]) pixels;
-        pixelData = new byte[s.length][][];
-        for (int i=0; i<s.length; i++) {
-          pixelData[i] = new byte[s[i].length][];
-          for (int j=0; j<s[i].length; j++) {
-            pixelData[i][j] =
-              DataTools.doublesToBytes(s[i][j], isLittleEndian());
-          }
-        }
+        double[] s = (double[]) pixels;
+        pix = DataTools.doublesToBytes(s, isLittleEndian());
       }
+      pixelData = new RandomAccessInputStream(pix);
     }
     catch (ServiceException e) {
       throw new FormatException(e);
     }
 
-    core[0].sizeX = netcdf.getDimension("/zspace");
-    core[0].sizeY = netcdf.getDimension("/yspace");
-    core[0].sizeZ = netcdf.getDimension("/xspace");
+    long[] dims = netcdf.getDimensions("/image");
+
+    core[0].sizeZ = (int) dims[2];
+    core[0].sizeY = (int) dims[1];
+    core[0].sizeX = (int) dims[0];
 
     core[0].sizeT = 1;
     core[0].sizeC = 1;

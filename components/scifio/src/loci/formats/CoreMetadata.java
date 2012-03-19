@@ -135,6 +135,8 @@ public class CoreMetadata {
    */
   public boolean thumbnail;
 
+  public int resolutionCount = 1;
+
   // -- Constructors --
 
   public CoreMetadata() {
@@ -166,6 +168,7 @@ public class CoreMetadata {
     metadataComplete = r.isMetadataComplete();
     seriesMetadata = r.getSeriesMetadata();
     thumbnail = r.isThumbnailSeries();
+    resolutionCount = r.getResolutionCount();
     r.setSeries(series);
   }
 

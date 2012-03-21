@@ -655,6 +655,11 @@ public class ImageReader implements IFormatReader {
     getReader().setResolution(no);
   }
 
+  /* @see IFormatReader#getResolution() */
+  public int getResolution() {
+    return getReader().getResolution();
+  }
+
   /* @see IFormatReader#hasFlattenedResolutions() */
   public boolean hasFlattenedResolutions() {
     return getReader().hasFlattenedResolutions();

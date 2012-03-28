@@ -35,8 +35,9 @@ fprintf('*** A new stable version of Bio-Formats is available ***\n');
 % If appliable, download new version of Bioformats
 if ip.Results.autoDownload
     fprintf('*** Downloading... ***');
-    path = fullfile(fileparts(mfilename('fullpath')), 'loci_tools.jar');
-    buildName=[upper(ip.Results.version) '_BUILD'];
-    upgrader.install(loci.formats.UpgradeChecker.(buildName), path);
+    downloadPath = fullfile(fileparts(mfilename('fullpath')), 'loci_tools.jar');
+    jarPath=char(loci.formats.UpgradeChecker.([upper(ip.Results.version) '_BUILD']));
+    jarName =char(loci.formats.UpgradeChecker.TOOLS);
+    upgrader.install([jarPath jarName], downloadPath);
     fprintf('*** Upgrade will be finished when MATLAB is restarted ***\n');
 end

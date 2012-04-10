@@ -97,17 +97,21 @@ stitchFiles = 0;
 
 % -- Main function - no need to edit anything past this point --
 
+% load the Bio-Formats library into the MATLAB environment
+if autoloadBioFormats
+    path = which('loci_tools.jar');
+    if isempty(path)       
+        path = fullfile(fileparts(mfilename('fullpath')), 'loci_tools.jar');
+    end
+    javaaddpath(path);
+end
+
 if exist('id','file') == 0
   [file,path] = uigetfile(getFileExtensions, 'Choose a file to open');
   id = [path file];
   if isequal(path,0) || isequal(file,0), return; end
 end
 
-% load the Bio-Formats library into the MATLAB environment
-if autoloadBioFormats
-    path = fullfile(fileparts(mfilename('fullpath')), 'loci_tools.jar');
-    javaaddpath(path);
-end
 
 % set LuraWave license code, if available
 if exist('lurawaveLicense')
@@ -210,7 +214,6 @@ for s = 1:numSeries
     fprintf('\n');
 end
 r.close();
-toc
 
 % -- Helper functions --
 
@@ -218,7 +221,8 @@ function fileExt = getFileExtensions
 % List all supported extensions
 
 % Get all readers and create cell array with suffixes and names
-readers=loci.formats.ImageReader().getReaders;
+imageReader=loci.formats.ImageReader();
+readers = imageReader.getReaders;
 fileExt=cell(numel(readers),2);
 for i=1:numel(readers)
     suffixes=readers(i).getSuffixes();

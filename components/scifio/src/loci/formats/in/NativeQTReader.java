@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
 
+import loci.common.ByteArrayHandle;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.FormatException;
@@ -173,6 +174,11 @@ public class NativeQTReader extends FormatReader {
     byte[] pixs = new byte[nextOffset - offset];
 
     in.seek(pixelOffset + offset);
+
+    if (code.equals("tiff")) {
+      in.skipBytes(16);
+    }
+
     in.read(pixs);
 
     canUsePrevious = (prevPixels != null) && (prevPlane == no - 1) &&
@@ -497,7 +503,7 @@ public class NativeQTReader extends FormatReader {
 
               if (!codec.equals("raw ") && !codec.equals("rle ") &&
                 !codec.equals("rpza") && !codec.equals("mjpb") &&
-                !codec.equals("jpeg"))
+                !codec.equals("jpeg") && !codec.equals("tiff"))
               {
                 throw new UnsupportedCompressionException(
                   "Unsupported codec: " + codec);
@@ -616,6 +622,15 @@ public class NativeQTReader extends FormatReader {
     }
     else if (code.equals("jpeg")) {
       return new JPEGCodec().decompress(pixs, options);
+    }
+    else if (code.equals("tiff")) {
+      MinimalTiffReader tiffReader = new MinimalTiffReader();
+      Location.mapFile("plane.tiff", new ByteArrayHandle(pixs));
+      tiffReader.setId("plane.tiff");
+      byte[] result = tiffReader.openBytes(0);
+      tiffReader.close();
+      Location.mapFile("plane.tiff", null);
+      return result;
     }
     else {
       throw new UnsupportedCompressionException("Unsupported codec : " + code);

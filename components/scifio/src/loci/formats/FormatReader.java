@@ -1127,6 +1127,9 @@ public abstract class FormatReader extends FormatHandler
   }
 
   protected int getCoreIndex() {
+    if (hasFlattenedResolutions()) {
+        return getSeries();
+    }
     int index = 0;
     for (int i=0; i<getSeries(); i++) {
       index += core[index].resolutionCount;

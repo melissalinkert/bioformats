@@ -787,6 +787,7 @@ public abstract class FormatReader extends FormatHandler
     if (!fileOnly) {
       in = null;
       currentId = null;
+      resolution = 0;
     }
   }
 
@@ -1127,6 +1128,9 @@ public abstract class FormatReader extends FormatHandler
   }
 
   protected int getCoreIndex() {
+    if (hasFlattenedResolutions()) {
+        return getSeries();
+    }
     int index = 0;
     for (int i=0; i<getSeries(); i++) {
       index += core[index].resolutionCount;

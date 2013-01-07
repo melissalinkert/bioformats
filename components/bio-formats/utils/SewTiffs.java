@@ -75,20 +75,30 @@ public class SewTiffs {
       ServiceFactory factory = new ServiceFactory();
       OMEXMLService service = factory.getInstance(OMEXMLService.class);
       IMetadata meta = service.createOMEXMLMetadata();
-      in.setMetadataStore(meta);
-      in.setId(inId);
-      out.setMetadataRetrieve(meta);
+      byte[] image = null;
+      try {
+        in.setMetadataStore(meta);
+        in.setId(inId);
+        out.setMetadataRetrieve(meta);
 
-      // read first image plane
-      byte[] image = in.openBytes(0);
-      in.close();
+        // read first image plane
+        image = in.openBytes(0);
+      }
+      finally {
+        in.close();
+      }
 
       if (t == 0) {
         // read first IFD
+        IFD ifd = new IFD();
         RandomAccessInputStream ras = new RandomAccessInputStream(inId);
-        TiffParser parser = new TiffParser(ras);
-        IFD ifd = parser.getFirstIFD();
-        ras.close();
+        try {
+          TiffParser parser = new TiffParser(ras);
+          ifd = parser.getFirstIFD();
+        }
+        finally {
+          ras.close();
+        }
 
         // preserve TIFF comment
         String desc = ifd.getComment();

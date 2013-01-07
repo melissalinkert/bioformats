@@ -47,20 +47,24 @@ public class ParallelRead implements Runnable {
   public void run() {
     try {
       ImageReader r = new ImageReader();
-      ServiceFactory factory = new ServiceFactory();
-      OMEXMLService service = factory.getInstance(OMEXMLService.class);
-      IMetadata meta = service.createOMEXMLMetadata();
-      r.setMetadataStore(meta);
-      r.setId(id);
-      System.out.println(Thread.currentThread().getName() +
-        ": id=" + id +
-        ", sizeX=" + r.getSizeX() +
-        ", sizeY=" + r.getSizeY() +
-        ", sizeZ=" + r.getSizeZ() +
-        ", sizeT=" + r.getSizeT() +
-        ", sizeC=" + r.getSizeC() +
-        ", imageName=" + meta.getImageName(0));
-      r.close();
+      try {
+        ServiceFactory factory = new ServiceFactory();
+        OMEXMLService service = factory.getInstance(OMEXMLService.class);
+        IMetadata meta = service.createOMEXMLMetadata();
+        r.setMetadataStore(meta);
+        r.setId(id);
+        System.out.println(Thread.currentThread().getName() +
+          ": id=" + id +
+          ", sizeX=" + r.getSizeX() +
+          ", sizeY=" + r.getSizeY() +
+          ", sizeZ=" + r.getSizeZ() +
+          ", sizeT=" + r.getSizeT() +
+          ", sizeC=" + r.getSizeC() +
+          ", imageName=" + meta.getImageName(0));
+      }
+      finally {
+        r.close();
+      }
     }
     catch (Exception exc) {
       exc.printStackTrace();

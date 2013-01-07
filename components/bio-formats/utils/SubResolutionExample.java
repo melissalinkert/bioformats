@@ -48,29 +48,32 @@ public class SubResolutionExample {
 
     // configure reader
     IFormatReader reader = new ImageReader();
-    reader.setFlattenedResolutions(false);
-    System.out.println("Initializing file: " + id);
-    reader.setId(id); // parse metadata
+    try {
+      reader.setFlattenedResolutions(false);
+      System.out.println("Initializing file: " + id);
+      reader.setId(id); // parse metadata
 
-    int seriesCount = reader.getSeriesCount();
+      int seriesCount = reader.getSeriesCount();
 
-    System.out.println("  Series count = " + seriesCount);
+      System.out.println("  Series count = " + seriesCount);
 
-    for (int series=0; series<seriesCount; series++) {
-      reader.setSeries(series);
-      int resolutionCount = reader.getResolutionCount();
+      for (int series=0; series<seriesCount; series++) {
+        reader.setSeries(series);
+        int resolutionCount = reader.getResolutionCount();
 
-      System.out.println("    Resolution count for series #" + series +
-        " = " + resolutionCount);
+        System.out.println("    Resolution count for series #" + series +
+          " = " + resolutionCount);
 
-      for (int r=0; r<resolutionCount; r++) {
-        reader.setResolution(r);
-        System.out.println("      Resolution #" + r + " dimensions = " +
-          reader.getSizeX() + " x " + reader.getSizeY());
+        for (int r=0; r<resolutionCount; r++) {
+          reader.setResolution(r);
+          System.out.println("      Resolution #" + r + " dimensions = " +
+            reader.getSizeX() + " x " + reader.getSizeY());
+        }
       }
     }
-
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
 }

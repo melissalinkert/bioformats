@@ -79,13 +79,17 @@ public class WriteRGBMovie {
     // write image planes to disk
     System.out.print("Writing planes to '" + id + "'");
     IFormatWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(meta);
-    writer.setId(id);
-    for (int t=0; t<numFrames; t++) {
-      System.out.print(".");
-      writer.saveBytes(t, img[t]);
+    try {
+      writer.setMetadataRetrieve(meta);
+      writer.setId(id);
+      for (int t=0; t<numFrames; t++) {
+        System.out.print(".");
+        writer.saveBytes(t, img[t]);
+      }
     }
-    writer.close();
+    finally {
+      writer.close();
+    }
 
     System.out.println("Done.");
   }

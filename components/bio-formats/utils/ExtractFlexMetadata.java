@@ -52,14 +52,23 @@ public class ExtractFlexMetadata {
         String id = file.getPath();
         int dot = id.lastIndexOf(".");
         String outId = (dot >= 0 ? id.substring(0, dot) : id) + ".xml";
+        String xml = null;
         RandomAccessInputStream in = new RandomAccessInputStream(id);
-        TiffParser parser = new TiffParser(in);
-        IFD firstIFD = parser.getIFDs().get(0);
-        String xml = firstIFD.getIFDTextValue(FlexReader.FLEX);
-        in.close();
+        try {
+          TiffParser parser = new TiffParser(in);
+          IFD firstIFD = parser.getIFDs().get(0);
+          xml = firstIFD.getIFDTextValue(FlexReader.FLEX);
+        }
+        finally {
+          in.close();
+        }
         FileWriter writer = new FileWriter(new File(outId));
-        writer.write(xml);
-        writer.close();
+        try {
+          writer.write(xml);
+        }
+        finally {
+          writer.close();
+        }
         System.out.println("Writing header of: " + id);
       }
     }

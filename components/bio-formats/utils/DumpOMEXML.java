@@ -58,10 +58,14 @@ public class DumpOMEXML {
     IMetadata meta = omexmlService.createOMEXMLMetadata();
 
     ImageReader r = new ImageReader();
-    r.setMetadataStore(meta);
-    r.setOriginalMetadataPopulated(true);
-    r.setId(path);
-    r.close();
+    try {
+      r.setMetadataStore(meta);
+      r.setOriginalMetadataPopulated(true);
+      r.setId(path);
+    }
+    finally {
+      r.close();
+    }
     String xml = omexmlService.getOMEXML(meta);
     System.out.println(xml);
   }

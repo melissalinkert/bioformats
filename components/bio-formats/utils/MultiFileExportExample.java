@@ -48,34 +48,38 @@ public class MultiFileExportExample {
     }
 
     ImageReader reader = new ImageReader();
-    IMetadata metadata = MetadataTools.createOMEXMLMetadata();
-    reader.setMetadataStore(metadata);
-    reader.setId(args[0]);
-
     ImageWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(metadata);
-    String baseFile = args[0].substring(0, args[0].lastIndexOf("."));
-    writer.setId(baseFile + "_s0_z0" + args[1]);
 
-    for (int series=0; series<reader.getSeriesCount(); series++) {
-      reader.setSeries(series);
-      writer.setSeries(series);
+    try {
+      IMetadata metadata = MetadataTools.createOMEXMLMetadata();
+      reader.setMetadataStore(metadata);
+      reader.setId(args[0]);
 
-      int planesPerFile = reader.getImageCount() / reader.getSizeZ();
-      for (int z=0; z<reader.getSizeZ(); z++) {
-        String file = baseFile + "_s" + series + "_z" + z + args[1];
-        writer.changeOutputFile(file);
-        for (int image=0; image<planesPerFile; image++) {
-          int zct[] = FormatTools.getZCTCoords(reader.getDimensionOrder(),
-            1, reader.getEffectiveSizeC(), reader.getSizeT(),
-            planesPerFile, image);
-          int index = FormatTools.getIndex(reader, z, zct[1], zct[2]);
-          writer.saveBytes(image, reader.openBytes(index));
+      writer.setMetadataRetrieve(metadata);
+      String baseFile = args[0].substring(0, args[0].lastIndexOf("."));
+      writer.setId(baseFile + "_s0_z0" + args[1]);
+
+      for (int series=0; series<reader.getSeriesCount(); series++) {
+        reader.setSeries(series);
+        writer.setSeries(series);
+
+        int planesPerFile = reader.getImageCount() / reader.getSizeZ();
+        for (int z=0; z<reader.getSizeZ(); z++) {
+          String file = baseFile + "_s" + series + "_z" + z + args[1];
+          writer.changeOutputFile(file);
+          for (int image=0; image<planesPerFile; image++) {
+            int zct[] = FormatTools.getZCTCoords(reader.getDimensionOrder(),
+              1, reader.getEffectiveSizeC(), reader.getSizeT(),
+              planesPerFile, image);
+            int index = FormatTools.getIndex(reader, z, zct[1], zct[2]);
+            writer.saveBytes(image, reader.openBytes(index));
+          }
         }
       }
     }
-
-    reader.close();
-    writer.close();
+    finally {
+      reader.close();
+      writer.close();
+    }
   }
 }

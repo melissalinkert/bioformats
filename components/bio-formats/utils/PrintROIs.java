@@ -164,17 +164,20 @@ public class PrintROIs {
 
   public static void main(String[] args) throws Exception {
     ImageReader reader = new ImageReader();
-    IMetadata omexml = MetadataTools.createOMEXMLMetadata();
-    reader.setMetadataStore(omexml);
-    reader.setId(args[0]);
+    try {
+      IMetadata omexml = MetadataTools.createOMEXMLMetadata();
+      reader.setMetadataStore(omexml);
+      reader.setId(args[0]);
 
-    printAllROIs(omexml);
-    System.out.println();
-    for (int series=0; series<reader.getSeriesCount(); series++) {
-      printSeriesROIs(omexml, series);
+      printAllROIs(omexml);
+      System.out.println();
+      for (int series=0; series<reader.getSeriesCount(); series++) {
+        printSeriesROIs(omexml, series);
+      }
     }
-
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
 }

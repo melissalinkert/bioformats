@@ -66,59 +66,76 @@ public class WritePrecompressedPlanes {
     // open up one of the input files so that we can read the metadata
     // this assumes that the dimensions of the input files are the same
     ImageReader reader = new ImageReader();
-    reader.setId(inputFiles[0]);
-    int pixelType = reader.getPixelType();
-
-    // write the pixel data to the output file
     RandomAccessOutputStream out = new RandomAccessOutputStream(outputFile);
-    TiffSaver saver = new TiffSaver(out, outputFile);
-    saver.setWritingSequentially(true);
-    saver.setLittleEndian(reader.isLittleEndian());
-    saver.setBigTiff(false);
-    saver.writeHeader();
 
-    for (int i=0; i<inputFiles.length; i++) {
-      RandomAccessInputStream in = new RandomAccessInputStream(inputFiles[i]);
-      byte[] buf = new byte[(int) in.length()];
-      in.readFully(buf);
-      in.close();
+    try {
+      reader.setId(inputFiles[0]);
+      int pixelType = reader.getPixelType();
 
-      IFD ifd = new IFD();
-      ifd.put(IFD.IMAGE_WIDTH, reader.getSizeX());
-      ifd.put(IFD.IMAGE_LENGTH, reader.getSizeY());
-      ifd.put(IFD.LITTLE_ENDIAN, reader.isLittleEndian());
-      ifd.put(IFD.SAMPLE_FORMAT, FormatTools.isSigned(pixelType) ? 2 :
-        FormatTools.isFloatingPoint(pixelType) ? 3 : 1);
-      ifd.put(IFD.PLANAR_CONFIGURATION, 1);
-      ifd.put(IFD.REUSE, out.length());
-      out.seek(out.length());
+      // write the pixel data to the output file
+      TiffSaver saver = new TiffSaver(out, outputFile);
+      saver.setWritingSequentially(true);
+      saver.setLittleEndian(reader.isLittleEndian());
+      saver.setBigTiff(false);
+      saver.writeHeader();
 
-      // this is very important
-      // the data is already compressed in a single chunk, so setting the
-      // number of rows per strip to something smaller than the full height
-      // will require us to re-compress the data
-      ifd.put(IFD.ROWS_PER_STRIP, reader.getSizeY());
+      for (int i=0; i<inputFiles.length; i++) {
+        RandomAccessInputStream in = new RandomAccessInputStream(inputFiles[i]);
+        byte[] buf = null;
+        try {
+          buf = new byte[(int) in.length()];
+          in.readFully(buf);
+        }
+        finally {
+          in.close();
+        }
 
-      saver.writeImage(buf, ifd, i, pixelType, 0, 0, reader.getSizeX(),
-        reader.getSizeY(), i == inputFiles.length - 1,
-        reader.getRGBChannelCount(), true);
+        IFD ifd = new IFD();
+        ifd.put(IFD.IMAGE_WIDTH, reader.getSizeX());
+        ifd.put(IFD.IMAGE_LENGTH, reader.getSizeY());
+        ifd.put(IFD.LITTLE_ENDIAN, reader.isLittleEndian());
+        ifd.put(IFD.SAMPLE_FORMAT, FormatTools.isSigned(pixelType) ? 2 :
+          FormatTools.isFloatingPoint(pixelType) ? 3 : 1);
+        ifd.put(IFD.PLANAR_CONFIGURATION, 1);
+        ifd.put(IFD.REUSE, out.length());
+        out.seek(out.length());
+
+        // this is very important
+        // the data is already compressed in a single chunk, so setting the
+        // number of rows per strip to something smaller than the full height
+        // will require us to re-compress the data
+        ifd.put(IFD.ROWS_PER_STRIP, reader.getSizeY());
+
+        saver.writeImage(buf, ifd, i, pixelType, 0, 0, reader.getSizeX(),
+          reader.getSizeY(), i == inputFiles.length - 1,
+          reader.getRGBChannelCount(), true);
+      }
     }
-
-    reader.close();
-    out.close();
+    finally {
+      reader.close();
+      out.close();
+    }
 
     // reset the TIFF file's compression flag
     // you cannot do this before the pixel data is written, otherwise
     // the pixels will be re-compressed
 
     saver = new TiffSaver(outputFile);
-    for (int i=0; i<inputFiles.length; i++) {
-      RandomAccessInputStream in = new RandomAccessInputStream(outputFile);
-      saver.overwriteLastIFDOffset(in);
-      saver.overwriteIFDValue(in, i, IFD.COMPRESSION,
-        TiffCompression.JPEG.getCode());
-      in.close();
+    try {
+      for (int i=0; i<inputFiles.length; i++) {
+        RandomAccessInputStream in = new RandomAccessInputStream(outputFile);
+        try {
+          saver.overwriteLastIFDOffset(in);
+          saver.overwriteIFDValue(in, i, IFD.COMPRESSION,
+            TiffCompression.JPEG.getCode());
+        }
+        finally {
+          in.close();
+        }
+      }
     }
-    saver.getStream().close();
+    finally {
+      saver.getStream().close();
+    }
   }
 }

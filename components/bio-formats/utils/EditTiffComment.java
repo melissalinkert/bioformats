@@ -63,8 +63,12 @@ public class EditTiffComment {
       // save results back to the TIFF file
       TiffSaver saver = new TiffSaver(f);
       RandomAccessInputStream in = new RandomAccessInputStream(f);
-      saver.overwriteComment(in, xml);
-      in.close();
+      try {
+        saver.overwriteComment(in, xml);
+      }
+      finally {
+        in.close();
+      }
       System.out.println(" [done]");
     }
   }

@@ -71,10 +71,14 @@ public class MinimumWriter {
     // write image plane to disk
     System.out.println("Writing image to '" + id + "'...");
     IFormatWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(meta);
-    writer.setId(id);
-    writer.saveBytes(0, img);
-    writer.close();
+    try {
+      writer.setMetadataRetrieve(meta);
+      writer.setId(id);
+      writer.saveBytes(0, img);
+    }
+    finally {
+      writer.close();
+    }
 
     System.out.println("Done.");
   }

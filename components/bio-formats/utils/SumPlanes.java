@@ -41,23 +41,32 @@ public class SumPlanes {
   public static void main(String[] args) throws Exception {
     String id = args[0];
     BufferedImageReader r = new BufferedImageReader();
+    BufferedImage[] images = null;
     System.out.print("Reading " + id);
-    r.setId(id);
-    int imageCount = r.getImageCount();
-    BufferedImage[] images = new BufferedImage[imageCount];
-    for (int i=0; i<imageCount; i++) {
-      System.out.print(".");
-      images[i] = r.openImage(i);
+    try {
+      r.setId(id);
+      int imageCount = r.getImageCount();
+      images = new BufferedImage[imageCount];
+      for (int i=0; i<imageCount; i++) {
+        System.out.print(".");
+        images[i] = r.openImage(i);
+      }
     }
-    r.close();
+    finally {
+      r.close();
+    }
     System.out.println(" [done]");
 
     String outId = id + ".tif";
     BufferedImageWriter w = new BufferedImageWriter();
     System.out.print("Writing " + outId);
-    w.setId(outId);
-    w.saveImage(sum(images), true);
-    w.close();
+    try {
+      w.setId(outId);
+      w.saveImage(sum(images), true);
+    }
+    finally {
+      w.close();
+    }
     System.out.println(" [done]");
   }
 

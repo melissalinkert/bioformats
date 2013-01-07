@@ -60,14 +60,18 @@ public class ExtractSDTData {
           String oid = tid + "-c" + c + "-row" + y + "-col" + x;
           System.out.println(oid);
           PrintWriter out = new PrintWriter(new FileWriter(oid));
-          for (int b=0; b<bins; b++) {
-            i += 2;
-            int v0 = data[c][i];
-            int v1 = data[c][i + 1];
-            int v = (v0 << 8) & v1;
-            out.println(b + " " + v);
+          try {
+            for (int b=0; b<bins; b++) {
+              i += 2;
+              int v0 = data[c][i];
+              int v1 = data[c][i + 1];
+              int v = (v0 << 8) & v1;
+              out.println(b + " " + v);
+            }
           }
-          out.close();
+          finally {
+            out.close();
+          }
         }
       }
     }

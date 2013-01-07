@@ -60,8 +60,12 @@ public class CommentSurgery {
         System.out.println(len + " -> " + xml.length());
         TiffSaver saver = new TiffSaver(id);
         RandomAccessInputStream in = new RandomAccessInputStream(id);
-        saver.overwriteComment(in, xml);
-        in.close();
+        try {
+          saver.overwriteComment(in, xml);
+        }
+        finally {
+          in.close();
+        }
       }
     }
   }

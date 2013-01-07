@@ -98,13 +98,15 @@ public class ShortcutPanel extends JPanel implements ActionListener, PlugIn {
     ArrayList<String> vPlugins = new ArrayList<String>();
     ArrayList<String> vArgs = new ArrayList<String>();
 
+    BufferedReader in = null;
+
     // read from configuration file
     try {
       URL url = ShortcutPanel.class.getResource("ShortcutPanel.class");
       String path = url.toString();
       path = path.substring(0, path.indexOf("!")) + "!/plugins.config";
       url = new URL(path);
-      BufferedReader in = new BufferedReader(
+      in = new BufferedReader(
         new InputStreamReader(url.openStream(), Constants.ENCODING));
       while (true) {
         String line = in.readLine();
@@ -135,10 +137,19 @@ public class ShortcutPanel extends JPanel implements ActionListener, PlugIn {
           vArgs.add(arg);
         }
       }
-      in.close();
     }
     catch (IOException exc) {
       exc.printStackTrace();
+    }
+    finally {
+      if (in != null) {
+        try {
+        in.close();
+        }
+        catch (IOException exc) {
+          WindowTools.reportException(exc);
+        }
+      }
     }
 
     openerIndex = index;

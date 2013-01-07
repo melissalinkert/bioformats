@@ -223,14 +223,18 @@ public class LociFunctions extends MacroFunctions {
     options.setTEnd(r.getSeries(), zct[2]);
 
     ImportProcess process = new ImportProcess(options);
-    process.execute();
+    try {
+      process.execute();
 
-    ImagePlusReader reader = new ImagePlusReader(process);
-    final ImagePlus imp = reader.openThumbImagePlus()[0];
-    Calibrator calibrator = new Calibrator(process);
-    calibrator.applyCalibration(imp);
-    process.getReader().close();
-    imp.show();
+      ImagePlusReader reader = new ImagePlusReader(process);
+      final ImagePlus imp = reader.openThumbImagePlus()[0];
+      Calibrator calibrator = new Calibrator(process);
+      calibrator.applyCalibration(imp);
+      imp.show();
+    }
+    finally {
+      process.getReader().close();
+    }
   }
 
   public void openImage(String title, Double no)
@@ -263,14 +267,18 @@ public class LociFunctions extends MacroFunctions {
     options.setCropRegion(r.getSeries(), region);
 
     ImportProcess process = new ImportProcess(options);
-    process.execute();
+    try {
+      process.execute();
 
-    ImagePlusReader reader = new ImagePlusReader(process);
-    final ImagePlus imp = reader.openImagePlus()[0];
-    Calibrator calibrator = new Calibrator(process);
-    calibrator.applyCalibration(imp);
-    process.getReader().close();
-    imp.show();
+      ImagePlusReader reader = new ImagePlusReader(process);
+      final ImagePlus imp = reader.openImagePlus()[0];
+      Calibrator calibrator = new Calibrator(process);
+      calibrator.applyCalibration(imp);
+      imp.show();
+    }
+    finally {
+      process.getReader().close();
+    }
   }
 
   public void close() throws IOException { r.close(); }

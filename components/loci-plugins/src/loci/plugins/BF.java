@@ -92,11 +92,16 @@ public final class BF {
     throws FormatException, IOException
   {
     ImportProcess process = new ImportProcess(options);
-    if (!process.execute()) return null;
-    ImagePlusReader reader = new ImagePlusReader(process);
-    ImagePlus[] imps = reader.openImagePlus();
-    if (!options.isVirtual()) {
-      process.getReader().close();
+    ImagePlus[] imps = null;
+    try {
+      if (!process.execute()) return null;
+      ImagePlusReader reader = new ImagePlusReader(process);
+      imps = reader.openImagePlus();
+    }
+    finally {
+      if (!options.isVirtual()) {
+        process.getReader().close();
+      }
     }
     return imps;
   }
@@ -108,14 +113,19 @@ public final class BF {
     options.setWindowless(true); // NB: Only needed due to ImporterPrompter.
 
     ImportProcess process = new ImportProcess(options);
+    ImagePlus[] imps = null;
 
-    new ImporterPrompter(process); // NB: Could eliminate this (see above).
+    try {
+      new ImporterPrompter(process); // NB: Could eliminate this (see above).
 
-    if (!process.execute()) return null;
-    ImagePlusReader reader = new ImagePlusReader(process);
-    ImagePlus[] imps = reader.openThumbImagePlus();
-    if (!options.isVirtual()) {
-      process.getReader().close();
+      if (!process.execute()) return null;
+      ImagePlusReader reader = new ImagePlusReader(process);
+      imps = reader.openThumbImagePlus();
+    }
+    finally {
+      if (!options.isVirtual()) {
+        process.getReader().close();
+      }
     }
     return imps;
   }

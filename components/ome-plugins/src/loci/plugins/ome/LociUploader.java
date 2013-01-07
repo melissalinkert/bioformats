@@ -122,9 +122,9 @@ public class LociUploader implements PlugIn {
 
   /** Log in to the OME server and upload the current image stack. */
   private void uploadStack() {
+    OMEWriter ul = new OMEWriter();
     try {
       IJ.showStatus("Starting upload...");
-      OMEWriter ul = new OMEWriter();
       String id = server + "?user=" + user + "&password=" + pass;
 
       ImagePlus imp = WindowManager.getCurrentImage();
@@ -258,12 +258,20 @@ public class LociUploader implements PlugIn {
       }
 
       IJ.showStatus("Sending data to server...");
-      ul.close();
       IJ.showStatus("Upload finished.");
     }
     catch (Exception e) {
       IJ.error("Upload failed:\n" + e);
       e.printStackTrace();
+    }
+    finally {
+      try {
+      ul.close();
+      }
+      catch (IOException e) {
+        IJ.error("Upload failed:\n" + e);
+        e.printStackTrace();
+      }
     }
   }
 

@@ -75,7 +75,6 @@ public class Read_Image implements PlugIn {
       ImagePlus imp = new ImagePlus(name, stack);
 
       ImagePlus colorizedImage = applyLookupTables(r, imp, lookupTable);
-      r.close();
 
       colorizedImage.show();
       IJ.showStatus("");
@@ -85,6 +84,9 @@ public class Read_Image implements PlugIn {
     }
     catch (IOException exc) {
       IJ.error("Sorry, an error occurred: " + exc.getMessage());
+    }
+    finally {
+      r.close();
     }
   }
 

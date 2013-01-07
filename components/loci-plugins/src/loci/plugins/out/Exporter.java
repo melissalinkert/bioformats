@@ -232,6 +232,8 @@ public class Exporter {
       splitC = multiFile.getNextBoolean();
     }
 
+    IFormatWriter w = null;
+
     try {
       int ptype = 0;
       int channels = 1;
@@ -253,7 +255,7 @@ public class Exporter {
       }
       String title = imp.getTitle();
 
-      IFormatWriter w = new ImageWriter().getWriter(outfile);
+      w = new ImageWriter().getWriter(outfile);
       w.setWriteSequentially(true);
       FileInfo fi = imp.getOriginalFileInfo();
       String xml = fi == null ? null : fi.description == null ? null :
@@ -572,13 +574,22 @@ public class Exporter {
           w.saveBytes(no++, plane);
         }
       }
-      w.close();
     }
     catch (FormatException e) {
       WindowTools.reportException(e);
     }
     catch (IOException e) {
       WindowTools.reportException(e);
+    }
+    finally {
+      if (w != null) {
+        try {
+          w.close();
+        }
+        catch (IOException e) {
+          WindowTools.reportException(e);
+        }
+      }
     }
   }
 

@@ -213,9 +213,14 @@ public final class OMEXMLFactory {
   public static Document parseOME(File file)
     throws ParserConfigurationException, SAXException, IOException
   {
+    Document doc = null;
     InputStream is = new FileInputStream(file);
-    Document doc = parseOME(is);
-    is.close();
+    try {
+      doc = parseOME(is);
+    }
+    finally {
+      is.close();
+    }
     return doc;
   }
 
@@ -225,8 +230,13 @@ public final class OMEXMLFactory {
   {
     byte[] bytes = xml.getBytes();
     InputStream is = new ByteArrayInputStream(bytes);
-    Document doc = parseOME(is);
-    is.close();
+    Document doc = null;
+    try {
+      doc = parseOME(is);
+    }
+    finally {
+      is.close();
+    }
     return doc;
   }
 

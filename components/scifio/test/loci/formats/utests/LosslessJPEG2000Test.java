@@ -80,43 +80,59 @@ public class LosslessJPEG2000Test {
     MetadataTools.populateMetadata(metadata8, 0, "foo", false, "XYCZT",
       "uint8", 1, 1, 1, 1, 1, 1);
     IFormatWriter writer8 = new JPEG2000Writer();
-    writer8.setMetadataRetrieve(metadata8);
-    writer8.setId(FILE_8);
-    writer8.saveBytes(0, PIXELS_8);
-    writer8.close();
+    try {
+      writer8.setMetadataRetrieve(metadata8);
+      writer8.setId(FILE_8);
+      writer8.saveBytes(0, PIXELS_8);
+    }
+    finally {
+      writer8.close();
+    }
 
     IMetadata metadata16 = MetadataTools.createOMEXMLMetadata();
     MetadataTools.populateMetadata(metadata16, 0, "foo", false, "XYCZT",
       "uint16", 1, 1, 1, 1, 1, 1);
     IFormatWriter writer16 = new JPEG2000Writer();
-    writer16.setMetadataRetrieve(metadata16);
-    writer16.setId(FILE_16);
-    writer16.saveBytes(0, PIXELS_16);
-    writer16.close();
+    try {
+      writer16.setMetadataRetrieve(metadata16);
+      writer16.setId(FILE_16);
+      writer16.saveBytes(0, PIXELS_16);
+    }
+    finally {
+      writer16.close();
+    }
   }
 
   @Test
   public void testEquivalentPixels8Bit() throws Exception {
     ImageReader reader = new ImageReader();
-    reader.setId(FILE_8);
-    byte[] plane = reader.openBytes(0);
-    assertEquals(plane.length, PIXELS_8.length);
-    for (int q=0; q<plane.length; q++) {
-      assertEquals(plane[q], PIXELS_8[q]);
+    try {
+      reader.setId(FILE_8);
+      byte[] plane = reader.openBytes(0);
+      assertEquals(plane.length, PIXELS_8.length);
+      for (int q=0; q<plane.length; q++) {
+        assertEquals(plane[q], PIXELS_8[q]);
+      }
     }
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
   @Test
   public void testEquivalentPixels16Bit() throws Exception {
     ImageReader reader = new ImageReader();
-    reader.setId(FILE_16);
-    byte[] plane = reader.openBytes(0);
-    assertEquals(plane.length, PIXELS_16.length);
-    for (int q=0; q<plane.length; q++) {
-      assertEquals(plane[q], PIXELS_16[q]);
+    try {
+      reader.setId(FILE_16);
+      byte[] plane = reader.openBytes(0);
+      assertEquals(plane.length, PIXELS_16.length);
+      for (int q=0; q<plane.length; q++) {
+        assertEquals(plane[q], PIXELS_16[q]);
+      }
     }
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
 }

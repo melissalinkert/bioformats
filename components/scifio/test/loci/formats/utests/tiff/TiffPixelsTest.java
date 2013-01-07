@@ -167,14 +167,23 @@ public class TiffPixelsTest {
     ByteArrayHandle savedData = new ByteArrayHandle();
     RandomAccessOutputStream out = new RandomAccessOutputStream(savedData);
     RandomAccessInputStream in = new RandomAccessInputStream(savedData);
-    TiffSaver saver = new TiffSaver(out, savedData);
-    //saver.setInputStream(in);
-    saver.writeImage(data, ifd, 0, FormatTools.UINT16, false);
-    out.close();
+    try {
+      TiffSaver saver = new TiffSaver(out, savedData);
+      //saver.setInputStream(in);
+      saver.writeImage(data, ifd, 0, FormatTools.UINT16, false);
+    }
+    finally {
+      out.close();
+    }
     TiffParser parser = new TiffParser(in);
-    byte[] plane = new byte[data.length];
-    parser.getSamples(ifd, plane);
-    in.close();
+    byte[] plane = null;
+    try {
+      plane = new byte[data.length];
+      parser.getSamples(ifd, plane);
+    }
+    finally {
+      in.close();
+    }
     return plane;
   }
 

@@ -87,10 +87,14 @@ public class EightBitLosslessJPEG2000Test {
       MetadataTools.populateMetadata(metadata, 0, "foo", false, "XYCZT",
         "uint8", 1, 1, 1, 1, 1, 1);
       IFormatWriter writer = new JPEG2000Writer();
-      writer.setMetadataRetrieve(metadata);
-      writer.setId(file);
-      writer.saveBytes(0, pixels[index]);
-      writer.close();
+      try {
+        writer.setMetadataRetrieve(metadata);
+        writer.setId(file);
+        writer.saveBytes(0, pixels[index]);
+      }
+      finally {
+        writer.close();
+      }
     }
   }
 
@@ -99,13 +103,17 @@ public class EightBitLosslessJPEG2000Test {
     int failureCount = 0;
     for (int i=0; i<files.size(); i++) {
       ImageReader reader = new ImageReader();
-      reader.setId(files.get(i));
-      byte[] plane = reader.openBytes(0);
-      if (plane[0] != pixels[i][0]) {
-        LOGGER.debug("FAILED on {}", pixels[i][0]);
-        failureCount++;
+      try {
+        reader.setId(files.get(i));
+        byte[] plane = reader.openBytes(0);
+        if (plane[0] != pixels[i][0]) {
+          LOGGER.debug("FAILED on {}", pixels[i][0]);
+          failureCount++;
+        }
       }
-      reader.close();
+      finally {
+        reader.close();
+      }
     }
     assertEquals(failureCount, 0);
   }

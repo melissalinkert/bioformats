@@ -111,13 +111,22 @@ public class OMETiffWriterLargeImageWidthTest {
   @Test
   public void testImageWidthWrittenCorrectly() throws Exception {
     ImageWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(ms);
-    writer.setId(target.getAbsolutePath());
-    writer.saveBytes(0, buf, 0, 0, buf.length, 1);
-    writer.close();
+    try {
+      writer.setMetadataRetrieve(ms);
+      writer.setId(target.getAbsolutePath());
+      writer.saveBytes(0, buf, 0, 0, buf.length, 1);
+    }
+    finally {
+      writer.close();
+    }
     TiffReader reader = new TiffReader();
-    reader.setId(target.getAbsolutePath());
-    assertEquals(SIZE_X, reader.getSizeX());
-    assertEquals(SIZE_Y, reader.getSizeY());
+    try {
+      reader.setId(target.getAbsolutePath());
+      assertEquals(SIZE_X, reader.getSizeX());
+      assertEquals(SIZE_Y, reader.getSizeY());
+    }
+    finally {
+      reader.close();
+    }
   }
 }

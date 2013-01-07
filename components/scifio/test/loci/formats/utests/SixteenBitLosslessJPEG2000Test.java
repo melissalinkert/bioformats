@@ -78,39 +78,51 @@ public class SixteenBitLosslessJPEG2000Test {
 
       String file = index + ".jp2";
       ByteArrayHandle tmpFile = new ByteArrayHandle(1);
-      Location.mapFile(file, tmpFile);
+      byte[] realData = null;
+      try {
+        Location.mapFile(file, tmpFile);
 
-      IMetadata metadata16 = MetadataTools.createOMEXMLMetadata();
-      MetadataTools.populateMetadata(metadata16, 0, "foo", false, "XYCZT",
-        "uint16", 1, 1, 1, 1, 1, 1);
-      IFormatWriter writer16 = new JPEG2000Writer();
-      writer16.setMetadataRetrieve(metadata16);
-      writer16.setId(file);
-      writer16.saveBytes(0, pixels);
-      writer16.close();
+        IMetadata metadata16 = MetadataTools.createOMEXMLMetadata();
+        MetadataTools.populateMetadata(metadata16, 0, "foo", false, "XYCZT",
+          "uint16", 1, 1, 1, 1, 1, 1);
+        IFormatWriter writer16 = new JPEG2000Writer();
+        try {
+          writer16.setMetadataRetrieve(metadata16);
+          writer16.setId(file);
+          writer16.saveBytes(0, pixels);
+        }
+        finally {
+          writer16.close();
+        }
 
-      byte[] buf = tmpFile.getBytes();
-      byte[] realData = new byte[(int) tmpFile.length()];
-      System.arraycopy(buf, 0, realData, 0, realData.length);
-      tmpFile.close();
+        byte[] buf = tmpFile.getBytes();
+        realData = new byte[(int) tmpFile.length()];
+        System.arraycopy(buf, 0, realData, 0, realData.length);
+      }
+      finally {
+        tmpFile.close();
+      }
       tmpFile = new ByteArrayHandle(realData);
-      Location.mapFile(file, tmpFile);
-
       ImageReader reader = new ImageReader();
-      reader.setId(file);
-      byte[] plane = reader.openBytes(0);
-      for (int q=0; q<plane.length; q++) {
-        if (plane[q] != pixels[q]) {
-          LOGGER.debug("FAILED on {}",
-            DataTools.bytesToShort(pixels, false));
-          failureCount++;
-          break;
+      try {
+        Location.mapFile(file, tmpFile);
+
+        reader.setId(file);
+        byte[] plane = reader.openBytes(0);
+        for (int q=0; q<plane.length; q++) {
+          if (plane[q] != pixels[q]) {
+            LOGGER.debug("FAILED on {}",
+              DataTools.bytesToShort(pixels, false));
+            failureCount++;
+            break;
+          }
         }
       }
-      reader.close();
-      tmpFile.close();
-
-      Location.mapFile(file, null);
+      finally {
+        reader.close();
+        tmpFile.close();
+        Location.mapFile(file, null);
+      }
     }
     assertEquals(failureCount, 0);
   }

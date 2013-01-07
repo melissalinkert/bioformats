@@ -122,12 +122,16 @@ public class OMETiffWriterTest {
   @Test
   public void testFileHandleClosure() throws Exception {
     ImageWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(ms);
-    writer.setId(target.getAbsolutePath());
-    for (int i = 0; i < (SIZE_Z * SIZE_C * SIZE_T); i++) {
-      writer.saveBytes(i, buf);
+    try {
+      writer.setMetadataRetrieve(ms);
+      writer.setId(target.getAbsolutePath());
+      for (int i = 0; i < (SIZE_Z * SIZE_C * SIZE_T); i++) {
+        writer.saveBytes(i, buf);
+      }
     }
-    writer.close();
+    finally {
+      writer.close();
+    }
     for (Entry<Long, Boolean> entry : app.map.entrySet()) {
       if (!entry.getValue()) {
         fail("RandomAccessInputStream " + entry.getKey() + " not closed!");

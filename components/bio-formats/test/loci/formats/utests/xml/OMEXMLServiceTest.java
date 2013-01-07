@@ -59,9 +59,14 @@ public class OMEXMLServiceTest {
     service = sf.getInstance(OMEXMLService.class);
 
     InputStream s = OMEXMLServiceTest.class.getResourceAsStream(XML_FILE);
-    byte[] b = new byte[s.available()];
-    s.read(b);
-    s.close();
+    byte[] b = null;
+    try {
+      b = new byte[s.available()];
+      s.read(b);
+    }
+    finally {
+      s.close();
+    }
 
     xml = new String(b);
   }

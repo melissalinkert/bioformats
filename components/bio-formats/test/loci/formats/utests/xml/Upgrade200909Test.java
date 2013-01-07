@@ -66,9 +66,14 @@ public class Upgrade200909Test {
     service = sf.getInstance(OMEXMLService.class);
 
     InputStream s = Upgrade200909Test.class.getResourceAsStream(XML_FILE);
-    byte[] b = new byte[s.available()];
-    s.read(b);
-    s.close();
+    byte[] b = null;
+    try {
+      b = new byte[s.available()];
+      s.read(b);
+    }
+    finally {
+      s.close();
+    }
 
     xml = new String(b);
     metadata = service.createOMEXMLMetadata(xml);

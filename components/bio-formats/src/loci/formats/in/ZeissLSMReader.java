@@ -359,39 +359,43 @@ public class ZeissLSMReader extends FormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
-    if (getSeriesCount() > 1) {
-      in.close();
-      in = new RandomAccessInputStream(getLSMFileFromSeries(getSeries()));
-      in.order(!isLittleEndian());
-      tiffParser = new TiffParser(in);
-    }
-
-    IFDList ifds = ifdsList.get(getSeries());
-
-    if (splitPlanes && getSizeC() > 1 && ifds.size() == getSizeZ() * getSizeT())
-    {
-      int bpp = FormatTools.getBytesPerPixel(getPixelType());
-      int plane = no / getSizeC();
-      int c = no % getSizeC();
-      Region region = new Region(x, y, w, h);
-
-      if (prevPlane != plane || prevBuf == null ||
-        prevBuf.length < w * h * bpp * getSizeC() || !region.equals(prevRegion))
-      {
-        prevBuf = new byte[w * h * bpp * getSizeC()];
-        tiffParser.getSamples(ifds.get(plane), prevBuf, x, y, w, h);
-        prevPlane = plane;
-        prevRegion = region;
+    try {
+      if (getSeriesCount() > 1) {
+        in.close();
+        in = new RandomAccessInputStream(getLSMFileFromSeries(getSeries()));
+        in.order(!isLittleEndian());
+        tiffParser = new TiffParser(in);
       }
-      ImageTools.splitChannels(
-        prevBuf, buf, c, getSizeC(), bpp, false, false, w * h * bpp);
-      prevChannel = c;
+
+      IFDList ifds = ifdsList.get(getSeries());
+
+      if (splitPlanes && getSizeC() > 1 && ifds.size() == getSizeZ() * getSizeT())
+      {
+        int bpp = FormatTools.getBytesPerPixel(getPixelType());
+        int plane = no / getSizeC();
+        int c = no % getSizeC();
+        Region region = new Region(x, y, w, h);
+
+        if (prevPlane != plane || prevBuf == null ||
+          prevBuf.length < w * h * bpp * getSizeC() || !region.equals(prevRegion))
+        {
+          prevBuf = new byte[w * h * bpp * getSizeC()];
+          tiffParser.getSamples(ifds.get(plane), prevBuf, x, y, w, h);
+          prevPlane = plane;
+          prevRegion = region;
+        }
+        ImageTools.splitChannels(
+          prevBuf, buf, c, getSizeC(), bpp, false, false, w * h * bpp);
+        prevChannel = c;
+      }
+      else {
+        tiffParser.getSamples(ifds.get(no), buf, x, y, w, h);
+        prevChannel = getZCTCoords(no)[1];
+      }
     }
-    else {
-      tiffParser.getSamples(ifds.get(no), buf, x, y, w, h);
-      prevChannel = getZCTCoords(no)[1];
+    finally {
+      if (getSeriesCount() > 1) in.close();
     }
-    if (getSeriesCount() > 1) in.close();
     return buf;
   }
 
@@ -441,39 +445,43 @@ public class ZeissLSMReader extends FormatReader {
     for (int i=0; i<lsmFilenames.length; i++) {
       RandomAccessInputStream stream =
         new RandomAccessInputStream(lsmFilenames[i]);
-      int count = seriesCounts.get(lsmFilenames[i]);
+      try {
+        int count = seriesCounts.get(lsmFilenames[i]);
 
-      TiffParser tp = new TiffParser(stream);
-      Boolean littleEndian = tp.checkHeader();
-      long[] ifdOffsets = tp.getIFDOffsets();
-      int ifdsPerSeries = (ifdOffsets.length / 2) / count;
+        TiffParser tp = new TiffParser(stream);
+        Boolean littleEndian = tp.checkHeader();
+        long[] ifdOffsets = tp.getIFDOffsets();
+        int ifdsPerSeries = (ifdOffsets.length / 2) / count;
 
-      int offset = 0;
-      Object zeissTag = null;
-      for (int s=0; s<count; s++, realSeries++) {
-        core[realSeries] = new CoreMetadata();
-        core[realSeries].littleEndian = littleEndian;
+        int offset = 0;
+        Object zeissTag = null;
+        for (int s=0; s<count; s++, realSeries++) {
+          core[realSeries] = new CoreMetadata();
+          core[realSeries].littleEndian = littleEndian;
 
-        IFDList ifds = new IFDList();
-        while (ifds.size() < ifdsPerSeries) {
-          tp.setDoCaching(offset == 0);
-          IFD ifd = tp.getIFD(ifdOffsets[offset]);
-          if (offset == 0) zeissTag = ifd.get(ZEISS_ID);
-          if (offset > 0 && ifds.size() == 0) {
-            ifd.putIFDValue(ZEISS_ID, zeissTag);
+          IFDList ifds = new IFDList();
+          while (ifds.size() < ifdsPerSeries) {
+            tp.setDoCaching(offset == 0);
+            IFD ifd = tp.getIFD(ifdOffsets[offset]);
+            if (offset == 0) zeissTag = ifd.get(ZEISS_ID);
+            if (offset > 0 && ifds.size() == 0) {
+              ifd.putIFDValue(ZEISS_ID, zeissTag);
+            }
+            ifds.add(ifd);
+            if (zeissTag != null) offset += 2;
+            else offset++;
           }
-          ifds.add(ifd);
-          if (zeissTag != null) offset += 2;
-          else offset++;
-        }
 
-        for (IFD ifd : ifds) {
-          tp.fillInIFD(ifd);
-        }
+          for (IFD ifd : ifds) {
+            tp.fillInIFD(ifd);
+          }
 
-        ifdsList.set(realSeries, ifds);
+          ifdsList.set(realSeries, ifds);
+        }
       }
-      stream.close();
+      finally {
+        stream.close();
+      }
     }
 
     MetadataStore store = makeFilterMetadata();
@@ -499,39 +507,44 @@ public class ZeissLSMReader extends FormatReader {
       // fix the offsets for > 4 GB files
       RandomAccessInputStream s =
         new RandomAccessInputStream(getLSMFileFromSeries(series));
-      for (int i=0; i<ifds.size(); i++) {
-        long[] stripOffsets = ifds.get(i).getStripOffsets();
+      try {
+        for (int i=0; i<ifds.size(); i++) {
+          long[] stripOffsets = ifds.get(i).getStripOffsets();
 
-        if (stripOffsets == null || (i != 0 && previousStripOffsets == null)) {
-          throw new FormatException(
-            "Strip offsets are missing; this is an invalid file.");
-        }
-        else if (i == 0 && previousStripOffsets == null) {
-          previousStripOffsets = stripOffsets;
-          continue;
-        }
+          if (stripOffsets == null || (i != 0 && previousStripOffsets == null))
+          {
+            throw new FormatException(
+              "Strip offsets are missing; this is an invalid file.");
+          }
+          else if (i == 0 && previousStripOffsets == null) {
+            previousStripOffsets = stripOffsets;
+            continue;
+          }
 
-        boolean neededAdjustment = false;
-        for (int j=0; j<stripOffsets.length; j++) {
-          if (j >= previousStripOffsets.length) break;
-          if (stripOffsets[j] < previousStripOffsets[j]) {
-            stripOffsets[j] = (previousStripOffsets[j] & ~0xffffffffL) |
-              (stripOffsets[j] & 0xffffffffL);
+          boolean neededAdjustment = false;
+          for (int j=0; j<stripOffsets.length; j++) {
+            if (j >= previousStripOffsets.length) break;
             if (stripOffsets[j] < previousStripOffsets[j]) {
-              long newOffset = stripOffsets[j] + 0x100000000L;
-              if (newOffset < s.length()) {
-                stripOffsets[j] = newOffset;
+              stripOffsets[j] = (previousStripOffsets[j] & ~0xffffffffL) |
+                (stripOffsets[j] & 0xffffffffL);
+              if (stripOffsets[j] < previousStripOffsets[j]) {
+                long newOffset = stripOffsets[j] + 0x100000000L;
+                if (newOffset < s.length()) {
+                  stripOffsets[j] = newOffset;
+                }
               }
+              neededAdjustment = true;
             }
-            neededAdjustment = true;
+            if (neededAdjustment) {
+              ifds.get(i).putIFDValue(IFD.STRIP_OFFSETS, stripOffsets);
+            }
           }
-          if (neededAdjustment) {
-            ifds.get(i).putIFDValue(IFD.STRIP_OFFSETS, stripOffsets);
-          }
+          previousStripOffsets = stripOffsets;
         }
-        previousStripOffsets = stripOffsets;
       }
-      s.close();
+      finally {
+        s.close();
+      }
 
       initMetadata(series);
     }
@@ -604,13 +617,19 @@ public class ZeissLSMReader extends FormatReader {
     tiffParser = new TiffParser(in);
     IFD ifd = tiffParser.getFirstIFD();
     RandomAccessInputStream ras = getCZTag(ifd);
-    if (ras == null) return 1;
-    ras.order(littleEndian);
+    try {
+      if (ras == null) return 1;
+      ras.order(littleEndian);
 
-    ras.seek(264);
-    dimensionP = ras.readInt();
-    dimensionM = ras.readInt();
-    ras.close();
+      ras.seek(264);
+      dimensionP = ras.readInt();
+      dimensionM = ras.readInt();
+    }
+    finally {
+      if (ras != null) {
+        ras.close();
+      }
+    }
 
     int nSeries = dimensionM * dimensionP;
     return nSeries <= 0 ? 1 : nSeries;
@@ -633,9 +652,13 @@ public class ZeissLSMReader extends FormatReader {
     if (s == null) {
       LOGGER.warn("Invalid Zeiss LSM file. Tag {} not found.", ZEISS_ID);
       TiffReader reader = new TiffReader();
-      reader.setId(getLSMFileFromSeries(series));
-      core[getSeries()] = reader.getCoreMetadata()[0];
-      reader.close();
+      try {
+        reader.setId(getLSMFileFromSeries(series));
+        core[getSeries()] = reader.getCoreMetadata()[0];
+      }
+      finally {
+        reader.close();
+      }
       return null;
     }
     byte[] cz = new byte[s.length];
@@ -702,564 +725,568 @@ public class ZeissLSMReader extends FormatReader {
       return;
     }
 
-    ras.seek(16);
+    try {
+      ras.seek(16);
 
-    core[series].sizeZ = ras.readInt();
-    ras.skipBytes(4);
-    core[series].sizeT = ras.readInt();
+      core[series].sizeZ = ras.readInt();
+      ras.skipBytes(4);
+      core[series].sizeT = ras.readInt();
 
-    int dataType = ras.readInt();
-    switch (dataType) {
-      case 2:
-        addSeriesMeta("DataType", "12 bit unsigned integer");
-        break;
-      case 5:
-        addSeriesMeta("DataType", "32 bit float");
-        break;
-      case 0:
-        addSeriesMeta("DataType", "varying data types");
-        break;
-      default:
-        addSeriesMeta("DataType", "8 bit unsigned integer");
-    }
-
-    if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-      ras.seek(0);
-      addSeriesMeta("MagicNumber ", ras.readInt());
-      addSeriesMeta("StructureSize", ras.readInt());
-      addSeriesMeta("DimensionX", ras.readInt());
-      addSeriesMeta("DimensionY", ras.readInt());
-
-      ras.seek(32);
-      addSeriesMeta("ThumbnailX", ras.readInt());
-      addSeriesMeta("ThumbnailY", ras.readInt());
-
-      // pixel sizes are stored in meters, we need them in microns
-      pixelSizeX = ras.readDouble() * 1000000;
-      pixelSizeY = ras.readDouble() * 1000000;
-      pixelSizeZ = ras.readDouble() * 1000000;
-
-      addSeriesMeta("VoxelSizeX", new Double(pixelSizeX));
-      addSeriesMeta("VoxelSizeY", new Double(pixelSizeY));
-      addSeriesMeta("VoxelSizeZ", new Double(pixelSizeZ));
-
-      originX = ras.readDouble() * 1000000;
-      originY = ras.readDouble() * 1000000;
-      originZ = ras.readDouble() * 1000000;
-
-      addSeriesMeta("OriginX", originX);
-      addSeriesMeta("OriginY", originY);
-      addSeriesMeta("OriginZ", originZ);
-    }
-    else ras.seek(88);
-
-    int scanType = ras.readShort();
-    switch (scanType) {
-      case 0:
-        addSeriesMeta("ScanType", "x-y-z scan");
-        core[series].dimensionOrder = "XYZCT";
-        break;
-      case 1:
-        addSeriesMeta("ScanType", "z scan (x-z plane)");
-        core[series].dimensionOrder = "XYZCT";
-        break;
-      case 2:
-        addSeriesMeta("ScanType", "line scan");
-        core[series].dimensionOrder = "XYZCT";
-        break;
-      case 3:
-        addSeriesMeta("ScanType", "time series x-y");
-        core[series].dimensionOrder = "XYTCZ";
-        break;
-      case 4:
-        addSeriesMeta("ScanType", "time series x-z");
-        core[series].dimensionOrder = "XYZTC";
-        break;
-      case 5:
-        addSeriesMeta("ScanType", "time series 'Mean of ROIs'");
-        core[series].dimensionOrder = "XYTCZ";
-        break;
-      case 6:
-        addSeriesMeta("ScanType", "time series x-y-z");
-        core[series].dimensionOrder = "XYZTC";
-        break;
-      case 7:
-        addSeriesMeta("ScanType", "spline scan");
-        core[series].dimensionOrder = "XYCTZ";
-        break;
-      case 8:
-        addSeriesMeta("ScanType", "spline scan x-z");
-        core[series].dimensionOrder = "XYCZT";
-        break;
-      case 9:
-        addSeriesMeta("ScanType", "time series spline plane x-z");
-        core[series].dimensionOrder = "XYTCZ";
-        break;
-      case 10:
-        addSeriesMeta("ScanType", "point mode");
-        core[series].dimensionOrder = "XYZCT";
-        break;
-      default:
-        addSeriesMeta("ScanType", "x-y-z scan");
-        core[series].dimensionOrder = "XYZCT";
-    }
-
-    core[series].indexed = lut != null && lut[series] != null;
-    if (isIndexed()) {
-      core[series].rgb = false;
-    }
-    if (getSizeC() == 0) core[series].sizeC = 1;
-
-    if (isRGB()) {
-      // shuffle C to front of order string
-      core[series].dimensionOrder = getDimensionOrder().replaceAll("C", "");
-      core[series].dimensionOrder = getDimensionOrder().replaceAll("XY", "XYC");
-    }
-
-    if (getEffectiveSizeC() == 0) {
-      core[series].imageCount = getSizeZ() * getSizeT();
-    }
-    else {
-      core[series].imageCount = getSizeZ() * getSizeT() * getEffectiveSizeC();
-    }
-
-    if (getImageCount() != ifds.size()) {
-      int diff = getImageCount() - ifds.size();
-      core[series].imageCount = ifds.size();
-      if (diff % getSizeZ() == 0) {
-        core[series].sizeT -= (diff / getSizeZ());
-      }
-      else if (diff % getSizeT() == 0) {
-        core[series].sizeZ -= (diff / getSizeT());
-      }
-      else if (getSizeZ() > 1) {
-        core[series].sizeZ = ifds.size();
-        core[series].sizeT = 1;
-      }
-      else if (getSizeT() > 1) {
-        core[series].sizeT = ifds.size();
-        core[series].sizeZ = 1;
-      }
-    }
-
-    if (getSizeZ() == 0) core[series].sizeZ = getImageCount();
-    if (getSizeT() == 0) core[series].sizeT = getImageCount() / getSizeZ();
-
-    long channelColorsOffset = 0;
-    long timeStampOffset = 0;
-    long eventListOffset = 0;
-    long scanInformationOffset = 0;
-    long channelWavelengthOffset = 0;
-    long applicationTagOffset = 0;
-    Color[] channelColor = new Color[getSizeC()];
-
-    if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-      int spectralScan = ras.readShort();
-      if (spectralScan != 1) {
-        addSeriesMeta("SpectralScan", "no spectral scan");
-      }
-      else addSeriesMeta("SpectralScan", "acquired with spectral scan");
-
-      int type = ras.readInt();
-      switch (type) {
-        case 1:
-          addSeriesMeta("DataType2", "calculated data");
-          break;
+      int dataType = ras.readInt();
+      switch (dataType) {
         case 2:
-          addSeriesMeta("DataType2", "animation");
+          addSeriesMeta("DataType", "12 bit unsigned integer");
+          break;
+        case 5:
+          addSeriesMeta("DataType", "32 bit float");
+          break;
+        case 0:
+          addSeriesMeta("DataType", "varying data types");
           break;
         default:
-          addSeriesMeta("DataType2", "original scan data");
+          addSeriesMeta("DataType", "8 bit unsigned integer");
       }
 
-      long[] overlayOffsets = new long[9];
-      String[] overlayKeys = new String[] {"VectorOverlay", "InputLut",
-        "OutputLut", "ROI", "BleachROI", "MeanOfRoisOverlay",
-        "TopoIsolineOverlay", "TopoProfileOverlay", "LinescanOverlay"};
+      if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
+        ras.seek(0);
+        addSeriesMeta("MagicNumber ", ras.readInt());
+        addSeriesMeta("StructureSize", ras.readInt());
+        addSeriesMeta("DimensionX", ras.readInt());
+        addSeriesMeta("DimensionY", ras.readInt());
 
-      overlayOffsets[0] = ras.readInt();
-      overlayOffsets[1] = ras.readInt();
-      overlayOffsets[2] = ras.readInt();
+        ras.seek(32);
+        addSeriesMeta("ThumbnailX", ras.readInt());
+        addSeriesMeta("ThumbnailY", ras.readInt());
 
-      channelColorsOffset = ras.readInt();
+        // pixel sizes are stored in meters, we need them in microns
+        pixelSizeX = ras.readDouble() * 1000000;
+        pixelSizeY = ras.readDouble() * 1000000;
+        pixelSizeZ = ras.readDouble() * 1000000;
 
-      addSeriesMeta("TimeInterval", ras.readDouble());
-      ras.skipBytes(4);
-      scanInformationOffset = ras.readInt();
-      applicationTagOffset = ras.readInt();
-      timeStampOffset = ras.readInt();
-      eventListOffset = ras.readInt();
-      overlayOffsets[3] = ras.readInt();
-      overlayOffsets[4] = ras.readInt();
-      ras.skipBytes(4);
+        addSeriesMeta("VoxelSizeX", new Double(pixelSizeX));
+        addSeriesMeta("VoxelSizeY", new Double(pixelSizeY));
+        addSeriesMeta("VoxelSizeZ", new Double(pixelSizeZ));
 
-      addSeriesMeta("DisplayAspectX", ras.readDouble());
-      addSeriesMeta("DisplayAspectY", ras.readDouble());
-      addSeriesMeta("DisplayAspectZ", ras.readDouble());
-      addSeriesMeta("DisplayAspectTime", ras.readDouble());
+        originX = ras.readDouble() * 1000000;
+        originY = ras.readDouble() * 1000000;
+        originZ = ras.readDouble() * 1000000;
 
-      overlayOffsets[5] = ras.readInt();
-      overlayOffsets[6] = ras.readInt();
-      overlayOffsets[7] = ras.readInt();
-      overlayOffsets[8] = ras.readInt();
+        addSeriesMeta("OriginX", originX);
+        addSeriesMeta("OriginY", originY);
+        addSeriesMeta("OriginZ", originZ);
+      }
+      else ras.seek(88);
 
-      if (getMetadataOptions().getMetadataLevel() != MetadataLevel.NO_OVERLAYS)
-      {
-        for (int i=0; i<overlayOffsets.length; i++) {
-          parseOverlays(series, overlayOffsets[i], overlayKeys[i], store);
+      int scanType = ras.readShort();
+      switch (scanType) {
+        case 0:
+          addSeriesMeta("ScanType", "x-y-z scan");
+          core[series].dimensionOrder = "XYZCT";
+          break;
+        case 1:
+          addSeriesMeta("ScanType", "z scan (x-z plane)");
+          core[series].dimensionOrder = "XYZCT";
+          break;
+        case 2:
+          addSeriesMeta("ScanType", "line scan");
+          core[series].dimensionOrder = "XYZCT";
+          break;
+        case 3:
+          addSeriesMeta("ScanType", "time series x-y");
+          core[series].dimensionOrder = "XYTCZ";
+          break;
+        case 4:
+          addSeriesMeta("ScanType", "time series x-z");
+          core[series].dimensionOrder = "XYZTC";
+          break;
+        case 5:
+          addSeriesMeta("ScanType", "time series 'Mean of ROIs'");
+          core[series].dimensionOrder = "XYTCZ";
+          break;
+        case 6:
+          addSeriesMeta("ScanType", "time series x-y-z");
+          core[series].dimensionOrder = "XYZTC";
+          break;
+        case 7:
+          addSeriesMeta("ScanType", "spline scan");
+          core[series].dimensionOrder = "XYCTZ";
+          break;
+        case 8:
+          addSeriesMeta("ScanType", "spline scan x-z");
+          core[series].dimensionOrder = "XYCZT";
+          break;
+        case 9:
+          addSeriesMeta("ScanType", "time series spline plane x-z");
+          core[series].dimensionOrder = "XYTCZ";
+          break;
+        case 10:
+          addSeriesMeta("ScanType", "point mode");
+          core[series].dimensionOrder = "XYZCT";
+          break;
+        default:
+          addSeriesMeta("ScanType", "x-y-z scan");
+          core[series].dimensionOrder = "XYZCT";
+      }
+
+      core[series].indexed = lut != null && lut[series] != null;
+      if (isIndexed()) {
+        core[series].rgb = false;
+      }
+      if (getSizeC() == 0) core[series].sizeC = 1;
+
+      if (isRGB()) {
+        // shuffle C to front of order string
+        core[series].dimensionOrder = getDimensionOrder().replaceAll("C", "");
+        core[series].dimensionOrder = getDimensionOrder().replaceAll("XY", "XYC");
+      }
+
+      if (getEffectiveSizeC() == 0) {
+        core[series].imageCount = getSizeZ() * getSizeT();
+      }
+      else {
+        core[series].imageCount = getSizeZ() * getSizeT() * getEffectiveSizeC();
+      }
+
+      if (getImageCount() != ifds.size()) {
+        int diff = getImageCount() - ifds.size();
+        core[series].imageCount = ifds.size();
+        if (diff % getSizeZ() == 0) {
+          core[series].sizeT -= (diff / getSizeZ());
+        }
+        else if (diff % getSizeT() == 0) {
+          core[series].sizeZ -= (diff / getSizeT());
+        }
+        else if (getSizeZ() > 1) {
+          core[series].sizeZ = ifds.size();
+          core[series].sizeT = 1;
+        }
+        else if (getSizeT() > 1) {
+          core[series].sizeT = ifds.size();
+          core[series].sizeZ = 1;
         }
       }
 
-      totalROIs = 0;
+      if (getSizeZ() == 0) core[series].sizeZ = getImageCount();
+      if (getSizeT() == 0) core[series].sizeT = getImageCount() / getSizeZ();
 
-      addSeriesMeta("ToolbarFlags", ras.readInt());
+      long channelColorsOffset = 0;
+      long timeStampOffset = 0;
+      long eventListOffset = 0;
+      long scanInformationOffset = 0;
+      long channelWavelengthOffset = 0;
+      long applicationTagOffset = 0;
+      Color[] channelColor = new Color[getSizeC()];
 
-      channelWavelengthOffset = ras.readInt();
-      ras.skipBytes(64);
-    }
-    else ras.skipBytes(182);
-
-    if (getSizeC() > 1) {
-      if (!splitPlanes) splitPlanes = isRGB();
-      core[series].rgb = false;
-      if (splitPlanes) core[series].imageCount *= getSizeC();
-    }
-
-    for (int c=0; c<getEffectiveSizeC(); c++) {
-      String lsid = MetadataTools.createLSID("Channel", series, c);
-      store.setChannelID(lsid, series, c);
-    }
-
-    if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-      // NB: the Zeiss LSM 5.5 specification indicates that there should be
-      //     15 32-bit integers here; however, there are actually 16 32-bit
-      //     integers before the tile position offset.
-      //     We have confirmed with Zeiss that this is correct, and the 6.0
-      //     specification was updated to contain the correct information.
-      ras.skipBytes(64);
-
-      int tilePositionOffset = ras.readInt();
-
-      ras.skipBytes(36);
-
-      int positionOffset = ras.readInt();
-
-      // read referenced structures
-
-      addSeriesMeta("DimensionZ", getSizeZ());
-      addSeriesMeta("DimensionChannels", getSizeC());
-      addSeriesMeta("DimensionM", dimensionM);
-      addSeriesMeta("DimensionP", dimensionP);
-
-      if (lsmFilenames.length == 1) {
-        xCoordinates.clear();
-        yCoordinates.clear();
-        zCoordinates.clear();
-      }
-
-      if (positionOffset != 0) {
-        in.seek(positionOffset);
-        int nPositions = in.readInt();
-        for (int i=0; i<nPositions; i++) {
-          double xPos = originX + in.readDouble() * 1000000;
-          double yPos = originY + in.readDouble() * 1000000;
-          double zPos = originZ + in.readDouble() * 1000000;
-          xCoordinates.add(xPos);
-          yCoordinates.add(yPos);
-          zCoordinates.add(zPos);
-
-          addGlobalMeta("X position for position #" + (i + 1), xPos);
-          addGlobalMeta("Y position for position #" + (i + 1), yPos);
-          addGlobalMeta("Z position for position #" + (i + 1), zPos);
+      if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
+        int spectralScan = ras.readShort();
+        if (spectralScan != 1) {
+          addSeriesMeta("SpectralScan", "no spectral scan");
         }
-      }
+        else addSeriesMeta("SpectralScan", "acquired with spectral scan");
 
-      if (tilePositionOffset != 0) {
-        in.seek(tilePositionOffset);
-        int nTiles = in.readInt();
-        for (int i=0; i<nTiles; i++) {
-          double xPos = originX + in.readDouble() * 1000000;
-          double yPos = originY + in.readDouble() * 1000000;
-          double zPos = originZ + in.readDouble() * 1000000;
-          if (xCoordinates.size() > i) {
-            xPos += xCoordinates.get(i);
-            xCoordinates.setElementAt(xPos, i);
+        int type = ras.readInt();
+        switch (type) {
+          case 1:
+            addSeriesMeta("DataType2", "calculated data");
+            break;
+          case 2:
+            addSeriesMeta("DataType2", "animation");
+            break;
+          default:
+            addSeriesMeta("DataType2", "original scan data");
+        }
+
+        long[] overlayOffsets = new long[9];
+        String[] overlayKeys = new String[] {"VectorOverlay", "InputLut",
+          "OutputLut", "ROI", "BleachROI", "MeanOfRoisOverlay",
+          "TopoIsolineOverlay", "TopoProfileOverlay", "LinescanOverlay"};
+
+        overlayOffsets[0] = ras.readInt();
+        overlayOffsets[1] = ras.readInt();
+        overlayOffsets[2] = ras.readInt();
+
+        channelColorsOffset = ras.readInt();
+
+        addSeriesMeta("TimeInterval", ras.readDouble());
+        ras.skipBytes(4);
+        scanInformationOffset = ras.readInt();
+        applicationTagOffset = ras.readInt();
+        timeStampOffset = ras.readInt();
+        eventListOffset = ras.readInt();
+        overlayOffsets[3] = ras.readInt();
+        overlayOffsets[4] = ras.readInt();
+        ras.skipBytes(4);
+
+        addSeriesMeta("DisplayAspectX", ras.readDouble());
+        addSeriesMeta("DisplayAspectY", ras.readDouble());
+        addSeriesMeta("DisplayAspectZ", ras.readDouble());
+        addSeriesMeta("DisplayAspectTime", ras.readDouble());
+
+        overlayOffsets[5] = ras.readInt();
+        overlayOffsets[6] = ras.readInt();
+        overlayOffsets[7] = ras.readInt();
+        overlayOffsets[8] = ras.readInt();
+
+        if (getMetadataOptions().getMetadataLevel() != MetadataLevel.NO_OVERLAYS)
+        {
+          for (int i=0; i<overlayOffsets.length; i++) {
+            parseOverlays(series, overlayOffsets[i], overlayKeys[i], store);
           }
-          else if (xCoordinates.size() == i) {
+        }
+
+        totalROIs = 0;
+
+        addSeriesMeta("ToolbarFlags", ras.readInt());
+
+        channelWavelengthOffset = ras.readInt();
+        ras.skipBytes(64);
+      }
+      else ras.skipBytes(182);
+
+      if (getSizeC() > 1) {
+        if (!splitPlanes) splitPlanes = isRGB();
+        core[series].rgb = false;
+        if (splitPlanes) core[series].imageCount *= getSizeC();
+      }
+
+      for (int c=0; c<getEffectiveSizeC(); c++) {
+        String lsid = MetadataTools.createLSID("Channel", series, c);
+        store.setChannelID(lsid, series, c);
+      }
+
+      if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
+        // NB: the Zeiss LSM 5.5 specification indicates that there should be
+        //     15 32-bit integers here; however, there are actually 16 32-bit
+        //     integers before the tile position offset.
+        //     We have confirmed with Zeiss that this is correct, and the 6.0
+        //     specification was updated to contain the correct information.
+        ras.skipBytes(64);
+
+        int tilePositionOffset = ras.readInt();
+
+        ras.skipBytes(36);
+
+        int positionOffset = ras.readInt();
+
+        // read referenced structures
+
+        addSeriesMeta("DimensionZ", getSizeZ());
+        addSeriesMeta("DimensionChannels", getSizeC());
+        addSeriesMeta("DimensionM", dimensionM);
+        addSeriesMeta("DimensionP", dimensionP);
+
+        if (lsmFilenames.length == 1) {
+          xCoordinates.clear();
+          yCoordinates.clear();
+          zCoordinates.clear();
+        }
+
+        if (positionOffset != 0) {
+          in.seek(positionOffset);
+          int nPositions = in.readInt();
+          for (int i=0; i<nPositions; i++) {
+            double xPos = originX + in.readDouble() * 1000000;
+            double yPos = originY + in.readDouble() * 1000000;
+            double zPos = originZ + in.readDouble() * 1000000;
             xCoordinates.add(xPos);
-          }
-          if (yCoordinates.size() > i) {
-            yPos += yCoordinates.get(i);
-            yCoordinates.setElementAt(yPos, i);
-          }
-          else if (yCoordinates.size() == i) {
             yCoordinates.add(yPos);
-          }
-          if (zCoordinates.size() > i) {
-            zPos += zCoordinates.get(i);
-            zCoordinates.setElementAt(zPos, i);
-          }
-          else if (zCoordinates.size() == i) {
             zCoordinates.add(zPos);
+
+            addGlobalMeta("X position for position #" + (i + 1), xPos);
+            addGlobalMeta("Y position for position #" + (i + 1), yPos);
+            addGlobalMeta("Z position for position #" + (i + 1), zPos);
+          }
+        }
+
+        if (tilePositionOffset != 0) {
+          in.seek(tilePositionOffset);
+          int nTiles = in.readInt();
+          for (int i=0; i<nTiles; i++) {
+            double xPos = originX + in.readDouble() * 1000000;
+            double yPos = originY + in.readDouble() * 1000000;
+            double zPos = originZ + in.readDouble() * 1000000;
+            if (xCoordinates.size() > i) {
+              xPos += xCoordinates.get(i);
+              xCoordinates.setElementAt(xPos, i);
+            }
+            else if (xCoordinates.size() == i) {
+              xCoordinates.add(xPos);
+            }
+            if (yCoordinates.size() > i) {
+              yPos += yCoordinates.get(i);
+              yCoordinates.setElementAt(yPos, i);
+            }
+            else if (yCoordinates.size() == i) {
+              yCoordinates.add(yPos);
+            }
+            if (zCoordinates.size() > i) {
+              zPos += zCoordinates.get(i);
+              zCoordinates.setElementAt(zPos, i);
+            }
+            else if (zCoordinates.size() == i) {
+              zCoordinates.add(zPos);
+            }
+
+            addGlobalMeta("X position for position #" + (i + 1), xPos);
+            addGlobalMeta("Y position for position #" + (i + 1), yPos);
+            addGlobalMeta("Z position for position #" + (i + 1), zPos);
+          }
+        }
+
+        if (channelColorsOffset != 0) {
+          in.seek(channelColorsOffset + 12);
+          int colorsOffset = in.readInt();
+          int namesOffset = in.readInt();
+
+          // read the color of each channel
+
+          if (colorsOffset > 0) {
+            in.seek(channelColorsOffset + colorsOffset);
+            lut[getSeries()] = new byte[getSizeC() * 3][256];
+            core[getSeries()].indexed = true;
+            for (int i=0; i<getSizeC(); i++) {
+              int color = in.readInt();
+
+              int red = color & 0xff;
+              int green = (color & 0xff00) >> 8;
+              int blue = (color & 0xff0000) >> 16;
+
+              channelColor[i] = new Color(red, green, blue, 255);
+
+              for (int j=0; j<256; j++) {
+                lut[getSeries()][i * 3][j] = (byte) ((red / 255.0) * j);
+                lut[getSeries()][i * 3 + 1][j] = (byte) ((green / 255.0) * j);
+                lut[getSeries()][i * 3 + 2][j] = (byte) ((blue / 255.0) * j);
+              }
+            }
           }
 
-          addGlobalMeta("X position for position #" + (i + 1), xPos);
-          addGlobalMeta("Y position for position #" + (i + 1), yPos);
-          addGlobalMeta("Z position for position #" + (i + 1), zPos);
-        }
-      }
+          // read the name of each channel
 
-      if (channelColorsOffset != 0) {
-        in.seek(channelColorsOffset + 12);
-        int colorsOffset = in.readInt();
-        int namesOffset = in.readInt();
+          if (namesOffset > 0) {
+            in.seek(channelColorsOffset + namesOffset + 4);
 
-        // read the color of each channel
-
-        if (colorsOffset > 0) {
-          in.seek(channelColorsOffset + colorsOffset);
-          lut[getSeries()] = new byte[getSizeC() * 3][256];
-          core[getSeries()].indexed = true;
-          for (int i=0; i<getSizeC(); i++) {
-            int color = in.readInt();
-
-            int red = color & 0xff;
-            int green = (color & 0xff00) >> 8;
-            int blue = (color & 0xff0000) >> 16;
-
-            channelColor[i] = new Color(red, green, blue, 255);
-
-            for (int j=0; j<256; j++) {
-              lut[getSeries()][i * 3][j] = (byte) ((red / 255.0) * j);
-              lut[getSeries()][i * 3 + 1][j] = (byte) ((green / 255.0) * j);
-              lut[getSeries()][i * 3 + 2][j] = (byte) ((blue / 255.0) * j);
+            for (int i=0; i<getSizeC(); i++) {
+              if (in.getFilePointer() >= in.length() - 1) break;
+              // we want to read until we find a null char
+              String name = in.readCString();
+              if (name.length() <= 128) {
+                addSeriesMeta("ChannelName" + i, name);
+              }
             }
           }
         }
 
-        // read the name of each channel
+        if (timeStampOffset != 0) {
+          in.seek(timeStampOffset + 4);
+          int nStamps = in.readInt();
+          for (int i=0; i<nStamps; i++) {
+            double stamp = in.readDouble();
+            addSeriesMeta("TimeStamp" + i, stamp);
+            timestamps.add(new Double(stamp));
+          }
+        }
 
-        if (namesOffset > 0) {
-          in.seek(channelColorsOffset + namesOffset + 4);
+        if (eventListOffset != 0) {
+          in.seek(eventListOffset + 4);
+          int numEvents = in.readInt();
+          in.seek(in.getFilePointer() - 4);
+          in.order(!in.isLittleEndian());
+          int tmpEvents = in.readInt();
+          if (numEvents < 0) numEvents = tmpEvents;
+          else numEvents = (int) Math.min(numEvents, tmpEvents);
+          in.order(!in.isLittleEndian());
 
-          for (int i=0; i<getSizeC(); i++) {
-            if (in.getFilePointer() >= in.length() - 1) break;
-            // we want to read until we find a null char
-            String name = in.readCString();
-            if (name.length() <= 128) {
-              addSeriesMeta("ChannelName" + i, name);
+          if (numEvents > 65535) numEvents = 0;
+
+          for (int i=0; i<numEvents; i++) {
+            if (in.getFilePointer() + 16 <= in.length()) {
+              int size = in.readInt();
+              double eventTime = in.readDouble();
+              int eventType = in.readInt();
+              addSeriesMeta("Event" + i + " Time", eventTime);
+              addSeriesMeta("Event" + i + " Type", eventType);
+              long fp = in.getFilePointer();
+              int len = size - 16;
+              if (len > 65536) len = 65536;
+              if (len < 0) len = 0;
+              addSeriesMeta("Event" + i + " Description", in.readString(len));
+              in.seek(fp + size - 16);
+              if (in.getFilePointer() < 0) break;
             }
           }
         }
-      }
 
-      if (timeStampOffset != 0) {
-        in.seek(timeStampOffset + 4);
-        int nStamps = in.readInt();
-        for (int i=0; i<nStamps; i++) {
-          double stamp = in.readDouble();
-          addSeriesMeta("TimeStamp" + i, stamp);
-          timestamps.add(new Double(stamp));
-        }
-      }
+        if (scanInformationOffset != 0) {
+          in.seek(scanInformationOffset);
 
-      if (eventListOffset != 0) {
-        in.seek(eventListOffset + 4);
-        int numEvents = in.readInt();
-        in.seek(in.getFilePointer() - 4);
-        in.order(!in.isLittleEndian());
-        int tmpEvents = in.readInt();
-        if (numEvents < 0) numEvents = tmpEvents;
-        else numEvents = (int) Math.min(numEvents, tmpEvents);
-        in.order(!in.isLittleEndian());
+          nextLaser = nextDetector = 0;
+          nextFilter = nextDichroicChannel = nextDichroic = 0;
+          nextDataChannel = nextDetectChannel = nextIllumChannel = 0;
 
-        if (numEvents > 65535) numEvents = 0;
+          Vector<SubBlock> blocks = new Vector<SubBlock>();
 
-        for (int i=0; i<numEvents; i++) {
-          if (in.getFilePointer() + 16 <= in.length()) {
-            int size = in.readInt();
-            double eventTime = in.readDouble();
-            int eventType = in.readInt();
-            addSeriesMeta("Event" + i + " Time", eventTime);
-            addSeriesMeta("Event" + i + " Type", eventType);
-            long fp = in.getFilePointer();
-            int len = size - 16;
-            if (len > 65536) len = 65536;
-            if (len < 0) len = 0;
-            addSeriesMeta("Event" + i + " Description", in.readString(len));
-            in.seek(fp + size - 16);
+          while (in.getFilePointer() < in.length() - 12) {
             if (in.getFilePointer() < 0) break;
-          }
-        }
-      }
+            int entry = in.readInt();
+            int blockType = in.readInt();
+            int dataSize = in.readInt();
 
-      if (scanInformationOffset != 0) {
-        in.seek(scanInformationOffset);
-
-        nextLaser = nextDetector = 0;
-        nextFilter = nextDichroicChannel = nextDichroic = 0;
-        nextDataChannel = nextDetectChannel = nextIllumChannel = 0;
-
-        Vector<SubBlock> blocks = new Vector<SubBlock>();
-
-        while (in.getFilePointer() < in.length() - 12) {
-          if (in.getFilePointer() < 0) break;
-          int entry = in.readInt();
-          int blockType = in.readInt();
-          int dataSize = in.readInt();
-
-          if (blockType == TYPE_SUBBLOCK) {
-            SubBlock block = null;
-            switch (entry) {
-              case SUBBLOCK_RECORDING:
-                block = new Recording();
-                break;
-              case SUBBLOCK_LASER:
-                block = new Laser();
-                break;
-              case SUBBLOCK_TRACK:
-                block = new Track();
-                break;
-              case SUBBLOCK_DETECTION_CHANNEL:
-                block = new DetectionChannel();
-                break;
-              case SUBBLOCK_ILLUMINATION_CHANNEL:
-                block = new IlluminationChannel();
-                break;
-              case SUBBLOCK_BEAM_SPLITTER:
-                block = new BeamSplitter();
-                break;
-              case SUBBLOCK_DATA_CHANNEL:
-                block = new DataChannel();
-                break;
-              case SUBBLOCK_TIMER:
-                block = new Timer();
-                break;
-              case SUBBLOCK_MARKER:
-                block = new Marker();
-                break;
+            if (blockType == TYPE_SUBBLOCK) {
+              SubBlock block = null;
+              switch (entry) {
+                case SUBBLOCK_RECORDING:
+                  block = new Recording();
+                  break;
+                case SUBBLOCK_LASER:
+                  block = new Laser();
+                  break;
+                case SUBBLOCK_TRACK:
+                  block = new Track();
+                  break;
+                case SUBBLOCK_DETECTION_CHANNEL:
+                  block = new DetectionChannel();
+                  break;
+                case SUBBLOCK_ILLUMINATION_CHANNEL:
+                  block = new IlluminationChannel();
+                  break;
+                case SUBBLOCK_BEAM_SPLITTER:
+                  block = new BeamSplitter();
+                  break;
+                case SUBBLOCK_DATA_CHANNEL:
+                  block = new DataChannel();
+                  break;
+                case SUBBLOCK_TIMER:
+                  block = new Timer();
+                  break;
+                case SUBBLOCK_MARKER:
+                  block = new Marker();
+                  break;
+              }
+              if (block != null) {
+                blocks.add(block);
+              }
             }
-            if (block != null) {
-              blocks.add(block);
-            }
-          }
-          else if (dataSize + in.getFilePointer() <= in.length() &&
-            dataSize > 0)
-          {
-            in.skipBytes(dataSize);
-          }
-          else break;
-        }
-
-        Vector<SubBlock> nonAcquiredBlocks = new Vector<SubBlock>();
-
-        SubBlock[] metadataBlocks = blocks.toArray(new SubBlock[0]);
-        for (SubBlock block : metadataBlocks) {
-          block.addToHashtable();
-          if (!block.acquire) {
-            nonAcquiredBlocks.add(block);
-            blocks.remove(block);
-          }
-        }
-
-        for (int i=0; i<blocks.size(); i++) {
-          SubBlock block = blocks.get(i);
-          // every valid IlluminationChannel must be immediately followed by
-          // a valid DataChannel or IlluminationChannel
-          if ((block instanceof IlluminationChannel) && i < blocks.size() - 1) {
-            SubBlock nextBlock = blocks.get(i + 1);
-            if (!(nextBlock instanceof DataChannel) &&
-              !(nextBlock instanceof IlluminationChannel))
+            else if (dataSize + in.getFilePointer() <= in.length() &&
+              dataSize > 0)
             {
-              ((IlluminationChannel) block).wavelength = null;
+              in.skipBytes(dataSize);
             }
+            else break;
           }
-          // every valid DetectionChannel must be immediately preceded by
-          // a valid Track or DetectionChannel
-          else if ((block instanceof DetectionChannel) && i > 0) {
-            SubBlock prevBlock = blocks.get(i - 1);
-            if (!(prevBlock instanceof Track) &&
-              !(prevBlock instanceof DetectionChannel))
-            {
-              block.acquire = false;
+
+          Vector<SubBlock> nonAcquiredBlocks = new Vector<SubBlock>();
+
+          SubBlock[] metadataBlocks = blocks.toArray(new SubBlock[0]);
+          for (SubBlock block : metadataBlocks) {
+            block.addToHashtable();
+            if (!block.acquire) {
               nonAcquiredBlocks.add(block);
+              blocks.remove(block);
             }
           }
-          if (block.acquire) populateMetadataStore(block, store, series);
+
+          for (int i=0; i<blocks.size(); i++) {
+            SubBlock block = blocks.get(i);
+            // every valid IlluminationChannel must be immediately followed by
+            // a valid DataChannel or IlluminationChannel
+            if ((block instanceof IlluminationChannel) && i < blocks.size() - 1) {
+              SubBlock nextBlock = blocks.get(i + 1);
+              if (!(nextBlock instanceof DataChannel) &&
+                !(nextBlock instanceof IlluminationChannel))
+              {
+                ((IlluminationChannel) block).wavelength = null;
+              }
+            }
+            // every valid DetectionChannel must be immediately preceded by
+            // a valid Track or DetectionChannel
+            else if ((block instanceof DetectionChannel) && i > 0) {
+              SubBlock prevBlock = blocks.get(i - 1);
+              if (!(prevBlock instanceof Track) &&
+                !(prevBlock instanceof DetectionChannel))
+              {
+                block.acquire = false;
+                nonAcquiredBlocks.add(block);
+              }
+            }
+            if (block.acquire) populateMetadataStore(block, store, series);
+          }
+
+          for (SubBlock block : nonAcquiredBlocks) {
+            populateMetadataStore(block, store, series);
+          }
         }
 
-        for (SubBlock block : nonAcquiredBlocks) {
-          populateMetadataStore(block, store, series);
+        if (applicationTagOffset != 0) {
+          in.seek(applicationTagOffset);
+          parseApplicationTags();
         }
       }
 
-      if (applicationTagOffset != 0) {
-        in.seek(applicationTagOffset);
-        parseApplicationTags();
+      imageNames.add(imageName);
+
+      if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
+        if (userName != null) {
+          String experimenterID = MetadataTools.createLSID("Experimenter", 0);
+          store.setExperimenterID(experimenterID, 0);
+          store.setExperimenterUserName(userName, 0);
+        }
+
+        Double pixX = new Double(pixelSizeX);
+        Double pixY = new Double(pixelSizeY);
+        Double pixZ = new Double(pixelSizeZ);
+
+        if (pixX > 0) {
+          store.setPixelsPhysicalSizeX(new PositiveFloat(pixX), series);
+        }
+        else {
+          LOGGER.warn("Expected positive value for PhysicalSizeX; got {}", pixX);
+        }
+        if (pixY >= 0) {
+          store.setPixelsPhysicalSizeY(new PositiveFloat(pixY), series);
+        }
+        else {
+          LOGGER.warn("Expected positive value for PhysicalSizeY; got {}", pixY);
+        }
+        if (pixZ >= 0) {
+          store.setPixelsPhysicalSizeZ(new PositiveFloat(pixZ), series);
+        }
+        else {
+          LOGGER.warn("Expected positive value for PhysicalSizeZ; got {}", pixZ);
+        }
+
+        for (int i=0; i<getSizeC(); i++) {
+          store.setChannelColor(channelColor[i], series, i);
+        }
+
+        int stampIndex = 0;
+        for (int i=0; i<series; i++) {
+          stampIndex += core[i].sizeT;
+        }
+
+        double firstStamp = 0;
+        if (timestamps.size() > 0 && stampIndex < timestamps.size()) {
+          firstStamp = timestamps.get(stampIndex).doubleValue();
+        }
+
+        for (int i=0; i<getImageCount(); i++) {
+          int[] zct = FormatTools.getZCTCoords(this, i);
+
+          if (getSizeT() > 1 && zct[2] < timestamps.size() - stampIndex) {
+            double thisStamp = timestamps.get(stampIndex + zct[2]).doubleValue();
+            store.setPlaneDeltaT(thisStamp - firstStamp, series, i);
+          }
+          if (xCoordinates.size() > series) {
+            store.setPlanePositionX(xCoordinates.get(series), series, i);
+            store.setPlanePositionY(yCoordinates.get(series), series, i);
+            store.setPlanePositionZ(zCoordinates.get(series), series, i);
+          }
+        }
       }
     }
-
-    imageNames.add(imageName);
-
-    if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-      if (userName != null) {
-        String experimenterID = MetadataTools.createLSID("Experimenter", 0);
-        store.setExperimenterID(experimenterID, 0);
-        store.setExperimenterUserName(userName, 0);
-      }
-
-      Double pixX = new Double(pixelSizeX);
-      Double pixY = new Double(pixelSizeY);
-      Double pixZ = new Double(pixelSizeZ);
-
-      if (pixX > 0) {
-        store.setPixelsPhysicalSizeX(new PositiveFloat(pixX), series);
-      }
-      else {
-        LOGGER.warn("Expected positive value for PhysicalSizeX; got {}", pixX);
-      }
-      if (pixY >= 0) {
-        store.setPixelsPhysicalSizeY(new PositiveFloat(pixY), series);
-      }
-      else {
-        LOGGER.warn("Expected positive value for PhysicalSizeY; got {}", pixY);
-      }
-      if (pixZ >= 0) {
-        store.setPixelsPhysicalSizeZ(new PositiveFloat(pixZ), series);
-      }
-      else {
-        LOGGER.warn("Expected positive value for PhysicalSizeZ; got {}", pixZ);
-      }
-
-      for (int i=0; i<getSizeC(); i++) {
-        store.setChannelColor(channelColor[i], series, i);
-      }
-
-      int stampIndex = 0;
-      for (int i=0; i<series; i++) {
-        stampIndex += core[i].sizeT;
-      }
-
-      double firstStamp = 0;
-      if (timestamps.size() > 0 && stampIndex < timestamps.size()) {
-        firstStamp = timestamps.get(stampIndex).doubleValue();
-      }
-
-      for (int i=0; i<getImageCount(); i++) {
-        int[] zct = FormatTools.getZCTCoords(this, i);
-
-        if (getSizeT() > 1 && zct[2] < timestamps.size() - stampIndex) {
-          double thisStamp = timestamps.get(stampIndex + zct[2]).doubleValue();
-          store.setPlaneDeltaT(thisStamp - firstStamp, series, i);
-        }
-        if (xCoordinates.size() > series) {
-          store.setPlanePositionX(xCoordinates.get(series), series, i);
-          store.setPlanePositionY(yCoordinates.get(series), series, i);
-          store.setPlanePositionZ(zCoordinates.get(series), series, i);
-        }
-      }
+    finally {
+      ras.close();
     }
-    ras.close();
   }
 
   protected void populateMetadataStore(SubBlock block, MetadataStore store,

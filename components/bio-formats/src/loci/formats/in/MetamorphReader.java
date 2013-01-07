@@ -252,23 +252,27 @@ public class MetamorphReader extends BaseTiffReader {
     String file = stks[series][ndx];
     if (file == null) return buf;
 
-    // the original file is a .nd file, so we need to construct a new reader
-    // for the constituent STK files
-    stkReaders[series][ndx].setMetadataOptions(
+    int plane = no;
+    try {
+      // the original file is a .nd file, so we need to construct a new reader
+      // for the constituent STK files
+      stkReaders[series][ndx].setMetadataOptions(
         new DefaultMetadataOptions(MetadataLevel.MINIMUM));
-    stkReaders[series][ndx].setId(file);
-    int plane = stks[series].length == 1 ? no : coords[0];
+      stkReaders[series][ndx].setId(file);
+      plane = stks[series].length == 1 ? no : coords[0];
 
-    if (bizarreMultichannelAcquisition) {
-      int realX = getZCTCoords(no)[1] == 0 ? x : x + getSizeX();
-      stkReaders[series][ndx].openBytes(plane, buf, realX, y, w, h);
+      if (bizarreMultichannelAcquisition) {
+        int realX = getZCTCoords(no)[1] == 0 ? x : x + getSizeX();
+        stkReaders[series][ndx].openBytes(plane, buf, realX, y, w, h);
+      }
+      else {
+        stkReaders[series][ndx].openBytes(plane, buf, x, y, w, h);
+      }
     }
-    else {
-      stkReaders[series][ndx].openBytes(plane, buf, x, y, w, h);
-    }
-
-    if (plane == stkReaders[series][ndx].getImageCount() - 1) {
-      stkReaders[series][ndx].close();
+    finally {
+      if (plane == stkReaders[series][ndx].getImageCount() - 1) {
+        stkReaders[series][ndx].close();
+      }
     }
 
     return buf;
@@ -598,10 +602,15 @@ public class MetamorphReader extends BaseTiffReader {
             "Unable to locate at lease one valid STK file!");
       }
 
+      IFD ifd = new IFD();
       RandomAccessInputStream s = new RandomAccessInputStream(file);
-      TiffParser tp = new TiffParser(s);
-      IFD ifd = tp.getFirstIFD();
-      s.close();
+      try {
+        TiffParser tp = new TiffParser(s);
+        ifd = tp.getFirstIFD();
+      }
+      finally {
+        s.close();
+      }
       core[0].sizeX = (int) ifd.getImageWidth();
       core[0].sizeY = (int) ifd.getImageLength();
 
@@ -846,117 +855,120 @@ public class MetamorphReader extends BaseTiffReader {
       TiffParser tp = null;
       RandomAccessInputStream stream = null;
 
-      for (int p=0; p<getImageCount(); p++) {
-        int[] coords = getZCTCoords(p);
-        Double deltaT = new Double(0);
-        Double expTime = exposureTime;
-        Double xmlZPosition = null;
+      try {
+        for (int p=0; p<getImageCount(); p++) {
+          int[] coords = getZCTCoords(p);
+          Double deltaT = new Double(0);
+          Double expTime = exposureTime;
+          Double xmlZPosition = null;
 
-        int fileIndex = getIndex(0, 0, coords[2]) / getSizeZ();
-        if (fileIndex >= 0) {
-          String file = stks == null ? currentId : stks[i][fileIndex];
-          if (file != null) {
-            if (fileIndex != lastFile) {
-              if (stream != null) {
-                stream.close();
+          int fileIndex = getIndex(0, 0, coords[2]) / getSizeZ();
+          if (fileIndex >= 0) {
+            String file = stks == null ? currentId : stks[i][fileIndex];
+            if (file != null) {
+              if (fileIndex != lastFile) {
+                if (stream != null) {
+                  stream.close();
+                }
+                stream = new RandomAccessInputStream(file);
+                tp = new TiffParser(stream);
+                tp.setDoCaching(false);
+                tp.checkHeader();
+                lastFile = fileIndex;
+                lastIFDs = tp.getIFDs();
               }
-              stream = new RandomAccessInputStream(file);
-              tp = new TiffParser(stream);
-              tp.setDoCaching(false);
-              tp.checkHeader();
-              lastFile = fileIndex;
-              lastIFDs = tp.getIFDs();
-            }
 
-            lastIFD = lastIFDs.get(p % lastIFDs.size());
-            Object commentEntry = lastIFD.get(IFD.IMAGE_DESCRIPTION);
-            if (commentEntry != null) {
-              if (commentEntry instanceof String) {
-                comment = (String) commentEntry;
+              lastIFD = lastIFDs.get(p % lastIFDs.size());
+              Object commentEntry = lastIFD.get(IFD.IMAGE_DESCRIPTION);
+              if (commentEntry != null) {
+                if (commentEntry instanceof String) {
+                  comment = (String) commentEntry;
+                }
+                else if (commentEntry instanceof TiffIFDEntry) {
+                  comment = tp.getIFDValue((TiffIFDEntry) commentEntry).toString();
+                }
               }
-              else if (commentEntry instanceof TiffIFDEntry) {
-                comment = tp.getIFDValue((TiffIFDEntry) commentEntry).toString();
-              }
-            }
-            if (comment != null) comment = comment.trim();
-            if (comment != null && comment.startsWith("<MetaData>")) {
-              String[] lines = comment.split("\n");
+              if (comment != null) comment = comment.trim();
+              if (comment != null && comment.startsWith("<MetaData>")) {
+                String[] lines = comment.split("\n");
 
-              timestamps = new Vector<String>();
+                timestamps = new Vector<String>();
 
-              for (String line : lines) {
-                line = line.trim();
-                if (line.startsWith("<prop")) {
-                  int firstQuote = line.indexOf("\"") + 1;
-                  int lastQuote = line.lastIndexOf("\"");
-                  String key =
-                    line.substring(firstQuote, line.indexOf("\"", firstQuote));
-                  String value = line.substring(
-                    line.lastIndexOf("\"", lastQuote - 1) + 1, lastQuote);
+                for (String line : lines) {
+                  line = line.trim();
+                  if (line.startsWith("<prop")) {
+                    int firstQuote = line.indexOf("\"") + 1;
+                    int lastQuote = line.lastIndexOf("\"");
+                    String key =
+                      line.substring(firstQuote, line.indexOf("\"", firstQuote));
+                    String value = line.substring(
+                      line.lastIndexOf("\"", lastQuote - 1) + 1, lastQuote);
 
-                  if (key.equals("z-position")) {
-                    xmlZPosition = new Double(value);
-                  }
-                  else if (key.equals("acquisition-time-local")) {
-                    timestamps.add(value);
+                    if (key.equals("z-position")) {
+                      xmlZPosition = new Double(value);
+                    }
+                    else if (key.equals("acquisition-time-local")) {
+                      timestamps.add(value);
+                    }
                   }
                 }
               }
             }
           }
-        }
 
-        int index = 0;
+          int index = 0;
 
-        if (timestamps.size() > 0) {
-          if (coords[2] < timestamps.size()) index = coords[2];
-          String stamp = timestamps.get(index);
-          long ms = DateTools.getTime(stamp, MEDIUM_DATE_FORMAT);
-          deltaT = new Double((ms - startDate) / 1000.0);
-        }
-        else if (internalStamps != null && p < internalStamps.length) {
-          long delta = internalStamps[p] - internalStamps[0];
-          deltaT = new Double(delta / 1000.0);
-          if (coords[2] < exposureTimes.size()) index = coords[2];
-        }
-
-        if (index == 0 && p > 0 && exposureTimes.size() > 0) {
-          index = coords[1] % exposureTimes.size();
-        }
-
-        if (index < exposureTimes.size()) {
-          expTime = exposureTimes.get(index);
-        }
-
-        store.setPlaneDeltaT(deltaT, i, p);
-        store.setPlaneExposureTime(expTime, i, p);
-
-        if (stageX != null && p < stageX.length) {
-          store.setPlanePositionX(stageX[p], i, p);
-        }
-        else if (positionX != null) {
-          store.setPlanePositionX(positionX, i, p);
-        }
-        if (stageY != null && p < stageY.length) {
-          store.setPlanePositionY(stageY[p], i, p);
-        }
-        else if (positionY != null) {
-          store.setPlanePositionY(positionY, i, p);
-        }
-        if (zDistances != null && p < zDistances.length) {
-          if (p > 0) {
-            if (zDistances[p] != 0d) distance += zDistances[p];
-            else distance += zDistances[0];
+          if (timestamps.size() > 0) {
+            if (coords[2] < timestamps.size()) index = coords[2];
+            String stamp = timestamps.get(index);
+            long ms = DateTools.getTime(stamp, MEDIUM_DATE_FORMAT);
+            deltaT = new Double((ms - startDate) / 1000.0);
           }
-          store.setPlanePositionZ(distance, i, p);
-        }
-        else if (xmlZPosition != null) {
-          store.setPlanePositionZ(xmlZPosition, i, p);
+          else if (internalStamps != null && p < internalStamps.length) {
+            long delta = internalStamps[p] - internalStamps[0];
+            deltaT = new Double(delta / 1000.0);
+            if (coords[2] < exposureTimes.size()) index = coords[2];
+          }
+
+          if (index == 0 && p > 0 && exposureTimes.size() > 0) {
+            index = coords[1] % exposureTimes.size();
+          }
+
+          if (index < exposureTimes.size()) {
+            expTime = exposureTimes.get(index);
+          }
+
+          store.setPlaneDeltaT(deltaT, i, p);
+          store.setPlaneExposureTime(expTime, i, p);
+
+          if (stageX != null && p < stageX.length) {
+            store.setPlanePositionX(stageX[p], i, p);
+          }
+          else if (positionX != null) {
+            store.setPlanePositionX(positionX, i, p);
+          }
+          if (stageY != null && p < stageY.length) {
+            store.setPlanePositionY(stageY[p], i, p);
+          }
+          else if (positionY != null) {
+            store.setPlanePositionY(positionY, i, p);
+          }
+          if (zDistances != null && p < zDistances.length) {
+            if (p > 0) {
+              if (zDistances[p] != 0d) distance += zDistances[p];
+              else distance += zDistances[0];
+            }
+            store.setPlanePositionZ(distance, i, p);
+          }
+          else if (xmlZPosition != null) {
+            store.setPlanePositionZ(xmlZPosition, i, p);
+          }
         }
       }
-
-      if (stream != null) {
-        stream.close();
+      finally {
+        if (stream != null) {
+          stream.close();
+        }
       }
     }
     setSeries(0);
@@ -1297,11 +1309,17 @@ public class MetamorphReader extends BaseTiffReader {
 
   private String getComment(int i, int no) throws IOException {
     if (stks != null && stks[i][no] != null) {
-      RandomAccessInputStream stream = new RandomAccessInputStream(stks[i][no]);
-      TiffParser tp = new TiffParser(stream);
-      String comment = tp.getComment();
-      stream.close();
-      return comment;
+      RandomAccessInputStream stream = null;
+      try {
+        stream = new RandomAccessInputStream(stks[i][no]);
+        TiffParser tp = new TiffParser(stream);
+        return tp.getComment();
+      }
+      finally {
+        if (stream != null) {
+          stream.close();
+        }
+      }
     }
     return ifds.get(0).getComment();
   }

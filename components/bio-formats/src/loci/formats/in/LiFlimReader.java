@@ -183,8 +183,12 @@ public class LiFlimReader extends FormatReader {
       }
 
       RandomAccessInputStream s = new RandomAccessInputStream(bytes);
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
     }
     else {
       in.seek(dataOffset + bytesPerPlane * no);

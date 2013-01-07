@@ -130,17 +130,23 @@ public class MetamorphTiffReader extends BaseTiffReader {
 
     int fileIndex = FormatTools.positionToRaster(lengths, position);
     RandomAccessInputStream s = null;
-    if (fileIndex < files.length) {
-      s = new RandomAccessInputStream(files[fileIndex]);
+    try {
+      if (fileIndex < files.length) {
+        s = new RandomAccessInputStream(files[fileIndex]);
+      }
+      else {
+        s = new RandomAccessInputStream(files[0]);
+      }
+      TiffParser parser = new TiffParser(s);
+      IFD ifd = files.length == 1 ?
+        ifds.get(getSeries() * getImageCount() + no) : parser.getFirstIFD();
+      parser.getSamples(ifd, buf, x, y, w, h);
     }
-    else {
-      s = new RandomAccessInputStream(files[0]);
+    finally {
+      if (s != null) {
+        s.close();
+      }
     }
-    TiffParser parser = new TiffParser(s);
-    IFD ifd = files.length == 1 ?
-      ifds.get(getSeries() * getImageCount() + no) : parser.getFirstIFD();
-    parser.getSamples(ifd, buf, x, y, w, h);
-    s.close();
 
     return buf;
   }
@@ -517,11 +523,15 @@ public class MetamorphTiffReader extends BaseTiffReader {
     throws IOException
   {
     RandomAccessInputStream s = new RandomAccessInputStream(tiff);
-    TiffParser parser = new TiffParser(s);
-    IFD firstIFD = parser.getFirstIFD();
-    String xml = XMLTools.sanitizeXML(firstIFD.getComment());
-    XMLTools.parseXML(xml, handler);
-    s.close();
+    try {
+      TiffParser parser = new TiffParser(s);
+      IFD firstIFD = parser.getFirstIFD();
+      String xml = XMLTools.sanitizeXML(firstIFD.getComment());
+      XMLTools.parseXML(xml, handler);
+    }
+    finally {
+      s.close();
+    }
   }
 
   // -- Helper classes --

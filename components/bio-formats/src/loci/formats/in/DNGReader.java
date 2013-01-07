@@ -149,38 +149,44 @@ public class DNGReader extends BaseTiffReader {
       long[] offsets = ifd.getStripOffsets();
 
       ByteArrayOutputStream src = new ByteArrayOutputStream();
-
-      for (int i=0; i<byteCounts.length; i++) {
-        byte[] t = new byte[(int) byteCounts[i]];
-
-        in.seek(offsets[i]);
-        in.read(t);
-
-        src.write(t);
-      }
+      BitBuffer bb = null;
 
       int[] colorMap = {1, 0, 2, 1}; // default color map
-      short[] ifdColors = (short[]) ifd.get(COLOR_MAP);
-      if (ifdColors != null && ifdColors.length >= colorMap.length) {
-        boolean colorsValid = true;
-        for (int q=0; q<colorMap.length; q++) {
-          if (ifdColors[q] < 0 || ifdColors[q] > 2) {
-            // found invalid channel index, use default color map instead
-            colorsValid = false;
-            break;
-          }
+
+      try {
+        for (int i=0; i<byteCounts.length; i++) {
+          byte[] t = new byte[(int) byteCounts[i]];
+
+          in.seek(offsets[i]);
+          in.read(t);
+
+          src.write(t);
         }
-        if (colorsValid) {
+
+        short[] ifdColors = (short[]) ifd.get(COLOR_MAP);
+        if (ifdColors != null && ifdColors.length >= colorMap.length) {
+          boolean colorsValid = true;
           for (int q=0; q<colorMap.length; q++) {
-            colorMap[q] = ifdColors[q];
+            if (ifdColors[q] < 0 || ifdColors[q] > 2) {
+              // found invalid channel index, use default color map instead
+              colorsValid = false;
+              break;
+            }
+          }
+          if (colorsValid) {
+            for (int q=0; q<colorMap.length; q++) {
+              colorMap[q] = ifdColors[q];
+            }
           }
         }
+
+        lastPlane = new byte[FormatTools.getPlaneSize(this)];
+
+        bb = new BitBuffer(src.toByteArray());
       }
-
-      lastPlane = new byte[FormatTools.getPlaneSize(this)];
-
-      BitBuffer bb = new BitBuffer(src.toByteArray());
-      src.close();
+      finally {
+        src.close();
+      }
       short[] pix = new short[getSizeX() * getSizeY() * 3];
 
       for (int row=0; row<getSizeY(); row++) {
@@ -291,37 +297,41 @@ public class DNGReader extends BaseTiffReader {
             System.arraycopy(b, 0, buf, offset, b.length - 8);
             RandomAccessInputStream makerNote =
               new RandomAccessInputStream(buf);
-            TiffParser tp = new TiffParser(makerNote);
-            IFD note = null;
             try {
-              note = tp.getFirstIFD();
-            }
-            catch (Exception e) {
-              LOGGER.debug("Failed to parse first IFD", e);
-            }
-            if (note != null) {
-              for (Integer nextKey : note.keySet()) {
-                int nextTag = nextKey.intValue();
-                addGlobalMeta(name, note.get(nextKey));
-                if (nextTag == WHITE_BALANCE_RGB_COEFFS) {
-                  if (note.get(nextTag) instanceof TiffRational[]) {
-                    TiffRational[] wb = (TiffRational[]) note.get(nextTag);
-                    whiteBalance = new double[wb.length];
-                    for (int i=0; i<wb.length; i++) {
-                      whiteBalance[i] = wb[i].doubleValue();
+              TiffParser tp = new TiffParser(makerNote);
+              IFD note = null;
+              try {
+                note = tp.getFirstIFD();
+              }
+              catch (Exception e) {
+                LOGGER.debug("Failed to parse first IFD", e);
+              }
+              if (note != null) {
+                for (Integer nextKey : note.keySet()) {
+                  int nextTag = nextKey.intValue();
+                  addGlobalMeta(name, note.get(nextKey));
+                  if (nextTag == WHITE_BALANCE_RGB_COEFFS) {
+                    if (note.get(nextTag) instanceof TiffRational[]) {
+                      TiffRational[] wb = (TiffRational[]) note.get(nextTag);
+                      whiteBalance = new double[wb.length];
+                      for (int i=0; i<wb.length; i++) {
+                        whiteBalance[i] = wb[i].doubleValue();
+                      }
                     }
-                  }
-                  else {
-                    // use a default white balance table
-                    whiteBalance = new double[3];
-                    whiteBalance[0] = 2.391381;
-                    whiteBalance[1] = 0.929156;
-                    whiteBalance[2] = 1.298254;
+                    else {
+                      // use a default white balance table
+                      whiteBalance = new double[3];
+                      whiteBalance[0] = 2.391381;
+                      whiteBalance[1] = 0.929156;
+                      whiteBalance[2] = 1.298254;
+                    }
                   }
                 }
               }
             }
-            makerNote.close();
+            finally {
+              makerNote.close();
+            }
           }
         }
       }

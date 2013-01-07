@@ -130,11 +130,15 @@ public class TillVisionReader extends FormatReader {
     }
     else {
       pixelsStream = new RandomAccessInputStream(pixelsFiles[series]);
-      if ((no + 1) * plane <= pixelsStream.length()) {
-        pixelsStream.seek(no * plane);
-        readPlane(pixelsStream, x, y, w, h, buf);
+      try {
+        if ((no + 1) * plane <= pixelsStream.length()) {
+          pixelsStream.seek(no * plane);
+          readPlane(pixelsStream, x, y, w, h, buf);
+        }
       }
-      pixelsStream.close();
+      finally {
+        pixelsStream.close();
+      }
     }
 
     return buf;
@@ -224,302 +228,320 @@ public class TillVisionReader extends FormatReader {
       throw new FormatException("POI library not found", de);
     }
 
-    poi.initialize(id);
-    Vector<String> documents = poi.getDocumentList();
+    try {
+      poi.initialize(id);
+      Vector<String> documents = poi.getDocumentList();
 
-    int nImages = 0;
+      int nImages = 0;
 
-    Hashtable tmpSeriesMetadata = new Hashtable();
+      Hashtable tmpSeriesMetadata = new Hashtable();
 
-    for (String name : documents) {
-      LOGGER.debug("Reading {}", name);
+      for (String name : documents) {
+        LOGGER.debug("Reading {}", name);
 
-      if (name.equals("Root Entry" + File.separator + "Contents")) {
-        RandomAccessInputStream s = poi.getDocumentStream(name);
-        s.order(true);
+        if (name.equals("Root Entry" + File.separator + "Contents")) {
+          RandomAccessInputStream s = poi.getDocumentStream(name);
+          s.order(true);
 
-        boolean specialCImage = false;
-        int nFound = 0;
-        Long[] cimages = null;
+          boolean specialCImage = false;
+          int nFound = 0;
+          Long[] cimages = null;
 
-        Location dir = new Location(id).getAbsoluteFile().getParentFile();
-        String[] list = dir.list(true);
-        boolean hasPST = false;
-        for (String f : list) {
-          if (checkSuffix(f, "pst")) {
-            hasPST = true;
+          Location dir = new Location(id).getAbsoluteFile().getParentFile();
+          String[] list = dir.list(true);
+          boolean hasPST = false;
+          for (String f : list) {
+            if (checkSuffix(f, "pst")) {
+              hasPST = true;
+              break;
+            }
+          }
+
+          if (!hasPST) {
+            cimages = findImages(s);
+            nFound = cimages.length;
+
+            if (nFound == 0) {
+              s.seek(13);
+              int len = s.readShort();
+              String type = s.readString(len);
+              if (type.equals("CImage")) {
+                nFound = 1;
+
+                cimages = new Long[] {s.getFilePointer() + 6};
+                specialCImage = true;
+              }
+            }
+
+            embeddedImages = nFound > 0;
+          }
+          LOGGER.debug("Images are {}embedded", embeddedImages ? "" : "not ");
+
+          if (embeddedImages) {
+            try {
+              core = new CoreMetadata[nFound];
+              embeddedOffset = new long[nFound];
+
+              for (int i=0; i<getSeriesCount(); i++) {
+                core[i] = new CoreMetadata();
+
+                s.seek(cimages[i]);
+
+                int len = s.read();
+                String imageName = s.readString(len);
+                imageNames.add(imageName);
+
+                if (specialCImage) {
+                  s.seek(1280);
+                }
+                else {
+                  while (true) {
+                    if (s.readString(2).equals("sB")) {
+                      break;
+                    }
+                    else s.seek(s.getFilePointer() - 1);
+                  }
+                }
+
+                s.skipBytes(20);
+
+                core[i].sizeX = s.readInt();
+                core[i].sizeY = s.readInt();
+                core[i].sizeZ = s.readInt();
+                core[i].sizeC = s.readInt();
+                core[i].sizeT = s.readInt();
+
+                core[i].pixelType = convertPixelType(s.readInt());
+                if (specialCImage) {
+                  embeddedOffset[i] = s.getFilePointer() + 27;
+                }
+                else {
+                  embeddedOffset[i] = s.getFilePointer() + 31;
+                }
+              }
+            }
+            finally {
+              if (in != null) in.close();
+              s.close();
+            }
+            in = poi.getDocumentStream(name);
             break;
           }
-        }
 
-        if (!hasPST) {
-          cimages = findImages(s);
-          nFound = cimages.length;
+          try {
+            s.seek(0);
 
-          if (nFound == 0) {
-            s.seek(13);
-            int len = s.readShort();
-            String type = s.readString(len);
-            if (type.equals("CImage")) {
-              nFound = 1;
+            int lowerBound = 0;
+            int upperBound = 0x1000;
 
-              cimages = new Long[] {s.getFilePointer() + 6};
-              specialCImage = true;
-            }
-          }
+            while (s.getFilePointer() < s.length() - 2) {
+              LOGGER.debug("  Looking for image at {}", s.getFilePointer());
+              s.order(false);
+              int nextOffset = findNextOffset(s);
+              if (nextOffset < 0 || nextOffset >= s.length()) break;
+              s.seek(nextOffset);
+              s.skipBytes(3);
+              int len = s.readShort();
+              if (len <= 0) continue;
+              imageNames.add(s.readString(len));
+              if (s.getFilePointer() + 8 >= s.length()) break;
+              s.skipBytes(6);
+              s.order(true);
+              len = s.readShort();
+              if (nImages == 0 && len > upperBound * 2 && len < upperBound * 4) {
+                lowerBound = 512;
+                upperBound = 0x4000;
+              }
+              if (len < lowerBound || len > upperBound) continue;
+              String description = s.readString(len);
+              LOGGER.debug("Description: {}", description);
 
-          embeddedImages = nFound > 0;
-        }
-        LOGGER.debug("Images are {}embedded", embeddedImages ? "" : "not ");
+              // parse key/value pairs from description
 
-        if (embeddedImages) {
-          core = new CoreMetadata[nFound];
-          embeddedOffset = new long[nFound];
+              String dateTime = "";
 
-          for (int i=0; i<getSeriesCount(); i++) {
-            core[i] = new CoreMetadata();
+              String[] lines = description.split("[\r\n]");
+              for (String line : lines) {
+                line = line.trim();
+                int colon = line.indexOf(":");
+                if (colon != -1 && !line.startsWith(";")) {
+                  String key = line.substring(0, colon).trim();
+                  String value = line.substring(colon + 1).trim();
+                  String metaKey = "Series " + nImages + " " + key;
+                  addMeta(metaKey, value, tmpSeriesMetadata);
 
-            s.seek(cimages[i]);
-
-            int len = s.read();
-            String imageName = s.readString(len);
-            imageNames.add(imageName);
-
-            if (specialCImage) {
-              s.seek(1280);
-            }
-            else {
-              while (true) {
-                if (s.readString(2).equals("sB")) {
-                  break;
+                  if (key.equals("Start time of experiment")) {
+                    // HH:mm:ss aa OR HH:mm:ss.sss aa
+                    dateTime += " " + value;
+                  }
+                  else if (key.equals("Date")) {
+                    // mm/dd/yy ?
+                    dateTime = value + " " + dateTime;
+                  }
+                  else if (key.equals("Exposure time [ms]")) {
+                    double exp = Double.parseDouble(value) / 1000;
+                    exposureTimes.put(new Integer(nImages), new Double(exp));
+                  }
+                  else if (key.equals("Image type")) {
+                    types.add(value);
+                  }
                 }
-                else s.seek(s.getFilePointer() - 1);
               }
-            }
 
-            s.skipBytes(20);
-
-            core[i].sizeX = s.readInt();
-            core[i].sizeY = s.readInt();
-            core[i].sizeZ = s.readInt();
-            core[i].sizeC = s.readInt();
-            core[i].sizeT = s.readInt();
-
-            core[i].pixelType = convertPixelType(s.readInt());
-            if (specialCImage) {
-              embeddedOffset[i] = s.getFilePointer() + 27;
-            }
-            else {
-              embeddedOffset[i] = s.getFilePointer() + 31;
+              dateTime = dateTime.trim();
+              if (!dateTime.equals("")) {
+                boolean success = false;
+                for (String format : DATE_FORMATS) {
+                  try {
+                    dateTime = DateTools.formatDate(dateTime, format);
+                    success = true;
+                  }
+                  catch (NullPointerException e) { }
+                }
+                dates.add(success ? dateTime : "");
+              }
+              nImages++;
             }
           }
-
-          if (in != null) in.close();
-          in = poi.getDocumentStream(name);
-          s.close();
-          break;
-        }
-
-        s.seek(0);
-
-        int lowerBound = 0;
-        int upperBound = 0x1000;
-
-        while (s.getFilePointer() < s.length() - 2) {
-          LOGGER.debug("  Looking for image at {}", s.getFilePointer());
-          s.order(false);
-          int nextOffset = findNextOffset(s);
-          if (nextOffset < 0 || nextOffset >= s.length()) break;
-          s.seek(nextOffset);
-          s.skipBytes(3);
-          int len = s.readShort();
-          if (len <= 0) continue;
-          imageNames.add(s.readString(len));
-          if (s.getFilePointer() + 8 >= s.length()) break;
-          s.skipBytes(6);
-          s.order(true);
-          len = s.readShort();
-          if (nImages == 0 && len > upperBound * 2 && len < upperBound * 4) {
-            lowerBound = 512;
-            upperBound = 0x4000;
-          }
-          if (len < lowerBound || len > upperBound) continue;
-          String description = s.readString(len);
-          LOGGER.debug("Description: {}", description);
-
-          // parse key/value pairs from description
-
-          String dateTime = "";
-
-          String[] lines = description.split("[\r\n]");
-          for (String line : lines) {
-            line = line.trim();
-            int colon = line.indexOf(":");
-            if (colon != -1 && !line.startsWith(";")) {
-              String key = line.substring(0, colon).trim();
-              String value = line.substring(colon + 1).trim();
-              String metaKey = "Series " + nImages + " " + key;
-              addMeta(metaKey, value, tmpSeriesMetadata);
-
-              if (key.equals("Start time of experiment")) {
-                // HH:mm:ss aa OR HH:mm:ss.sss aa
-                dateTime += " " + value;
-              }
-              else if (key.equals("Date")) {
-                // mm/dd/yy ?
-                dateTime = value + " " + dateTime;
-              }
-              else if (key.equals("Exposure time [ms]")) {
-                double exp = Double.parseDouble(value) / 1000;
-                exposureTimes.put(new Integer(nImages), new Double(exp));
-              }
-              else if (key.equals("Image type")) {
-                types.add(value);
-              }
-            }
-          }
-
-          dateTime = dateTime.trim();
-          if (!dateTime.equals("")) {
-            boolean success = false;
-            for (String format : DATE_FORMATS) {
-              try {
-                dateTime = DateTools.formatDate(dateTime, format);
-                success = true;
-              }
-              catch (NullPointerException e) { }
-            }
-            dates.add(success ? dateTime : "");
-          }
-          nImages++;
-        }
-        s.close();
-      }
-    }
-
-    Location directory =
-      new Location(currentId).getAbsoluteFile().getParentFile();
-
-    String[] pixelsFile = new String[nImages];
-
-    if (!embeddedImages) {
-      if (nImages == 0) {
-        throw new FormatException("No images found.");
-      }
-      core = new CoreMetadata[nImages];
-
-      // look for appropriate pixels files
-
-      String[] files = directory.list(true);
-      String name = currentId.substring(
-        currentId.lastIndexOf(File.separator) + 1, currentId.lastIndexOf("."));
-
-      int nextFile = 0;
-
-      for (String f : files) {
-        if (checkSuffix(f, "pst")) {
-          Location pst = new Location(directory, f);
-          if (pst.isDirectory() && f.startsWith(name)) {
-            String[] subfiles = pst.list(true);
-            for (String q : subfiles) {
-              if (checkSuffix(q, "pst") && nextFile < nImages) {
-                pixelsFile[nextFile++] = f + File.separator + q;
-              }
-            }
+          finally {
+            s.close();
           }
         }
       }
-      if (nextFile == 0) {
+
+      Location directory =
+        new Location(currentId).getAbsoluteFile().getParentFile();
+
+      String[] pixelsFile = new String[nImages];
+
+      if (!embeddedImages) {
+        if (nImages == 0) {
+          throw new FormatException("No images found.");
+        }
+        core = new CoreMetadata[nImages];
+
+        // look for appropriate pixels files
+
+        String[] files = directory.list(true);
+        String name = currentId.substring(
+          currentId.lastIndexOf(File.separator) + 1, currentId.lastIndexOf("."));
+
+        int nextFile = 0;
+
         for (String f : files) {
           if (checkSuffix(f, "pst")) {
-            pixelsFile[nextFile++] =
-              new Location(directory, f).getAbsolutePath();
+            Location pst = new Location(directory, f);
+            if (pst.isDirectory() && f.startsWith(name)) {
+              String[] subfiles = pst.list(true);
+              for (String q : subfiles) {
+                if (checkSuffix(q, "pst") && nextFile < nImages) {
+                  pixelsFile[nextFile++] = f + File.separator + q;
+                }
+              }
+            }
           }
         }
+        if (nextFile == 0) {
+          for (String f : files) {
+            if (checkSuffix(f, "pst")) {
+              pixelsFile[nextFile++] =
+                new Location(directory, f).getAbsolutePath();
+            }
+          }
 
-        if (nextFile == 0) throw new FormatException("No image files found.");
+          if (nextFile == 0) throw new FormatException("No image files found.");
+        }
       }
-    }
 
-    Arrays.sort(pixelsFile);
+      Arrays.sort(pixelsFile);
 
-    pixelsFiles = new String[getSeriesCount()];
-    infFiles = new String[getSeriesCount()];
+      pixelsFiles = new String[getSeriesCount()];
+      infFiles = new String[getSeriesCount()];
 
-    Object[] metadataKeys = tmpSeriesMetadata.keySet().toArray();
-    IniParser parser = new IniParser();
+      Object[] metadataKeys = tmpSeriesMetadata.keySet().toArray();
+      IniParser parser = new IniParser();
 
-    for (int i=0; i<getSeriesCount(); i++) {
-      if (!embeddedImages) {
-        core[i] = new CoreMetadata();
-        setSeries(i);
+      for (int i=0; i<getSeriesCount(); i++) {
+        if (!embeddedImages) {
+          core[i] = new CoreMetadata();
+          setSeries(i);
 
-        // make sure that pixels file exists
+          // make sure that pixels file exists
 
-        String file = pixelsFile[i];
+          String file = pixelsFile[i];
 
-        file = file.replace('/', File.separatorChar);
-        file = file.replace('\\', File.separatorChar);
-        String oldFile = file;
+          file = file.replace('/', File.separatorChar);
+          file = file.replace('\\', File.separatorChar);
+          String oldFile = file;
 
-        Location f = new Location(directory, oldFile);
+          Location f = new Location(directory, oldFile);
 
-        if (!f.exists()) {
-          oldFile = oldFile.substring(oldFile.lastIndexOf(File.separator) + 1);
-          f = new Location(directory, oldFile);
           if (!f.exists()) {
-            throw new FormatException("Could not find pixels file '" + file);
+            oldFile = oldFile.substring(oldFile.lastIndexOf(File.separator) + 1);
+            f = new Location(directory, oldFile);
+            if (!f.exists()) {
+              throw new FormatException("Could not find pixels file '" + file);
+            }
+          }
+
+          file = f.getAbsolutePath();
+          pixelsFiles[i] = file;
+
+          // read key/value pairs from .inf files
+
+          int dot = file.lastIndexOf(".");
+          String inf = file.substring(0, dot) + ".inf";
+          infFiles[i] = inf;
+
+          BufferedReader reader = null;
+          try {
+            reader = new BufferedReader(new InputStreamReader(
+              new FileInputStream(inf), Constants.ENCODING));
+            IniList data = parser.parseINI(reader);
+            IniTable infoTable = data.getTable("Info");
+
+            core[i].sizeX = Integer.parseInt(infoTable.get("Width"));
+            core[i].sizeY = Integer.parseInt(infoTable.get("Height"));
+            core[i].sizeC = Integer.parseInt(infoTable.get("Bands"));
+            core[i].sizeZ = Integer.parseInt(infoTable.get("Slices"));
+            core[i].sizeT = Integer.parseInt(infoTable.get("Frames"));
+            int dataType = Integer.parseInt(infoTable.get("Datatype"));
+            core[i].pixelType = convertPixelType(dataType);
+
+            if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM)
+            {
+              HashMap<String, String> iniMap = data.flattenIntoHashMap();
+              core[i].seriesMetadata.putAll(iniMap);
+            }
+          }
+          finally {
+            if (reader != null) {
+              reader.close();
+            }
           }
         }
 
-        file = f.getAbsolutePath();
-        pixelsFiles[i] = file;
+        core[i].imageCount = core[i].sizeZ * core[i].sizeC * core[i].sizeT;
+        core[i].rgb = false;
+        core[i].littleEndian = true;
+        core[i].dimensionOrder = "XYCZT";
 
-        // read key/value pairs from .inf files
-
-        int dot = file.lastIndexOf(".");
-        String inf = file.substring(0, dot) + ".inf";
-        infFiles[i] = inf;
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-          new FileInputStream(inf), Constants.ENCODING));
-        IniList data = parser.parseINI(reader);
-        reader.close();
-        IniTable infoTable = data.getTable("Info");
-
-        core[i].sizeX = Integer.parseInt(infoTable.get("Width"));
-        core[i].sizeY = Integer.parseInt(infoTable.get("Height"));
-        core[i].sizeC = Integer.parseInt(infoTable.get("Bands"));
-        core[i].sizeZ = Integer.parseInt(infoTable.get("Slices"));
-        core[i].sizeT = Integer.parseInt(infoTable.get("Frames"));
-        int dataType = Integer.parseInt(infoTable.get("Datatype"));
-        core[i].pixelType = convertPixelType(dataType);
-
-        if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-          HashMap<String, String> iniMap = data.flattenIntoHashMap();
-          core[i].seriesMetadata.putAll(iniMap);
+        core[i].seriesMetadata = new Hashtable();
+        for (Object key : metadataKeys) {
+          String keyName = key.toString();
+          if (keyName.startsWith("Series " + i + " ")) {
+            keyName = keyName.replaceAll("Series " + i + " ", "");
+            core[i].seriesMetadata.put(keyName, tmpSeriesMetadata.get(key));
+          }
         }
       }
-
-      core[i].imageCount = core[i].sizeZ * core[i].sizeC * core[i].sizeT;
-      core[i].rgb = false;
-      core[i].littleEndian = true;
-      core[i].dimensionOrder = "XYCZT";
-
-      core[i].seriesMetadata = new Hashtable();
-      for (Object key : metadataKeys) {
-        String keyName = key.toString();
-        if (keyName.startsWith("Series " + i + " ")) {
-          keyName = keyName.replaceAll("Series " + i + " ", "");
-          core[i].seriesMetadata.put(keyName, tmpSeriesMetadata.get(key));
-        }
-      }
+      tmpSeriesMetadata = null;
+      populateMetadataStore();
     }
-    tmpSeriesMetadata = null;
-    populateMetadataStore();
-
-    poi.close();
-    poi = null;
+    finally {
+      poi.close();
+      poi = null;
+    }
   }
 
   // -- Helper methods --

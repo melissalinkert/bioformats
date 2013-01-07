@@ -524,135 +524,150 @@ public class BDReader extends FormatReader {
   private IniList readMetaData(String id) throws IOException {
     IniParser parser = new IniParser();
     FileInputStream idStream = new FileInputStream(id);
-    IniList exp = parser.parseINI(new BufferedReader(new InputStreamReader(
-      idStream, Constants.ENCODING)));
-    IniList plate = null;
-    IniList xyz = null;
+    IniList exp = null;
+    try {
+      exp = parser.parseINI(new BufferedReader(new InputStreamReader(
+        idStream, Constants.ENCODING)));
+      IniList plate = null;
+      IniList xyz = null;
 
-    // Read Plate File
-    for (String filename : metadataFiles) {
-      if (checkSuffix(filename, "plt")) {
-        FileInputStream stream = new FileInputStream(filename);
-        plate = parser.parseINI(new BufferedReader(new InputStreamReader(
-          stream, Constants.ENCODING)));
-        stream.close();
-      }
-      else if (checkSuffix(filename, "xyz")) {
-        FileInputStream stream = new FileInputStream(filename);
-        xyz = parser.parseINI(new BufferedReader(new InputStreamReader(
-          stream, Constants.ENCODING)));
-        stream.close();
-      }
-      else if (filename.endsWith("RoiSummary.txt")) {
-        roiFile = filename;
-        if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
-          RandomAccessInputStream s = new RandomAccessInputStream(filename);
-          String line = s.readLine().trim();
-          while (!line.endsWith(".adf\"")) {
-            line = s.readLine().trim();
+      // Read Plate File
+      for (String filename : metadataFiles) {
+        if (checkSuffix(filename, "plt")) {
+          FileInputStream stream = new FileInputStream(filename);
+          try {
+            plate = parser.parseINI(new BufferedReader(new InputStreamReader(
+              stream, Constants.ENCODING)));
           }
-          plateName = line.substring(line.indexOf(":")).trim();
-          plateName = plateName.replace('/', File.separatorChar);
-          plateName = plateName.replace('\\', File.separatorChar);
-          for (int i=0; i<3; i++) {
-            plateName =
-              plateName.substring(0, plateName.lastIndexOf(File.separator));
+          finally {
+            stream.close();
           }
-          plateName =
-            plateName.substring(plateName.lastIndexOf(File.separator) + 1);
-
-          s.close();
+        }
+        else if (checkSuffix(filename, "xyz")) {
+          FileInputStream stream = new FileInputStream(filename);
+          try {
+            xyz = parser.parseINI(new BufferedReader(new InputStreamReader(
+              stream, Constants.ENCODING)));
+          }
+          finally {
+            stream.close();
+          }
+        }
+        else if (filename.endsWith("RoiSummary.txt")) {
+          roiFile = filename;
+          if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
+            RandomAccessInputStream s = new RandomAccessInputStream(filename);
+            try {
+              String line = s.readLine().trim();
+              while (!line.endsWith(".adf\"")) {
+                line = s.readLine().trim();
+              }
+              plateName = line.substring(line.indexOf(":")).trim();
+              plateName = plateName.replace('/', File.separatorChar);
+              plateName = plateName.replace('\\', File.separatorChar);
+              for (int i=0; i<3; i++) {
+                plateName =
+                  plateName.substring(0, plateName.lastIndexOf(File.separator));
+              }
+              plateName =
+                plateName.substring(plateName.lastIndexOf(File.separator) + 1);
+            }
+            finally {
+              s.close();
+            }
+          }
         }
       }
-    }
-    if (plate == null) throw new IOException("No Plate File");
+      if (plate == null) throw new IOException("No Plate File");
 
-    IniTable plateType = plate.getTable("PlateType");
+      IniTable plateType = plate.getTable("PlateType");
 
-    if (plateName == null) {
-      plateName = plateType.get("Brand");
-    }
-    plateDescription =
-      plateType.get("Brand") + " " + plateType.get("Description");
-
-    int nWells = Integer.parseInt(plateType.get("Wells"));
-    if (nWells == 96) {
-      wellRows = 8;
-      wellCols = 12;
-    }
-    else if (nWells == 384) {
-      wellRows = 16;
-      wellCols = 24;
-    }
-
-    Location dir = new Location(id).getAbsoluteFile().getParentFile();
-    String[] wellList = dir.list();
-    Arrays.sort(wellList);
-    for (String filename : wellList) {
-      if (filename.startsWith("Well ")) {
-        wellLabels.add(filename.split("\\s|\\.")[1]);
+      if (plateName == null) {
+        plateName = plateType.get("Brand");
       }
-    }
+      plateDescription =
+        plateType.get("Brand") + " " + plateType.get("Description");
 
-    IniTable imageTable = exp.getTable("Image");
-    boolean montage = imageTable.get("Montaged").equals("1");
-    if (montage) {
-      fieldRows = Integer.parseInt(imageTable.get("TilesY"));
-      fieldCols = Integer.parseInt(imageTable.get("TilesX"));
-    }
-    else {
-      fieldRows = 1;
-      fieldCols = 1;
-    }
+      int nWells = Integer.parseInt(plateType.get("Wells"));
+      if (nWells == 96) {
+        wellRows = 8;
+        wellCols = 12;
+      }
+      else if (nWells == 384) {
+        wellRows = 16;
+        wellCols = 24;
+      }
 
-    core = new CoreMetadata[wellLabels.size() * fieldRows * fieldCols];
+      Location dir = new Location(id).getAbsoluteFile().getParentFile();
+      String[] wellList = dir.list();
+      Arrays.sort(wellList);
+      for (String filename : wellList) {
+        if (filename.startsWith("Well ")) {
+          wellLabels.add(filename.split("\\s|\\.")[1]);
+        }
+      }
 
-    core[0] = new CoreMetadata();
+      IniTable imageTable = exp.getTable("Image");
+      boolean montage = imageTable.get("Montaged").equals("1");
+      if (montage) {
+        fieldRows = Integer.parseInt(imageTable.get("TilesY"));
+        fieldCols = Integer.parseInt(imageTable.get("TilesX"));
+      }
+      else {
+        fieldRows = 1;
+        fieldCols = 1;
+      }
 
-    core[0].sizeC = Integer.parseInt(exp.getTable("General").get("Dyes"));
-    core[0].bitsPerPixel =
-      Integer.parseInt(exp.getTable("Camera").get("BitdepthUsed"));
+      core = new CoreMetadata[wellLabels.size() * fieldRows * fieldCols];
 
-    IniTable dyeTable = exp.getTable("Dyes");
-    for (int i=1; i<=getSizeC(); i++) {
-      channelNames.add(dyeTable.get(Integer.toString(i)));
-    }
+      core[0] = new CoreMetadata();
 
-    if (xyz != null) {
-      IniTable zTable = xyz.getTable("Z1Axis");
-      boolean zEnabled = "1".equals(zTable.get("Z1AxisEnabled")) &&
-        "1".equals(zTable.get("Z1AxisMode"));
-      if (zEnabled) {
-        core[0].sizeZ = (int) Double.parseDouble(zTable.get("Z1AxisValue")) + 1;
+      core[0].sizeC = Integer.parseInt(exp.getTable("General").get("Dyes"));
+      core[0].bitsPerPixel =
+        Integer.parseInt(exp.getTable("Camera").get("BitdepthUsed"));
+
+      IniTable dyeTable = exp.getTable("Dyes");
+      for (int i=1; i<=getSizeC(); i++) {
+        channelNames.add(dyeTable.get(Integer.toString(i)));
+      }
+
+      if (xyz != null) {
+        IniTable zTable = xyz.getTable("Z1Axis");
+        boolean zEnabled = "1".equals(zTable.get("Z1AxisEnabled")) &&
+          "1".equals(zTable.get("Z1AxisMode"));
+        if (zEnabled) {
+          core[0].sizeZ = (int) Double.parseDouble(zTable.get("Z1AxisValue")) + 1;
+        }
+        else {
+          core[0].sizeZ = 1;
+        }
       }
       else {
         core[0].sizeZ = 1;
       }
-    }
-    else {
-      core[0].sizeZ = 1;
-    }
 
-    // Count Images
-    core[0].sizeT = 0;
+      // Count Images
+      core[0].sizeT = 0;
 
-    Location well = new Location(dir.getAbsolutePath(),
-      "Well " + wellLabels.get(1));
-    for (String channelName : channelNames) {
-      int images = 0;
-      for (String filename : well.list()) {
-        if (filename.startsWith(channelName) && filename.endsWith(".tif")) {
-          images++;
+      Location well = new Location(dir.getAbsolutePath(),
+        "Well " + wellLabels.get(1));
+      for (String channelName : channelNames) {
+        int images = 0;
+        for (String filename : well.list()) {
+          if (filename.startsWith(channelName) && filename.endsWith(".tif")) {
+            images++;
+          }
+        }
+
+        if (images > getImageCount()) {
+          core[0].sizeT = images / getSizeZ();
+          core[0].imageCount = getSizeZ() * getSizeT() * channelNames.size();
         }
       }
-
-      if (images > getImageCount()) {
-        core[0].sizeT = images / getSizeZ();
-        core[0].imageCount = getSizeZ() * getSizeT() * channelNames.size();
-      }
     }
-
-    idStream.close();
+    finally {
+      idStream.close();
+    }
 
     return exp;
   }
@@ -667,26 +682,29 @@ public class BDReader extends FormatReader {
     for (int c=0; c<channelNames.size(); c++) {
       Location dyeFile = new Location(dir, channelNames.get(c) + ".dye");
       FileInputStream stream = new FileInputStream(dyeFile.getAbsolutePath());
-      IniList dye = new IniParser().parseINI(new BufferedReader(
-        new InputStreamReader(stream, Constants.ENCODING)));
+      try {
+        IniList dye = new IniParser().parseINI(new BufferedReader(
+          new InputStreamReader(stream, Constants.ENCODING)));
 
-      IniTable numerator = dye.getTable("Numerator");
-      String em = numerator.get("Emission");
-      em = em.substring(0, em.indexOf(" "));
-      emWave[c] = Integer.parseInt(em);
+        IniTable numerator = dye.getTable("Numerator");
+        String em = numerator.get("Emission");
+        em = em.substring(0, em.indexOf(" "));
+        emWave[c] = Integer.parseInt(em);
 
-      String ex = numerator.get("Excitation");
-      ex = ex.substring(0, ex.lastIndexOf(" "));
-      if (ex.indexOf(" ") != -1) {
-        ex = ex.substring(ex.lastIndexOf(" ") + 1);
+        String ex = numerator.get("Excitation");
+        ex = ex.substring(0, ex.lastIndexOf(" "));
+        if (ex.indexOf(" ") != -1) {
+          ex = ex.substring(ex.lastIndexOf(" ") + 1);
+        }
+        exWave[c] = Integer.parseInt(ex);
+
+        exposure[c] = Double.parseDouble(numerator.get("Exposure"));
+        gain[c] = Double.parseDouble(numerator.get("Gain"));
+        offset[c] = Double.parseDouble(numerator.get("Offset"));
       }
-      exWave[c] = Integer.parseInt(ex);
-
-      exposure[c] = Double.parseDouble(numerator.get("Exposure"));
-      gain[c] = Double.parseDouble(numerator.get("Gain"));
-      offset[c] = Double.parseDouble(numerator.get("Offset"));
-
-      stream.close();
+      finally {
+        stream.close();
+      }
     }
   }
 
@@ -775,19 +793,22 @@ public class BDReader extends FormatReader {
 
   private long getTimestamp(String file) throws FormatException, IOException {
     RandomAccessInputStream s = new RandomAccessInputStream(file);
-    TiffParser parser = new TiffParser(s);
-    parser.setDoCaching(false);
-    IFD firstIFD = parser.getFirstIFD();
-    if (firstIFD != null) {
-      TiffIFDEntry timestamp = (TiffIFDEntry) firstIFD.get(IFD.DATE_TIME);
-      if (timestamp != null) {
-        String stamp = parser.getIFDValue(timestamp).toString();
-        s.close();
-        stamp = DateTools.formatDate(stamp, BaseTiffReader.DATE_FORMATS);
-        return DateTools.getTime(stamp, DateTools.ISO8601_FORMAT);
+    try {
+      TiffParser parser = new TiffParser(s);
+      parser.setDoCaching(false);
+      IFD firstIFD = parser.getFirstIFD();
+      if (firstIFD != null) {
+        TiffIFDEntry timestamp = (TiffIFDEntry) firstIFD.get(IFD.DATE_TIME);
+        if (timestamp != null) {
+          String stamp = parser.getIFDValue(timestamp).toString();
+          stamp = DateTools.formatDate(stamp, BaseTiffReader.DATE_FORMATS);
+          return DateTools.getTime(stamp, DateTools.ISO8601_FORMAT);
+        }
       }
     }
-    s.close();
+    finally {
+      s.close();
+    }
     return new Location(file).lastModified();
   }
 

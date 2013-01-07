@@ -303,8 +303,12 @@ public class ZeissCZIReader extends FormatReader {
         }
         else {
           RandomAccessInputStream s = new RandomAccessInputStream(rawData);
-          readPlane(s, x, y, w, h, buf);
-          s.close();
+          try {
+            readPlane(s, x, y, w, h, buf);
+          }
+          finally {
+            s.close();
+          }
           break;
         }
       }
@@ -734,11 +738,11 @@ public class ZeissCZIReader extends FormatReader {
   private void translateMetadata(String xml) throws FormatException, IOException
   {
     Element root = null;
+    ByteArrayInputStream s = null;
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       DocumentBuilder parser = factory.newDocumentBuilder();
-      ByteArrayInputStream s =
-        new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
+      s = new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
       root = parser.parse(s).getDocumentElement();
       s.close();
     }
@@ -747,6 +751,11 @@ public class ZeissCZIReader extends FormatReader {
     }
     catch (SAXException e) {
       throw new FormatException(e);
+    }
+    finally {
+      if (s != null) {
+        s.close();
+      }
     }
 
     if (root == null) {
@@ -1907,19 +1916,23 @@ public class ZeissCZIReader extends FormatReader {
       }
 
       Element root = null;
+      ByteArrayInputStream s = null;
       try {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder parser = factory.newDocumentBuilder();
-        ByteArrayInputStream s =
-          new ByteArrayInputStream(metadata.getBytes(Constants.ENCODING));
+        s = new ByteArrayInputStream(metadata.getBytes(Constants.ENCODING));
         root = parser.parse(s).getDocumentElement();
-        s.close();
       }
       catch (ParserConfigurationException e) {
         return;
       }
       catch (SAXException e) {
         return;
+      }
+      finally {
+        if (s != null) {
+          s.close();
+        }
       }
 
       if (root == null) {

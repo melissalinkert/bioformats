@@ -350,108 +350,112 @@ public class CellSensReader extends FormatReader {
     ifds = parser.getIFDs();
 
     RandomAccessInputStream vsi = new RandomAccessInputStream(id);
-    vsi.order(parser.getStream().isLittleEndian());
-    vsi.seek(8);
-    readTags(vsi);
-    vsi.seek(parser.getStream().getFilePointer());
+    try {
+      vsi.order(parser.getStream().isLittleEndian());
+      vsi.seek(8);
+      readTags(vsi);
+      vsi.seek(parser.getStream().getFilePointer());
 
-    vsi.skipBytes(273);
+      vsi.skipBytes(273);
 
-    ArrayList<String> files = new ArrayList<String>();
-    Location file = new Location(id).getAbsoluteFile();
+      ArrayList<String> files = new ArrayList<String>();
+      Location file = new Location(id).getAbsoluteFile();
 
-    Location dir = file.getParentFile();
+      Location dir = file.getParentFile();
 
-    String name = file.getName();
-    name = name.substring(0, name.lastIndexOf("."));
+      String name = file.getName();
+      name = name.substring(0, name.lastIndexOf("."));
 
-    Location pixelsDir = new Location(dir, "_" + name + "_");
-    String[] stackDirs = pixelsDir.list(true);
-    if (stackDirs != null) {
-      for (String f : stackDirs) {
-        Location stackDir = new Location(pixelsDir, f);
-        String[] pixelsFiles = stackDir.list(true);
-        if (pixelsFiles != null) {
-          for (String pixelsFile : pixelsFiles) {
-            if (checkSuffix(pixelsFile, "ets")) {
-              files.add(new Location(stackDir, pixelsFile).getAbsolutePath());
+      Location pixelsDir = new Location(dir, "_" + name + "_");
+      String[] stackDirs = pixelsDir.list(true);
+      if (stackDirs != null) {
+        for (String f : stackDirs) {
+          Location stackDir = new Location(pixelsDir, f);
+          String[] pixelsFiles = stackDir.list(true);
+          if (pixelsFiles != null) {
+            for (String pixelsFile : pixelsFiles) {
+              if (checkSuffix(pixelsFile, "ets")) {
+                files.add(new Location(stackDir, pixelsFile).getAbsolutePath());
+              }
             }
           }
         }
       }
-    }
-    files.add(file.getAbsolutePath());
-    usedFiles = files.toArray(new String[files.size()]);
+      files.add(file.getAbsolutePath());
+      usedFiles = files.toArray(new String[files.size()]);
 
-    core = new CoreMetadata[files.size() - 1 + ifds.size()];
+      core = new CoreMetadata[files.size() - 1 + ifds.size()];
 
-    tileOffsets = new Long[files.size() - 1][];
-    rows = new int[files.size() - 1];
-    cols = new int[files.size() - 1];
-    nDimensions = new int[core.length];
+      tileOffsets = new Long[files.size() - 1][];
+      rows = new int[files.size() - 1];
+      cols = new int[files.size() - 1];
+      nDimensions = new int[core.length];
 
-    IFDList exifs = parser.getExifIFDs();
+      IFDList exifs = parser.getExifIFDs();
 
-    compressionType = new int[core.length];
-    tileX = new int[core.length];
-    tileY = new int[core.length];
-    tileMap = new HashMap[core.length];
+      compressionType = new int[core.length];
+      tileX = new int[core.length];
+      tileY = new int[core.length];
+      tileMap = new HashMap[core.length];
 
-    for (int s=0; s<core.length; s++) {
-      core[s] = new CoreMetadata();
-    }
-
-    for (int s=0; s<core.length; s++) {
-      tileMap[s] = new HashMap<TileCoordinate, Integer>();
-
-      if (s == 0 && !hasFlattenedResolutions()) {
-        core[s].resolutionCount = ifds.size() + (files.size() == 1 ? 0 : 1);
+      for (int s=0; s<core.length; s++) {
+        core[s] = new CoreMetadata();
       }
 
-      if (s < files.size() - 1) {
-        setSeries(s);
-        parseETSFile(files.get(s), s);
+      for (int s=0; s<core.length; s++) {
+        tileMap[s] = new HashMap<TileCoordinate, Integer>();
 
-        core[s].littleEndian = compressionType[s] == RAW;
-        core[s].interleaved = core[s].rgb;
-
-        if (s == 0 && exifs.size() > 0) {
-          IFD exif = exifs.get(0);
-
-          int newX = exif.getIFDIntValue(IFD.PIXEL_X_DIMENSION);
-          int newY = exif.getIFDIntValue(IFD.PIXEL_Y_DIMENSION);
-
-          if (getSizeX() > newX || getSizeY() > newY) {
-            core[s].sizeX = newX;
-            core[s].sizeY = newY;
-          }
+        if (s == 0 && !hasFlattenedResolutions()) {
+          core[s].resolutionCount = ifds.size() + (files.size() == 1 ? 0 : 1);
         }
 
-        setSeries(0);
+        if (s < files.size() - 1) {
+          setSeries(s);
+          parseETSFile(files.get(s), s);
+
+          core[s].littleEndian = compressionType[s] == RAW;
+          core[s].interleaved = core[s].rgb;
+
+          if (s == 0 && exifs.size() > 0) {
+            IFD exif = exifs.get(0);
+
+            int newX = exif.getIFDIntValue(IFD.PIXEL_X_DIMENSION);
+            int newY = exif.getIFDIntValue(IFD.PIXEL_Y_DIMENSION);
+
+            if (getSizeX() > newX || getSizeY() > newY) {
+              core[s].sizeX = newX;
+              core[s].sizeY = newY;
+            }
+          }
+
+          setSeries(0);
+        }
+        else {
+          IFD ifd = ifds.get(s - files.size() + 1);
+          PhotoInterp p = ifd.getPhotometricInterpretation();
+          int samples = ifd.getSamplesPerPixel();
+          core[s].rgb = samples > 1 || p == PhotoInterp.RGB;
+          core[s].sizeX = (int) ifd.getImageWidth();
+          core[s].sizeY = (int) ifd.getImageLength();
+          core[s].sizeZ = 1;
+          core[s].sizeT = 1;
+          core[s].sizeC = core[s].rgb ? samples : 1;
+          core[s].littleEndian = ifd.isLittleEndian();
+          core[s].indexed = p == PhotoInterp.RGB_PALETTE &&
+            (get8BitLookupTable() != null || get16BitLookupTable() != null);
+          core[s].imageCount = 1;
+          core[s].pixelType = ifd.getPixelType();
+          core[s].interleaved = false;
+          core[s].falseColor = false;
+          core[s].thumbnail = s != 0;
+        }
+        core[s].metadataComplete = true;
+        core[s].dimensionOrder = "XYCZT";
       }
-      else {
-        IFD ifd = ifds.get(s - files.size() + 1);
-        PhotoInterp p = ifd.getPhotometricInterpretation();
-        int samples = ifd.getSamplesPerPixel();
-        core[s].rgb = samples > 1 || p == PhotoInterp.RGB;
-        core[s].sizeX = (int) ifd.getImageWidth();
-        core[s].sizeY = (int) ifd.getImageLength();
-        core[s].sizeZ = 1;
-        core[s].sizeT = 1;
-        core[s].sizeC = core[s].rgb ? samples : 1;
-        core[s].littleEndian = ifd.isLittleEndian();
-        core[s].indexed = p == PhotoInterp.RGB_PALETTE &&
-          (get8BitLookupTable() != null || get16BitLookupTable() != null);
-        core[s].imageCount = 1;
-        core[s].pixelType = ifd.getPixelType();
-        core[s].interleaved = false;
-        core[s].falseColor = false;
-        core[s].thumbnail = s != 0;
-      }
-      core[s].metadataComplete = true;
-      core[s].dimensionOrder = "XYCZT";
     }
-    vsi.close();
+    finally {
+      vsi.close();
+    }
 
     MetadataStore store = makeFilterMetadata();
     MetadataTools.populatePixels(store, this);
@@ -497,9 +501,6 @@ public class CellSensReader extends FormatReader {
     }
 
     Long offset = tileOffsets[getCoreIndex()][index];
-    RandomAccessInputStream ets =
-      new RandomAccessInputStream(usedFiles[getCoreIndex()]);
-    ets.seek(offset);
 
     CodecOptions options = new CodecOptions();
     options.interleaved = isInterleaved();
@@ -511,113 +512,125 @@ public class CellSensReader extends FormatReader {
     options.maxBytes = (int) (offset + tileSize);
 
     byte[] buf = null;
-    long end = index < tileOffsets[getCoreIndex()].length - 1 ?
-      tileOffsets[getCoreIndex()][index + 1] : ets.length();
-
     IFormatReader reader = null;
     String file = null;
 
-    switch (compressionType[getCoreIndex()]) {
-      case RAW:
-        buf = new byte[tileSize];
-        ets.read(buf);
-        break;
-      case JPEG:
-        Codec codec = new JPEGCodec();
-        buf = codec.decompress(ets, options);
-        break;
-      case JPEG_2000:
-        codec = new JPEG2000Codec();
-        buf = codec.decompress(ets, options);
-        break;
-      case PNG:
-        file = "tile.png";
-        reader = new APNGReader();
-      case BMP:
-        if (reader == null) {
-          file = "tile.bmp";
-          reader = new BMPReader();
-        }
+    RandomAccessInputStream ets =
+      new RandomAccessInputStream(usedFiles[getCoreIndex()]);
 
-        byte[] b = new byte[(int) (end - offset)];
-        ets.read(b);
-        Location.mapFile(file, new ByteArrayHandle(b));
-        reader.setId(file);
-        buf = reader.openBytes(0);
-        Location.mapFile(file, null);
-        break;
+    try {
+      ets.seek(offset);
+
+      long end = index < tileOffsets[getCoreIndex()].length - 1 ?
+        tileOffsets[getCoreIndex()][index + 1] : ets.length();
+
+      switch (compressionType[getCoreIndex()]) {
+        case RAW:
+          buf = new byte[tileSize];
+          ets.read(buf);
+          break;
+        case JPEG:
+          Codec codec = new JPEGCodec();
+          buf = codec.decompress(ets, options);
+          break;
+        case JPEG_2000:
+          codec = new JPEG2000Codec();
+          buf = codec.decompress(ets, options);
+          break;
+        case PNG:
+          file = "tile.png";
+          reader = new APNGReader();
+        case BMP:
+          if (reader == null) {
+            file = "tile.bmp";
+            reader = new BMPReader();
+          }
+
+          byte[] b = new byte[(int) (end - offset)];
+          ets.read(b);
+          Location.mapFile(file, new ByteArrayHandle(b));
+          reader.setId(file);
+          buf = reader.openBytes(0);
+          Location.mapFile(file, null);
+          break;
+      }
     }
-
-    if (reader != null) {
-      reader.close();
+    finally {
+      if (reader != null) {
+        reader.close();
+      }
+      ets.close();
     }
-
-    ets.close();
     return buf;
   }
 
   private void parseETSFile(String file, int s)
     throws FormatException, IOException
   {
-    RandomAccessInputStream etsFile = new RandomAccessInputStream(file);
-    etsFile.order(true);
-
-    // read the volume header
-    String magic = etsFile.readString(4).trim();
-    if (!magic.equals("SIS")) {
-      throw new FormatException("Unknown magic bytes: " + magic);
-    }
-
-    int headerSize = etsFile.readInt();
-    int version = etsFile.readInt();
-    nDimensions[s] = etsFile.readInt();
-    long additionalHeaderOffset = etsFile.readLong();
-    int additionalHeaderSize = etsFile.readInt();
-    etsFile.skipBytes(4); // reserved
-    long usedChunkOffset = etsFile.readLong();
-    int nUsedChunks = etsFile.readInt();
-    etsFile.skipBytes(4); // reserved
-
-    // read the additional header
-    etsFile.seek(additionalHeaderOffset);
-
-    String moreMagic = etsFile.readString(4).trim();
-    if (!moreMagic.equals("ETS")) {
-      throw new FormatException("Unknown magic bytes: " + moreMagic);
-    }
-
-    etsFile.skipBytes(4); // extra version number
-
-    int pixelType = etsFile.readInt();
-    core[s].sizeC = etsFile.readInt();
-    int colorspace = etsFile.readInt();
-    compressionType[s] = etsFile.readInt();
-    int compressionQuality = etsFile.readInt();
-    tileX[s] = etsFile.readInt();
-    tileY[s] = etsFile.readInt();
-    int tileZ = etsFile.readInt();
-
-    core[s].rgb = core[s].sizeC > 1;
-
-    // read the used chunks
-
-    etsFile.seek(usedChunkOffset);
-
-    tileOffsets[s] = new Long[nUsedChunks];
-
     ArrayList<TileCoordinate> tmpTiles = new ArrayList<TileCoordinate>();
+    RandomAccessInputStream etsFile = new RandomAccessInputStream(file);
+    int pixelType = 0;
+    try {
+      etsFile.order(true);
 
-    for (int chunk=0; chunk<nUsedChunks; chunk++) {
-      etsFile.skipBytes(4);
-      TileCoordinate t = new TileCoordinate(nDimensions[s]);
-      for (int i=0; i<nDimensions[s]; i++) {
-        t.coordinate[i] = etsFile.readInt();
+      // read the volume header
+      String magic = etsFile.readString(4).trim();
+      if (!magic.equals("SIS")) {
+        throw new FormatException("Unknown magic bytes: " + magic);
       }
-      tileOffsets[s][chunk] = etsFile.readLong();
-      int nBytes = etsFile.readInt();
-      etsFile.skipBytes(4);
 
-      tmpTiles.add(t);
+      int headerSize = etsFile.readInt();
+      int version = etsFile.readInt();
+      nDimensions[s] = etsFile.readInt();
+      long additionalHeaderOffset = etsFile.readLong();
+      int additionalHeaderSize = etsFile.readInt();
+      etsFile.skipBytes(4); // reserved
+      long usedChunkOffset = etsFile.readLong();
+      int nUsedChunks = etsFile.readInt();
+      etsFile.skipBytes(4); // reserved
+
+      // read the additional header
+      etsFile.seek(additionalHeaderOffset);
+
+      String moreMagic = etsFile.readString(4).trim();
+      if (!moreMagic.equals("ETS")) {
+        throw new FormatException("Unknown magic bytes: " + moreMagic);
+      }
+
+      etsFile.skipBytes(4); // extra version number
+
+      pixelType = etsFile.readInt();
+      core[s].sizeC = etsFile.readInt();
+      int colorspace = etsFile.readInt();
+      compressionType[s] = etsFile.readInt();
+      int compressionQuality = etsFile.readInt();
+      tileX[s] = etsFile.readInt();
+      tileY[s] = etsFile.readInt();
+      int tileZ = etsFile.readInt();
+
+      core[s].rgb = core[s].sizeC > 1;
+
+      // read the used chunks
+
+      etsFile.seek(usedChunkOffset);
+
+      tileOffsets[s] = new Long[nUsedChunks];
+
+      for (int chunk=0; chunk<nUsedChunks; chunk++) {
+        etsFile.skipBytes(4);
+        TileCoordinate t = new TileCoordinate(nDimensions[s]);
+        for (int i=0; i<nDimensions[s]; i++) {
+          t.coordinate[i] = etsFile.readInt();
+        }
+        tileOffsets[s][chunk] = etsFile.readLong();
+        int nBytes = etsFile.readInt();
+        etsFile.skipBytes(4);
+
+        tmpTiles.add(t);
+      }
+    }
+    finally {
+      etsFile.close();
     }
 
     int maxX = 0;
@@ -733,7 +746,6 @@ public class CellSensReader extends FormatReader {
     }
 
     core[s].pixelType = convertPixelType(pixelType);
-    etsFile.close();
   }
 
   private int convertPixelType(int pixelType) throws FormatException {

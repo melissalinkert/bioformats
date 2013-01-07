@@ -155,15 +155,23 @@ public class PrairieReader extends FormatReader {
       xml = new Location(parent, prefix + ".xml");
     }
 
+    RandomAccessInputStream xmlStream = null;
     boolean validXML = false;
     try {
-      RandomAccessInputStream xmlStream =
-        new RandomAccessInputStream(xml.getAbsolutePath());
+      xmlStream = new RandomAccessInputStream(xml.getAbsolutePath());
       validXML = isThisType(xmlStream);
       xmlStream.close();
     }
     catch (IOException e) {
       LOGGER.trace("Failed to check XML file's type", e);
+    }
+    finally {
+      try {
+        xmlStream.close();
+      }
+      catch (IOException e) {
+        LOGGER.debug("", e);
+      }
     }
 
     return xml.exists() && super.isThisType(name, false) && validXML;

@@ -111,33 +111,37 @@ public class ZeissZVIReader extends BaseZeissReader {
     }
 
     RandomAccessInputStream s = poi.getDocumentStream(imageFiles[index]);
-    s.seek(offsets[index]);
+    try {
+      s.seek(offsets[index]);
 
-    int len = w * pixel;
-    int row = getSizeX() * pixel;
+      int len = w * pixel;
+      int row = getSizeX() * pixel;
 
-    if (isJPEG) {
-      byte[] t = new JPEGCodec().decompress(s, options);
+      if (isJPEG) {
+        byte[] t = new JPEGCodec().decompress(s, options);
 
-      for (int yy=0; yy<h; yy++) {
-        System.arraycopy(t, (yy + y) * row + x * pixel, buf, yy*len, len);
-      }
-    }
-    else if (isZlib) {
-      byte[] t = new ZlibCodec().decompress(s, options);
-      for (int yy=0; yy<h; yy++) {
-        int src = (yy + y) * row + x * pixel;
-        int dest = yy * len;
-        if (src + len <= t.length && dest + len <= buf.length) {
-          System.arraycopy(t, src, buf, dest, len);
+        for (int yy=0; yy<h; yy++) {
+          System.arraycopy(t, (yy + y) * row + x * pixel, buf, yy*len, len);
         }
-        else break;
+      }
+      else if (isZlib) {
+        byte[] t = new ZlibCodec().decompress(s, options);
+        for (int yy=0; yy<h; yy++) {
+          int src = (yy + y) * row + x * pixel;
+          int dest = yy * len;
+          if (src + len <= t.length && dest + len <= buf.length) {
+            System.arraycopy(t, src, buf, dest, len);
+          }
+          else break;
+        }
+      }
+      else {
+        readPlane(s, x, y, w, h, buf);
       }
     }
-    else {
-      readPlane(s, x, y, w, h, buf);
+    finally {
+      s.close();
     }
-    s.close();
 
     if (isRGB() && !isJPEG) {
       // reverse bytes in groups of 3 to account for BGR storage
@@ -218,65 +222,68 @@ public class ZeissZVIReader extends BaseZeissReader {
 
         // found a valid image stream
         RandomAccessInputStream s = poi.getDocumentStream(name);
-        s.order(true);
+        try {
+          s.order(true);
 
-        if (s.length() <= 1024) {
+          if (s.length() <= 1024) {
+            continue;
+          }
+
+          for (int q=0; q<11; q++) {
+            getNextTag(s);
+          }
+
+          s.skipBytes(2);
+          int len = s.readInt() - 20;
+          s.skipBytes(8);
+
+          int zidx = s.readInt();
+          int cidx = s.readInt();
+          int tidx = s.readInt();
+
+          zIndices.add(zidx);
+          timepointIndices.add(tidx);
+          channelIndices.add(cidx);
+
+          s.skipBytes(len);
+
+          for (int q=0; q<5; q++) {
+            getNextTag(s);
+          }
+
+          s.skipBytes(4);
+          //if (getSizeX() == 0) {
+            core[0].sizeX = s.readInt();
+            core[0].sizeY = s.readInt();
+          //}
+          //else s.skipBytes(8);
+          s.skipBytes(4);
+
+          if (bpp == 0) {
+            bpp = s.readInt();
+          }
+          else s.skipBytes(4);
+          s.skipBytes(4);
+
+          int valid = s.readInt();
+
+          String check = s.readString(4).trim();
+          isZlib = (valid == 0 || valid == 1) && check.equals("WZL");
+          isJPEG = (valid == 0 || valid == 1) && !isZlib;
+
+          // save the offset to the pixel data
+
+          offsets[imageNum] = (int) s.getFilePointer() - 4;
+
+          if (isZlib) offsets[imageNum] += 8;
+          coordinates[imageNum][0] = zidx;
+          coordinates[imageNum][1] = cidx;
+          coordinates[imageNum][2] = tidx;
+          imageFiles[imageNum] = name;
+        }
+        finally {
           s.close();
-          continue;
         }
-
-        for (int q=0; q<11; q++) {
-          getNextTag(s);
-        }
-
-        s.skipBytes(2);
-        int len = s.readInt() - 20;
-        s.skipBytes(8);
-
-        int zidx = s.readInt();
-        int cidx = s.readInt();
-        int tidx = s.readInt();
-
-        zIndices.add(zidx);
-        timepointIndices.add(tidx);
-        channelIndices.add(cidx);
-
-        s.skipBytes(len);
-
-        for (int q=0; q<5; q++) {
-          getNextTag(s);
-        }
-
-        s.skipBytes(4);
-        //if (getSizeX() == 0) {
-          core[0].sizeX = s.readInt();
-          core[0].sizeY = s.readInt();
-        //}
-        //else s.skipBytes(8);
-        s.skipBytes(4);
-
-        if (bpp == 0) {
-          bpp = s.readInt();
-        }
-        else s.skipBytes(4);
-        s.skipBytes(4);
-
-        int valid = s.readInt();
-
-        String check = s.readString(4).trim();
-        isZlib = (valid == 0 || valid == 1) && check.equals("WZL");
-        isJPEG = (valid == 0 || valid == 1) && !isZlib;
-
-        // save the offset to the pixel data
-
-        offsets[imageNum] = (int) s.getFilePointer() - 4;
-
-        if (isZlib) offsets[imageNum] += 8;
-        coordinates[imageNum][0] = zidx;
-        coordinates[imageNum][1] = cidx;
-        coordinates[imageNum][2] = tidx;
-        imageFiles[imageNum] = name;
-        s.close();
       }
     }
   }
@@ -411,28 +418,30 @@ public class ZeissZVIReader extends BaseZeissReader {
     throws FormatException, IOException {
     ArrayList<Tag> tags = new ArrayList<Tag>();
     RandomAccessInputStream s = poi.getDocumentStream(file);
-    s.order(true);
+    try {
+      s.order(true);
 
-    s.seek(8);
+      s.seek(8);
 
-    int count = s.readInt();
+      int count = s.readInt();
 
+      for (int i=0; i<count; i++) {
+        if (s.getFilePointer() + 2 >= s.length()) break;
+        String value = DataTools.stripString(getNextTag(s));
 
-    for (int i=0; i<count; i++) {
-      if (s.getFilePointer() + 2 >= s.length()) break;
-      String value = DataTools.stripString(getNextTag(s));
+        s.skipBytes(2);
+        int tagID = s.readInt();
 
-      s.skipBytes(2);
-      int tagID = s.readInt();
+        s.skipBytes(6);
 
-      s.skipBytes(6);
+        tags.add(new Tag(tagID, value, Context.MAIN));
+      }
 
-      tags.add(new Tag(tagID, value, Context.MAIN));
+      parseMainTags(image, store, tags);
     }
-
-    parseMainTags(image, store, tags);
-
-    s.close();
+    finally {
+      s.close();
+    }
   }
 
   /**
@@ -447,92 +456,96 @@ public class ZeissZVIReader extends BaseZeissReader {
     }
 
     RandomAccessInputStream s = poi.getDocumentStream(name);
-    s.order(true);
+    try {
+      s.order(true);
 
-    // scan stream for offsets to each ROI
+      // scan stream for offsets to each ROI
 
-    Vector<Long> roiOffsets = new Vector<Long>();
-    s.seek(0);
-    while (s.getFilePointer() < s.length() - 8) {
-      // find next ROI signature
-      long signature = s.readLong() & 0xffffffffffffffffL;
-      while (signature != ROI_SIGNATURE) {
-        if (s.getFilePointer() >= s.length()) break;
-        s.seek(s.getFilePointer() - 6);
-        signature = s.readLong() & 0xffffffffffffffffL;
+      Vector<Long> roiOffsets = new Vector<Long>();
+      s.seek(0);
+      while (s.getFilePointer() < s.length() - 8) {
+        // find next ROI signature
+        long signature = s.readLong() & 0xffffffffffffffffL;
+        while (signature != ROI_SIGNATURE) {
+          if (s.getFilePointer() >= s.length()) break;
+          s.seek(s.getFilePointer() - 6);
+          signature = s.readLong() & 0xffffffffffffffffL;
+        }
+        if (s.getFilePointer() < s.length()) {
+          roiOffsets.add(new Long(s.getFilePointer()));
+        }
       }
-      if (s.getFilePointer() < s.length()) {
-        roiOffsets.add(new Long(s.getFilePointer()));
-      }
-    }
 
-    Layer nlayer = new Layer();
+      Layer nlayer = new Layer();
 
-    for (int shape=0; shape<roiOffsets.size(); shape++) {
-      Shape nshape = new Shape();
+      for (int shape=0; shape<roiOffsets.size(); shape++) {
+        Shape nshape = new Shape();
 
-      s.seek(roiOffsets.get(shape).longValue() + 18);
+        s.seek(roiOffsets.get(shape).longValue() + 18);
 
-      int length = s.readInt();
-      s.skipBytes(length + 10);
-      nshape.type = FeatureType.get(s.readInt());
-      s.skipBytes(8);
+        int length = s.readInt();
+        s.skipBytes(length + 10);
+        nshape.type = FeatureType.get(s.readInt());
+        s.skipBytes(8);
 
-      // read the bounding box
-      nshape.x1 = s.readInt();
-      nshape.y1 = s.readInt();
-      nshape.x2 = s.readInt();
-      nshape.y2 = s.readInt();
-      nshape.width = nshape.x2 - nshape.x1;
-      nshape.height = nshape.y2 - nshape.y1;
+        // read the bounding box
+        nshape.x1 = s.readInt();
+        nshape.y1 = s.readInt();
+        nshape.x2 = s.readInt();
+        nshape.y2 = s.readInt();
+        nshape.width = nshape.x2 - nshape.x1;
+        nshape.height = nshape.y2 - nshape.y1;
 
-      // read text label and font data
-      long nextOffset =
-          (shape < roiOffsets.size() - 1 ?
-              roiOffsets.get(shape + 1).longValue() : s.length());
+        // read text label and font data
+        long nextOffset =
+            (shape < roiOffsets.size() - 1 ?
+                roiOffsets.get(shape + 1).longValue() : s.length());
 
-      long nameBlock = s.getFilePointer();
-      long fontBlock = s.getFilePointer();
-      long lastBlock = s.getFilePointer();
-      while (s.getFilePointer() < nextOffset - 1) {
-        while (s.readShort() != 8) {
+        long nameBlock = s.getFilePointer();
+        long fontBlock = s.getFilePointer();
+        long lastBlock = s.getFilePointer();
+        while (s.getFilePointer() < nextOffset - 1) {
+          while (s.readShort() != 8) {
+            if (s.getFilePointer() >= nextOffset) break;
+          }
           if (s.getFilePointer() >= nextOffset) break;
+          if (s.getFilePointer() - lastBlock > 64 && lastBlock != fontBlock) {
+            break;
+          }
+          nameBlock = fontBlock;
+          fontBlock = lastBlock;
+          lastBlock = s.getFilePointer();
         }
-        if (s.getFilePointer() >= nextOffset) break;
-        if (s.getFilePointer() - lastBlock > 64 && lastBlock != fontBlock) {
-          break;
+
+        s.seek(nameBlock);
+        int strlen = s.readInt();
+        if (strlen + s.getFilePointer() > s.length()) continue;
+        nshape.name = DataTools.stripString(s.readString(strlen));
+
+        s.seek(fontBlock);
+        int fontLength = s.readInt();
+        nshape.fontName = DataTools.stripString(s.readString(fontLength));
+        s.skipBytes(2);
+        int typeLength = s.readInt(); // This is probably skipping the ShapeAttributes structure, especially if it's 156 bytes long.
+        s.skipBytes(typeLength);
+
+        // read list of points that define this ROI
+        s.skipBytes(10);
+        nshape.pointCount = s.readInt();
+        nshape.points = new double[nshape.pointCount*2];
+        s.skipBytes(6);
+        for (int p=0; p<nshape.pointCount; p++) {
+          nshape.points[(p*2)] =  s.readDouble();
+          nshape.points[(p*2)+1] =  s.readDouble();
         }
-        nameBlock = fontBlock;
-        fontBlock = lastBlock;
-        lastBlock = s.getFilePointer();
+
+        nlayer.shapes.add(nshape);
       }
-
-      s.seek(nameBlock);
-      int strlen = s.readInt();
-      if (strlen + s.getFilePointer() > s.length()) continue;
-      nshape.name = DataTools.stripString(s.readString(strlen));
-
-      s.seek(fontBlock);
-      int fontLength = s.readInt();
-      nshape.fontName = DataTools.stripString(s.readString(fontLength));
-      s.skipBytes(2);
-      int typeLength = s.readInt(); // This is probably skipping the ShapeAttributes structure, especially if it's 156 bytes long.
-      s.skipBytes(typeLength);
-
-      // read list of points that define this ROI
-      s.skipBytes(10);
-      nshape.pointCount = s.readInt();
-      nshape.points = new double[nshape.pointCount*2];
-      s.skipBytes(6);
-      for (int p=0; p<nshape.pointCount; p++) {
-        nshape.points[(p*2)] =  s.readDouble();
-        nshape.points[(p*2)+1] =  s.readDouble();
-      }
-
-      nlayer.shapes.add(nshape);
+      layers.add(nlayer);
     }
-    layers.add(nlayer);
-    s.close();
+    finally {
+      s.close();
+    }
   }
 
 }

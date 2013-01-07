@@ -104,9 +104,13 @@ public class InCell3000Reader extends FormatReader {
     }
     pixels.seek(0);
     RandomAccessInputStream pix = new RandomAccessInputStream(pixels);
-    pix.order(isLittleEndian());
-    readPlane(pix, x, y, w, h, buf);
-    pix.close();
+    try {
+      pix.order(isLittleEndian());
+      readPlane(pix, x, y, w, h, buf);
+    }
+    finally {
+      pix.close();
+    }
     return buf;
   }
 

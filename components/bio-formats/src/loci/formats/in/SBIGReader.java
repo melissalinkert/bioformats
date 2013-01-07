@@ -114,8 +114,12 @@ public class SBIGReader extends FormatReader {
         }
       }
       RandomAccessInputStream stream = new RandomAccessInputStream(b);
-      readPlane(stream, x, y, w, h, buf);
-      stream.close();
+      try {
+        readPlane(stream, x, y, w, h, buf);
+      }
+      finally {
+        stream.close();
+      }
     }
     else readPlane(in, x, y, w, h, buf);
     return buf;

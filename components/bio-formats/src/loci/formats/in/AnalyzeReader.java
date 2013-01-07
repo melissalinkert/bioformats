@@ -90,13 +90,20 @@ public class AnalyzeReader extends FormatReader {
     }
 
     boolean validHeader = false;
+    RandomAccessInputStream headerStream = null;
     try {
-      RandomAccessInputStream headerStream =
-        new RandomAccessInputStream(headerFile);
+      headerStream = new RandomAccessInputStream(headerFile);
       validHeader = isThisType(headerStream);
-      headerStream.close();
     }
     catch (IOException e) { }
+    finally {
+      if (headerStream != null) {
+        try {
+          headerStream.close();
+        }
+        catch (IOException e) { }
+      }
+    }
 
     return new Location(name + "." + extension).exists() && validHeader;
   }

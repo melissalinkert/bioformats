@@ -122,9 +122,13 @@ public class PhotoshopTiffReader extends BaseTiffReader {
         pix.write(codec.decompress(tag, options));
       }
       RandomAccessInputStream plane = new RandomAccessInputStream(pix);
-      plane.seek(0);
-      readPlane(plane, x, y, w, h, buf);
-      plane.close();
+      try {
+        plane.seek(0);
+        readPlane(plane, x, y, w, h, buf);
+      }
+      finally {
+        plane.close();
+      }
       pix = null;
     }
     else readPlane(tag, x, y, w, h, buf);

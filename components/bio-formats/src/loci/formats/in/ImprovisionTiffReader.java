@@ -361,9 +361,14 @@ public class ImprovisionTiffReader extends BaseTiffReader {
 
   private String getUUID(String path) throws FormatException, IOException {
     RandomAccessInputStream s = new RandomAccessInputStream(path);
-    TiffParser parser = new TiffParser(s);
-    String comment = parser.getComment();
-    s.close();
+    String comment = "";
+    try {
+      TiffParser parser = new TiffParser(s);
+      comment = parser.getComment();
+    }
+    finally {
+      s.close();
+    }
 
     comment = comment.replaceAll("\r\n", "\n");
     comment = comment.replaceAll("\r", "\n");

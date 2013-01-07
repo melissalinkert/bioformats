@@ -196,9 +196,13 @@ public class MIASReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     if (tileRows == 1 && tileCols == 1) {
-      readers[getSeries()][no].setId(tiffs[getSeries()][no]);
-      readers[getSeries()][no].openBytes(0, buf, x, y, w, h);
-      readers[getSeries()][no].close();
+      try {
+        readers[getSeries()][no].setId(tiffs[getSeries()][no]);
+        readers[getSeries()][no].openBytes(0, buf, x, y, w, h);
+      }
+      finally {
+        readers[getSeries()][no].close();
+      }
       return buf;
     }
 
@@ -870,10 +874,15 @@ public class MIASReader extends FormatReader {
   private Color getChannelColorFromFile(String file)
     throws FormatException, IOException
   {
+    IFD ifd = null;
     RandomAccessInputStream s = new RandomAccessInputStream(file);
-    TiffParser tp = new TiffParser(s);
-    IFD ifd = tp.getFirstIFD();
-    s.close();
+    try {
+      TiffParser tp = new TiffParser(s);
+      ifd = tp.getFirstIFD();
+    }
+    finally {
+      s.close();
+    }
     if (ifd == null) return null;
     int[] colorMap = ifd.getIFDIntArray(IFD.COLOR_MAP);
     if (colorMap == null) return null;
@@ -963,17 +972,23 @@ public class MIASReader extends FormatReader {
     intersection.y %= tileHeight;
 
     int tileIndex = (no * tileRows + row) * tileCols + col;
+    byte[] buf = null;
 
-    readers[well][tileIndex].setId(tiffs[well][tileIndex]);
-    int bpp = FormatTools.getBytesPerPixel(getPixelType());
-    int ch = getRGBChannelCount();
-    int bufferSize = intersection.width * intersection.height * ch * bpp;
-    if (cachedTileBuffer == null || cachedTileBuffer.length != bufferSize) {
-      cachedTileBuffer = new byte[bufferSize];
+    try {
+      readers[well][tileIndex].setId(tiffs[well][tileIndex]);
+      int bpp = FormatTools.getBytesPerPixel(getPixelType());
+      int ch = getRGBChannelCount();
+      int bufferSize = intersection.width * intersection.height * ch * bpp;
+      if (cachedTileBuffer == null || cachedTileBuffer.length != bufferSize) {
+        cachedTileBuffer = new byte[bufferSize];
+      }
+      buf = readers[well][tileIndex].openBytes(0, cachedTileBuffer,
+        intersection.x, intersection.y, intersection.width,
+        intersection.height);
     }
-    byte[] buf = readers[well][tileIndex].openBytes(0, cachedTileBuffer,
-      intersection.x, intersection.y, intersection.width, intersection.height);
-    readers[well][tileIndex].close();
+    finally {
+      readers[well][tileIndex].close();
+    }
     return buf;
   }
 
@@ -1128,24 +1143,30 @@ public class MIASReader extends FormatReader {
     }
 
     MinimalTiffReader r = new MinimalTiffReader();
-    r.setId(maskFile);
-
-    int index = overlayPlanes.get(id).intValue();
-    byte[] plane = r.openBytes(0);
     byte[][] planes = null;
+    int index = 0;
 
-    if (r.isIndexed()) {
-      planes = ImageTools.indexedToRGB(r.get8BitLookupTable(), plane);
-    }
-    else {
-      int bpp = FormatTools.getBytesPerPixel(r.getPixelType());
-      planes = new byte[r.getRGBChannelCount()][];
-      for (int c=0; c<planes.length; c++) {
-        planes[c] = ImageTools.splitChannels(plane, c, r.getRGBChannelCount(),
-          bpp, false, r.isInterleaved());
+    try {
+      r.setId(maskFile);
+
+      index = overlayPlanes.get(id).intValue();
+      byte[] plane = r.openBytes(0);
+
+      if (r.isIndexed()) {
+        planes = ImageTools.indexedToRGB(r.get8BitLookupTable(), plane);
+      }
+      else {
+        int bpp = FormatTools.getBytesPerPixel(r.getPixelType());
+        planes = new byte[r.getRGBChannelCount()][];
+        for (int c=0; c<planes.length; c++) {
+          planes[c] = ImageTools.splitChannels(plane, c, r.getRGBChannelCount(),
+            bpp, false, r.isInterleaved());
+        }
       }
     }
-    r.close();
+    finally {
+      r.close();
+    }
 
     for (int i=0; i<planes[0].length; i++) {
       boolean channelsEqual = true;

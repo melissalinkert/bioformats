@@ -97,8 +97,12 @@ public class FEIReader extends FormatReader {
     }
 
     RandomAccessInputStream pixels = new RandomAccessInputStream(plane);
-    readPlane(pixels, x, y, w, h, buf);
-    pixels.close();
+    try {
+      readPlane(pixels, x, y, w, h, buf);
+    }
+    finally {
+      pixels.close();
+    }
 
     return buf;
   }

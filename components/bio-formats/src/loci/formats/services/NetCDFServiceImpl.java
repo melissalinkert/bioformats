@@ -102,8 +102,12 @@ public class NetCDFServiceImpl extends AbstractService
         Constants.ENCODING) {
       public void print(String s) { }
     };
-    System.setOut(throwaway);
-    throwaway.close();
+    try {
+      System.setOut(throwaway);
+    }
+    finally {
+      throwaway.close();
+    }
     netCDFFile = NetcdfFile.open(currentId);
     System.setOut(outStream);
     root = netCDFFile.getRootGroup();

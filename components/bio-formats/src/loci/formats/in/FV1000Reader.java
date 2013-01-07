@@ -173,7 +173,6 @@ public class FV1000Reader extends FormatReader {
     try {
       TiffParser tp = new TiffParser(plane);
       IFD ifd = tp.getFirstIFD();
-      plane.close();
       return (int) ifd.getTileWidth();
     }
     catch (FormatException e) {
@@ -181,6 +180,14 @@ public class FV1000Reader extends FormatReader {
     }
     catch (IOException e) {
       LOGGER.debug("Could not retrieve tile width", e);
+    }
+    finally {
+      try {
+        plane.close();
+      }
+      catch (IOException e) {
+        LOGGER.debug("", e);
+      }
     }
     return super.getOptimalTileWidth();
   }
@@ -193,7 +200,6 @@ public class FV1000Reader extends FormatReader {
     try {
       TiffParser tp = new TiffParser(plane);
       IFD ifd = tp.getFirstIFD();
-      plane.close();
       return (int) ifd.getTileLength();
     }
     catch (FormatException e) {
@@ -201,6 +207,14 @@ public class FV1000Reader extends FormatReader {
     }
     catch (IOException e) {
       LOGGER.debug("Could not retrieve tile height", e);
+    }
+    finally {
+      try {
+        plane.close();
+      }
+      catch (IOException e) {
+        LOGGER.debug("", e);
+      }
     }
     return super.getOptimalTileHeight();
   }
@@ -265,22 +279,26 @@ public class FV1000Reader extends FormatReader {
     lastChannel = coords[1];
 
     RandomAccessInputStream plane = getPlane(getSeries(), no);
+    TiffParser tp = null;
 
     if (plane == null) return buf;
-    TiffParser tp = new TiffParser(plane);
-    IFDList ifds = tp.getIFDs();
-    if (image >= ifds.size()) return buf;
+    try {
+      tp = new TiffParser(plane);
+      IFDList ifds = tp.getIFDs();
+      if (image >= ifds.size()) return buf;
 
-    IFD ifd = ifds.get(image);
-    if (getSizeY() != ifd.getImageLength()) {
-      tp.getSamples(ifd, buf, x,
-        getIndex(coords[0], 0, coords[2]), w, 1);
+      IFD ifd = ifds.get(image);
+      if (getSizeY() != ifd.getImageLength()) {
+        tp.getSamples(ifd, buf, x,
+          getIndex(coords[0], 0, coords[2]), w, 1);
+      }
+      else tp.getSamples(ifd, buf, x, y, w, h);
     }
-    else tp.getSamples(ifd, buf, x, y, w, h);
-
-    plane.close();
-    plane = null;
-    tp = null;
+    finally {
+      plane.close();
+      plane = null;
+      tp = null;
+    }
     return buf;
   }
 
@@ -400,12 +418,17 @@ public class FV1000Reader extends FormatReader {
     String path = (isOIB || !oifPath.endsWith(oifName) || mappedOIF) ? "" :
       oifPath.substring(0, oifPath.lastIndexOf(File.separator) + 1);
 
+    RandomAccessInputStream s = null;
     try {
-      RandomAccessInputStream s = getFile(oifName);
-      s.close();
+      s = getFile(oifName);
     }
     catch (IOException e) {
       oifName = oifName.replaceAll(".oif", ".OIF");
+    }
+    finally {
+      if (s != null) {
+        s.close();
+      }
     }
 
     // parse key/value pairs from the OIF file
@@ -571,10 +594,15 @@ public class FV1000Reader extends FormatReader {
         IFDList ifds = null;
         for (String previewName : previewNames) {
           RandomAccessInputStream preview = getFile(previewName);
-          TiffParser tp = new TiffParser(preview);
-          ifds = tp.getIFDs();
-          preview.close();
-          tp = null;
+          TiffParser tp = null;
+          try {
+            tp = new TiffParser(preview);
+            ifds = tp.getIFDs();
+          }
+          finally {
+            preview.close();
+            tp = null;
+          }
           core[1].imageCount += ifds.size();
         }
         core[1].sizeX = (int) ifds.get(0).getImageWidth();
@@ -835,11 +863,11 @@ public class FV1000Reader extends FormatReader {
 
     // set up thumbnail file mapping
 
+    RandomAccessInputStream thumb = null;
     try {
-      RandomAccessInputStream thumb = getFile(thumbId);
+      thumb = getFile(thumbId);
       byte[] b = new byte[(int) thumb.length()];
       thumb.read(b);
-      thumb.close();
       Location.mapFile("thumbnail.bmp", new ByteArrayHandle(b));
       thumbReader.setId("thumbnail.bmp");
       for (int i=0; i<getSeriesCount(); i++) {
@@ -854,6 +882,11 @@ public class FV1000Reader extends FormatReader {
     catch (FormatException e) {
       LOGGER.debug("Could not read thumbnail", e);
     }
+    finally {
+      if (thumb != null) {
+        thumb.close();
+      }
+    }
 
     // initialize lookup table
 
@@ -862,11 +895,11 @@ public class FV1000Reader extends FormatReader {
     int count = (int) Math.min(getSizeC(), lutNames.size());
     for (int c=0; c<count; c++) {
       Exception exc = null;
+      RandomAccessInputStream stream = null;
       try {
-        RandomAccessInputStream stream = getFile(lutNames.get(c));
+        stream = getFile(lutNames.get(c));
         stream.seek(stream.length() - 65536 * 4);
         stream.read(buffer);
-        stream.close();
         for (int q=0; q<buffer.length; q+=4) {
           lut[c][0][q / 4] = (short) ((buffer[q + 2] & 0xff) * 257);
           lut[c][1][q / 4] = (short) ((buffer[q + 1] & 0xff) * 257);
@@ -875,6 +908,11 @@ public class FV1000Reader extends FormatReader {
       }
       catch (IOException e) { exc = e; }
       catch (FormatException e) { exc = e; }
+      finally {
+        if (stream != null) {
+          stream.close();
+        }
+      }
       if (exc != null) {
         LOGGER.debug("Could not read LUT", exc);
         lut = null;
@@ -1480,14 +1518,19 @@ public class FV1000Reader extends FormatReader {
     if (infoFile == null) {
       throw new FormatException("OibInfo.txt not found in " + currentId);
     }
-    RandomAccessInputStream ras = poi.getDocumentStream(infoFile);
-
     oibMapping = new Hashtable<String, String>();
+
+    String s = "";
+    RandomAccessInputStream ras = poi.getDocumentStream(infoFile);
 
     // set up file name mappings
 
-    String s = DataTools.stripString(ras.readString((int) ras.length()));
-    ras.close();
+    try {
+      s = DataTools.stripString(ras.readString((int) ras.length()));
+    }
+    finally {
+      ras.close();
+    }
     String[] lines = s.split("\n");
 
     // sort the lines to ensure that the
@@ -1665,27 +1708,37 @@ public class FV1000Reader extends FormatReader {
     throws FormatException, IOException
   {
     RandomAccessInputStream stream = getFile(filename);
-    String data = stream.readString((int) stream.length());
-    if (!data.startsWith("[")) {
-      data = data.substring(data.indexOf("["), data.length());
-    }
-    data = DataTools.stripString(data);
-    BufferedReader reader = new BufferedReader(new StringReader(data));
-    stream.close();
-    IniList list = parser.parseINI(reader);
+    BufferedReader reader = null;
+    IniList list = null;
+    try {
+      String data = stream.readString((int) stream.length());
+      if (!data.startsWith("[")) {
+        data = data.substring(data.indexOf("["), data.length());
+      }
+      data = DataTools.stripString(data);
+      reader = new BufferedReader(new StringReader(data));
+      list = parser.parseINI(reader);
 
-    // most of the values will be wrapped in double quotes
-    for (IniTable table : list) {
-      LOGGER.debug("");
-      LOGGER.debug("[" + table.get(IniTable.HEADER_KEY) + "]");
-      String[] keys = table.keySet().toArray(new String[table.size()]);
-      for (String key : keys) {
-        String value = sanitizeValue(table.get(key));
-        LOGGER.debug(key + " = " + value);
-        table.put(key, value);
+      // most of the values will be wrapped in double quotes
+      for (IniTable table : list) {
+        LOGGER.debug("");
+        LOGGER.debug("[" + table.get(IniTable.HEADER_KEY) + "]");
+        String[] keys = table.keySet().toArray(new String[table.size()]);
+        for (String key : keys) {
+          String value = sanitizeValue(table.get(key));
+          LOGGER.debug(key + " = " + value);
+          table.put(key, value);
+        }
       }
     }
-    reader.close();
+    finally {
+      if (stream != null) {
+        stream.close();
+      }
+      if (reader != null) {
+        reader.close();
+      }
+    }
     return list;
   }
 

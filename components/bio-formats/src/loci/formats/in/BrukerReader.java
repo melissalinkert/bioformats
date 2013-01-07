@@ -104,9 +104,13 @@ public class BrukerReader extends FormatReader {
 
     RandomAccessInputStream s =
       new RandomAccessInputStream(pixelsFiles.get(getSeries()));
-    s.seek(no * FormatTools.getPlaneSize(this));
-    readPlane(s, x, y, w, h, buf);
-    s.close();
+    try {
+      s.seek(no * FormatTools.getPlaneSize(this));
+      readPlane(s, x, y, w, h, buf);
+    }
+    finally {
+      s.close();
+    }
     return buf;
   }
 

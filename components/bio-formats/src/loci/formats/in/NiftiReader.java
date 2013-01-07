@@ -103,15 +103,25 @@ public class NiftiReader extends FormatReader {
     if (dot < 0) return false;
     if (!open) return false;
     String headerFile = name.substring(0, dot) + ".hdr";
+    boolean isValid = false;
+    RandomAccessInputStream header = null;
     try {
-      RandomAccessInputStream header = new RandomAccessInputStream(headerFile);
-      boolean isValid = isThisType(header);
-      header.close();
-      return isValid;
+      header = new RandomAccessInputStream(headerFile);
+      isValid = isThisType(header);
     }
     catch (FileNotFoundException e) { } // NB: No output for missing header.
     catch (IOException e) { LOGGER.debug("", e); }
-    return false;
+    finally {
+      if (header != null) {
+        try {
+          header.close();
+        }
+        catch (IOException e) {
+          LOGGER.debug("", e);
+        }
+      }
+    }
+    return isValid;
   }
 
   /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */

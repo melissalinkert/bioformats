@@ -240,11 +240,15 @@ public class BioRadReader extends FormatReader {
     if (picFiles != null) {
       int file = no % picFiles.length;
       RandomAccessInputStream ras = new RandomAccessInputStream(picFiles[file]);
-      long offset = (no / picFiles.length) * FormatTools.getPlaneSize(this);
-      ras.seek(offset + 76);
+      try {
+        long offset = (no / picFiles.length) * FormatTools.getPlaneSize(this);
+        ras.seek(offset + 76);
 
-      readPlane(ras, x, y, w, h, buf);
-      ras.close();
+        readPlane(ras, x, y, w, h, buf);
+      }
+      finally {
+        ras.close();
+      }
     }
     else {
       in.seek(no * FormatTools.getPlaneSize(this) + 76);
@@ -411,8 +415,12 @@ public class BioRadReader extends FormatReader {
 
           DefaultHandler handler = new BioRadHandler();
           RandomAccessInputStream xml = new RandomAccessInputStream(path);
-          XMLTools.parseXML(xml, handler);
-          xml.close();
+          try {
+            XMLTools.parseXML(xml, handler);
+          }
+          finally {
+            xml.close();
+          }
 
           used.remove(currentId);
           for (int q=0; q<list.length; q++) {
@@ -476,9 +484,13 @@ public class BioRadReader extends FormatReader {
         picFiles == null ? currentId : picFiles[plane % picFiles.length];
       LOGGER.trace("reading table for C = {} from {}", channel, file);
       RandomAccessInputStream s = new RandomAccessInputStream(file);
-      s.order(true);
-      readLookupTables(s);
-      s.close();
+      try {
+        s.order(true);
+        readLookupTables(s);
+      }
+      finally {
+        s.close();
+      }
       if (lut == null) break;
     }
     core[0].indexed = lut != null;

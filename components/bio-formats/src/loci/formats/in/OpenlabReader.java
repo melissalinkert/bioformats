@@ -298,8 +298,12 @@ public class OpenlabReader extends FormatReader {
         }
 
         RandomAccessInputStream pix = new RandomAccessInputStream(plane);
-        readPlane(pix, x, y, w, h, buf);
-        pix.close();
+        try {
+          readPlane(pix, x, y, w, h, buf);
+        }
+        finally {
+          pix.close();
+        }
         plane = null;
       }
     }

@@ -115,9 +115,13 @@ public class UnisokuReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     RandomAccessInputStream dat = new RandomAccessInputStream(datFile);
-    dat.order(isLittleEndian());
-    readPlane(dat, x, y, w, h, buf);
-    dat.close();
+    try {
+      dat.order(isLittleEndian());
+      readPlane(dat, x, y, w, h, buf);
+    }
+    finally {
+      dat.close();
+    }
 
     return buf;
   }

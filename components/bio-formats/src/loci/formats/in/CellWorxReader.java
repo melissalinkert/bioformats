@@ -352,39 +352,43 @@ public class CellWorxReader extends FormatReader {
 
     String file = getFile(0, 0);
     IFormatReader pnl = getReader(file);
+    IMetadata convertMetadata = null;
 
-    for (int i=0; i<core.length; i++) {
-      setSeries(i);
-      core[i] = new CoreMetadata();
-      core[i].littleEndian = pnl.isLittleEndian();
-      core[i].sizeX = pnl.getSizeX();
-      core[i].sizeY = pnl.getSizeY();
-      core[i].pixelType = pnl.getPixelType();
-      core[i].sizeZ = 1;
-      core[i].sizeT = nTimepoints;
-      core[i].sizeC = wavelengths.length;
-      core[i].imageCount = getSizeZ() * getSizeC() * getSizeT();
-      core[i].dimensionOrder = "XYCZT";
-      core[i].rgb = false;
-      core[i].interleaved = pnl.isInterleaved();
-    }
-
-    OMEXMLMetadata readerMetadata = (OMEXMLMetadata) pnl.getMetadataStore();
-    OME root = (OME) readerMetadata.getRoot();
-    Instrument instrument = root.getInstrument(0);
-    List<Image> images = root.copyImageList();
-
-    OME convertRoot = new OME();
-    convertRoot.addInstrument(instrument);
-    for (int i=0; i<core.length/images.size(); i++) {
-      for (Image img : images) {
-        convertRoot.addImage(img);
+    try {
+      for (int i=0; i<core.length; i++) {
+        setSeries(i);
+        core[i] = new CoreMetadata();
+        core[i].littleEndian = pnl.isLittleEndian();
+        core[i].sizeX = pnl.getSizeX();
+        core[i].sizeY = pnl.getSizeY();
+        core[i].pixelType = pnl.getPixelType();
+        core[i].sizeZ = 1;
+        core[i].sizeT = nTimepoints;
+        core[i].sizeC = wavelengths.length;
+        core[i].imageCount = getSizeZ() * getSizeC() * getSizeT();
+        core[i].dimensionOrder = "XYCZT";
+        core[i].rgb = false;
+        core[i].interleaved = pnl.isInterleaved();
       }
-    }
-    IMetadata convertMetadata = MetadataTools.createOMEXMLMetadata();
-    convertMetadata.setRoot(convertRoot);
 
-    pnl.close();
+      OMEXMLMetadata readerMetadata = (OMEXMLMetadata) pnl.getMetadataStore();
+      OME root = (OME) readerMetadata.getRoot();
+      Instrument instrument = root.getInstrument(0);
+      List<Image> images = root.copyImageList();
+
+      OME convertRoot = new OME();
+      convertRoot.addInstrument(instrument);
+      for (int i=0; i<core.length/images.size(); i++) {
+        for (Image img : images) {
+          convertRoot.addImage(img);
+        }
+      }
+      convertMetadata = MetadataTools.createOMEXMLMetadata();
+      convertMetadata.setRoot(convertRoot);
+    }
+    finally {
+      pnl.close();
+    }
 
     MetadataStore store = makeFilterMetadata();
     MetadataConverter.convertMetadata(convertMetadata, store);

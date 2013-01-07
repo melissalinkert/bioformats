@@ -201,9 +201,13 @@ public class ZeissTIFFReader extends BaseZeissReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
     if (new CaseInsensitiveLocation(imageFiles[no]).exists()) {
       Plane p = planes.get(no);
-      tiffReader.setId(p.filename);
-      tiffReader.openBytes(0, buf, x, y, w, h);
-      tiffReader.close();
+      try {
+        tiffReader.setId(p.filename);
+        tiffReader.openBytes(0, buf, x, y, w, h);
+      }
+      finally {
+        tiffReader.close();
+      }
     } else {
       LOGGER.warn("File for image #{} ({}) is missing.", no, imageFiles[no]);
     }
@@ -416,9 +420,14 @@ public class ZeissTIFFReader extends BaseZeissReader {
 
       planes.add(np);
       if (bpp == 0) {
-        tiffReader.setId(np.filename);
-        IFDList ifds = tiffReader.getIFDs();
-        tiffReader.close();
+        IFDList ifds = null;
+        try {
+          tiffReader.setId(np.filename);
+          ifds = tiffReader.getIFDs();
+        }
+        finally {
+          tiffReader.close();
+        }
         IFD firstIFD = ifds.get(0);
         int bits = firstIFD.getBitsPerSample()[0];
         int samples = firstIFD.getSamplesPerPixel();

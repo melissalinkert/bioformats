@@ -157,12 +157,16 @@ public class OperettaReader extends FormatReader {
       Plane p = planes[getSeries()][no];
 
       if (new Location(p.filename).exists()) {
-        if (reader == null) {
-          reader = new MinimalTiffReader();
+        try {
+          if (reader == null) {
+            reader = new MinimalTiffReader();
+          }
+          reader.setId(p.filename);
+          reader.openBytes(0, buf, x, y, w, h);
         }
-        reader.setId(p.filename);
-        reader.openBytes(0, buf, x, y, w, h);
-        reader.close();
+        finally {
+          reader.close();
+        }
       }
     }
 
@@ -281,15 +285,19 @@ public class OperettaReader extends FormatReader {
       core[i].sizeT = uniqueTs.size();
       core[i].dimensionOrder = "XYCZT";
 
-      if (reader == null) {
-        reader = new MinimalTiffReader();
+      try {
+        if (reader == null) {
+          reader = new MinimalTiffReader();
+        }
+        reader.setId(planes[i][0].filename);
+        core[i].pixelType = reader.getPixelType();
+        core[i].rgb = false;
+        core[i].imageCount = getSizeZ() * getSizeC() * getSizeT();
+        core[i].littleEndian = reader.isLittleEndian();
       }
-      reader.setId(planes[i][0].filename);
-      core[i].pixelType = reader.getPixelType();
-      core[i].rgb = false;
-      core[i].imageCount = getSizeZ() * getSizeC() * getSizeT();
-      core[i].littleEndian = reader.isLittleEndian();
-      reader.close();
+      finally {
+        reader.close();
+      }
     }
 
     // populate the MetadataStore

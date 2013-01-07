@@ -211,8 +211,12 @@ public class NDPIReader extends BaseTiffReader {
   /* @see loci.formats.FormatReader#initFile(String) */
   protected void initFile(String id) throws FormatException, IOException {
     RandomAccessInputStream s = new RandomAccessInputStream(id);
-    use64Bit = s.length() >= Math.pow(2, 32);
-    s.close();
+    try {
+      use64Bit = s.length() >= Math.pow(2, 32);
+    }
+    finally {
+      s.close();
+    }
     super.initFile(id);
   }
 
@@ -228,22 +232,26 @@ public class NDPIReader extends BaseTiffReader {
 
     // fix the offsets for > 4 GB files
     RandomAccessInputStream stream = new RandomAccessInputStream(currentId);
-    for (int i=0; i<ifds.size(); i++) {
-      long[] stripOffsets = ifds.get(i).getStripOffsets();
+    try {
+      for (int i=0; i<ifds.size(); i++) {
+        long[] stripOffsets = ifds.get(i).getStripOffsets();
 
-      boolean neededAdjustment = false;
-      for (int j=0; j<stripOffsets.length; j++) {
-        long newOffset = stripOffsets[j] + 0x100000000L;
-        if (newOffset < stream.length()) {
-          stripOffsets[j] = newOffset;
-          neededAdjustment = true;
+        boolean neededAdjustment = false;
+        for (int j=0; j<stripOffsets.length; j++) {
+          long newOffset = stripOffsets[j] + 0x100000000L;
+          if (newOffset < stream.length()) {
+            stripOffsets[j] = newOffset;
+            neededAdjustment = true;
+          }
+        }
+        if (neededAdjustment) {
+          ifds.get(i).putIFDValue(IFD.STRIP_OFFSETS, stripOffsets);
         }
       }
-      if (neededAdjustment) {
-        ifds.get(i).putIFDValue(IFD.STRIP_OFFSETS, stripOffsets);
-      }
     }
-    stream.close();
+    finally {
+      stream.close();
+    }
 
     for (int i=1; i<ifds.size(); i++) {
       IFD ifd = ifds.get(i);
@@ -353,14 +361,20 @@ public class NDPIReader extends BaseTiffReader {
   private void setupService(int y, int h, int z)
     throws FormatException, IOException
   {
-    decoder.close();
+    long offset = 0;
+    int byteCount = 0;
+    try {
+      decoder.close();
 
-    IFD ifd = ifds.get(getIFDIndex(getCoreIndex(), z));
+      IFD ifd = ifds.get(getIFDIndex(getCoreIndex(), z));
 
-    long offset = ifd.getStripOffsets()[0];
-    int byteCount = (int) ifd.getStripByteCounts()[0];
-    if (in != null) {
-      in.close();
+      offset = ifd.getStripOffsets()[0];
+      byteCount = (int) ifd.getStripByteCounts()[0];
+    }
+    finally {
+      if (in != null) {
+        in.close();
+      }
     }
     in = new RandomAccessInputStream(currentId);
     in.seek(offset);

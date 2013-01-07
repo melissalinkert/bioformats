@@ -96,10 +96,14 @@ public class CellomicsReader extends FormatReader {
     String file = files[getSeries()];
     RandomAccessInputStream s = getDecompressedStream(file);
 
-    int planeSize = FormatTools.getPlaneSize(this);
-    s.seek(52 + no * planeSize);
-    readPlane(s, x, y, w, h, buf);
-    s.close();
+    try {
+      int planeSize = FormatTools.getPlaneSize(this);
+      s.seek(52 + no * planeSize);
+      readPlane(s, x, y, w, h, buf);
+    }
+    finally {
+      s.close();
+    }
 
     return buf;
   }
@@ -380,10 +384,15 @@ public class CellomicsReader extends FormatReader {
     if (checkSuffix(filename, "c01")) {
       LOGGER.info("Decompressing file");
 
-      s.seek(4);
-      ZlibCodec codec = new ZlibCodec();
-      byte[] file = codec.decompress(s, null);
-      s.close();
+      byte[] file = null;
+      try {
+        s.seek(4);
+        ZlibCodec codec = new ZlibCodec();
+        file = codec.decompress(s, null);
+      }
+      finally {
+        s.close();
+      }
 
       return new RandomAccessInputStream(file);
     }

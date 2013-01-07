@@ -231,26 +231,31 @@ public class ScanrReader extends FormatReader {
       try {
         reader.setId(tiffs[index]);
         reader.openBytes(0, buf, x, y, w, h);
-        reader.close();
       }
       catch (FormatException e) {
-        reader.close();
         return buf;
+      }
+      finally {
+        reader.close();
       }
 
       // mask out the sign bit
       ByteArrayHandle pixels = new ByteArrayHandle(buf);
-      pixels.setOrder(
-        isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
-      for (int i=0; i<buf.length; i+=2) {
-        pixels.seek(i);
-        short value = pixels.readShort();
-        value = (short) (value & 0xfff);
-        pixels.seek(i);
-        pixels.writeShort(value);
+      try {
+        pixels.setOrder(
+          isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
+        for (int i=0; i<buf.length; i+=2) {
+          pixels.seek(i);
+          short value = pixels.readShort();
+          value = (short) (value & 0xfff);
+          pixels.seek(i);
+          pixels.writeShort(value);
+        }
+        buf = pixels.getBytes();
       }
-      buf = pixels.getBytes();
-      pixels.close();
+      finally {
+        pixels.close();
+      }
     }
 
     return buf;
@@ -300,17 +305,20 @@ public class ScanrReader extends FormatReader {
     }
     else if (!isGroupFiles() && checkSuffix(id, "tif")) {
       TiffReader r = new TiffReader();
-      r.setMetadataStore(getMetadataStore());
-      r.setId(id);
-      core = r.getCoreMetadata();
-      metadataStore = r.getMetadataStore();
+      try {
+        r.setMetadataStore(getMetadataStore());
+        r.setId(id);
+        core = r.getCoreMetadata();
+        metadataStore = r.getMetadataStore();
 
-      Hashtable globalMetadata = r.getGlobalMetadata();
-      for (Object key : globalMetadata.keySet()) {
-        addGlobalMeta(key.toString(), globalMetadata.get(key));
+        Hashtable globalMetadata = r.getGlobalMetadata();
+        for (Object key : globalMetadata.keySet()) {
+          addGlobalMeta(key.toString(), globalMetadata.get(key));
+        }
       }
-
-      r.close();
+      finally {
+        r.close();
+      }
       tiffs = new String[] {id};
       reader = new MinimalTiffReader();
 
@@ -522,49 +530,52 @@ public class ScanrReader extends FormatReader {
     }
 
     reader = new MinimalTiffReader();
-    reader.setId(tiffs[0]);
-    int sizeX = reader.getSizeX();
-    int sizeY = reader.getSizeY();
-    int pixelType = reader.getPixelType();
+    try {
+      reader.setId(tiffs[0]);
+      int sizeX = reader.getSizeX();
+      int sizeY = reader.getSizeY();
+      int pixelType = reader.getPixelType();
 
-    tileWidth = reader.getOptimalTileWidth();
-    tileHeight = reader.getOptimalTileHeight();
+      tileWidth = reader.getOptimalTileWidth();
+      tileHeight = reader.getOptimalTileHeight();
 
-    // we strongly suspect that ScanR incorrectly records the
-    // signedness of the pixels
+      // we strongly suspect that ScanR incorrectly records the
+      // signedness of the pixels
 
-    switch (pixelType) {
-      case FormatTools.INT8:
-        pixelType = FormatTools.UINT8;
-        break;
-      case FormatTools.INT16:
-        pixelType = FormatTools.UINT16;
-        break;
+      switch (pixelType) {
+        case FormatTools.INT8:
+          pixelType = FormatTools.UINT8;
+          break;
+        case FormatTools.INT16:
+          pixelType = FormatTools.UINT16;
+          break;
+      }
+
+      boolean rgb = reader.isRGB();
+      boolean interleaved = reader.isInterleaved();
+      boolean indexed = reader.isIndexed();
+      boolean littleEndian = reader.isLittleEndian();
+
+      core = new CoreMetadata[nWells * nPos];
+      for (int i=0; i<getSeriesCount(); i++) {
+        core[i] = new CoreMetadata();
+        core[i].sizeC = nChannels;
+        core[i].sizeZ = nSlices;
+        core[i].sizeT = nTimepoints;
+        core[i].sizeX = sizeX;
+        core[i].sizeY = sizeY;
+        core[i].pixelType = pixelType;
+        core[i].rgb = rgb;
+        core[i].interleaved = interleaved;
+        core[i].indexed = indexed;
+        core[i].littleEndian = littleEndian;
+        core[i].dimensionOrder = "XYCTZ";
+        core[i].imageCount = nSlices * nTimepoints * nChannels;
+        core[i].bitsPerPixel = 12;
+      }
     }
-
-    boolean rgb = reader.isRGB();
-    boolean interleaved = reader.isInterleaved();
-    boolean indexed = reader.isIndexed();
-    boolean littleEndian = reader.isLittleEndian();
-
-    reader.close();
-
-    core = new CoreMetadata[nWells * nPos];
-    for (int i=0; i<getSeriesCount(); i++) {
-      core[i] = new CoreMetadata();
-      core[i].sizeC = nChannels;
-      core[i].sizeZ = nSlices;
-      core[i].sizeT = nTimepoints;
-      core[i].sizeX = sizeX;
-      core[i].sizeY = sizeY;
-      core[i].pixelType = pixelType;
-      core[i].rgb = rgb;
-      core[i].interleaved = interleaved;
-      core[i].indexed = indexed;
-      core[i].littleEndian = littleEndian;
-      core[i].dimensionOrder = "XYCTZ";
-      core[i].imageCount = nSlices * nTimepoints * nChannels;
-      core[i].bitsPerPixel = 12;
+    finally {
+      reader.close();
     }
 
     MetadataStore store = makeFilterMetadata();

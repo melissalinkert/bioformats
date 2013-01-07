@@ -878,11 +878,11 @@ public class LIFReader extends FormatReader {
   private Element getMetadataRoot(String xml)
     throws FormatException, IOException
   {
+    ByteArrayInputStream s = null;
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       DocumentBuilder parser = factory.newDocumentBuilder();
-      ByteArrayInputStream s =
-        new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
+      s = new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
       Element root = parser.parse(s).getDocumentElement();
       s.close();
       return root;
@@ -892,6 +892,11 @@ public class LIFReader extends FormatReader {
     }
     catch (SAXException e) {
       throw new FormatException(e);
+    }
+    finally {
+      if (s != null) {
+        s.close();
+      }
     }
   }
 

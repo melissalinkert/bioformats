@@ -340,10 +340,15 @@ public class TrestleReader extends BaseTiffReader {
 
     store.setImageROIRef(roiID, 0, 0);
 
+    byte[] roiPixels = null;
     ImageReader roiReader = new ImageReader();
-    roiReader.setId(roiFile);
-    byte[] roiPixels = roiReader.openBytes(0);
-    roiReader.close();
+    try {
+      roiReader.setId(roiFile);
+      roiPixels = roiReader.openBytes(0);
+    }
+    finally {
+      roiReader.close();
+    }
 
     BitWriter bits = new BitWriter(roiPixels.length / 8);
     for (int i=0; i<roiPixels.length; i++) {

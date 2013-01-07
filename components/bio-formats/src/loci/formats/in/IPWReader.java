@@ -119,11 +119,11 @@ public class IPWReader extends FormatReader {
   /* @see loci.formats.IFormatReader#getOptimalTileWidth() */
   public int getOptimalTileWidth() {
     FormatTools.assertId(currentId, true, 1);
+    RandomAccessInputStream stream = null;
     try {
-      RandomAccessInputStream stream = poi.getDocumentStream(imageFiles.get(0));
+      stream = poi.getDocumentStream(imageFiles.get(0));
       TiffParser tp = new TiffParser(stream);
       IFD ifd = tp.getFirstIFD();
-      stream.close();
       return (int) ifd.getTileWidth();
     }
     catch (FormatException e) {
@@ -132,17 +132,27 @@ public class IPWReader extends FormatReader {
     catch (IOException e) {
       LOGGER.debug("Could not retrieve tile height", e);
     }
+    finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+        catch (IOException e) {
+          LOGGER.debug("", e);
+        }
+      }
+    }
     return super.getOptimalTileWidth();
   }
 
   /* @see loci.formats.IFormatReader#getOptimalTileHeight() */
   public int getOptimalTileHeight() {
     FormatTools.assertId(currentId, true, 1);
+    RandomAccessInputStream stream = null;
     try {
-      RandomAccessInputStream stream = poi.getDocumentStream(imageFiles.get(0));
+      stream = poi.getDocumentStream(imageFiles.get(0));
       TiffParser tp = new TiffParser(stream);
       IFD ifd = tp.getFirstIFD();
-      stream.close();
       return (int) ifd.getTileLength();
     }
     catch (FormatException e) {
@@ -150,6 +160,16 @@ public class IPWReader extends FormatReader {
     }
     catch (IOException e) {
       LOGGER.debug("Could not retrieve tile length", e);
+    }
+    finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+        catch (IOException e) {
+          LOGGER.debug("", e);
+        }
+      }
     }
     return super.getOptimalTileHeight();
   }
@@ -163,10 +183,14 @@ public class IPWReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     RandomAccessInputStream stream = poi.getDocumentStream(imageFiles.get(no));
-    TiffParser tp = new TiffParser(stream);
-    IFD ifd = tp.getFirstIFD();
-    tp.getSamples(ifd, buf, x, y, w, h);
-    stream.close();
+    try {
+      TiffParser tp = new TiffParser(stream);
+      IFD ifd = tp.getFirstIFD();
+      tp.getSamples(ifd, buf, x, y, w, h);
+    }
+    finally {
+      stream.close();
+    }
     return buf;
   }
 
@@ -219,11 +243,15 @@ public class IPWReader extends FormatReader {
         }
         else if (relativePath.equals("FrameInfo")) {
           RandomAccessInputStream s = poi.getDocumentStream(name);
-          s.order(true);
-          for (int q=0; q<s.length()/2; q++) {
-            addGlobalMeta("FrameInfo " + q, s.readShort());
+          try {
+            s.order(true);
+            for (int q=0; q<s.length()/2; q++) {
+              addGlobalMeta("FrameInfo " + q, s.readShort());
+            }
           }
-          s.close();
+          finally {
+            s.close();
+          }
         }
       }
 
@@ -282,10 +310,15 @@ public class IPWReader extends FormatReader {
 
     core[0].imageCount = imageFiles.size();
 
+    IFD firstIFD = null;
     RandomAccessInputStream stream = poi.getDocumentStream(imageFiles.get(0));
-    TiffParser tp = new TiffParser(stream);
-    IFD firstIFD = tp.getFirstIFD();
-    stream.close();
+    try {
+      TiffParser tp = new TiffParser(stream);
+      firstIFD = tp.getFirstIFD();
+    }
+    finally {
+      stream.close();
+    }
 
     core[0].rgb = firstIFD.getSamplesPerPixel() > 1;
 

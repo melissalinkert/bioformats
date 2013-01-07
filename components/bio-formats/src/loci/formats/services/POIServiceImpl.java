@@ -118,8 +118,12 @@ public class POIServiceImpl extends AbstractService implements POIService {
 
     byte[] buf = new byte[len];
     InputStream s = getInputStream(file);
-    s.read(buf);
-    s.close();
+    try {
+      s.read(buf);
+    }
+    finally {
+      s.close();
+    }
     return buf;
   }
 
@@ -171,9 +175,13 @@ public class POIServiceImpl extends AbstractService implements POIService {
 
         DocumentInputStream s =
           new DocumentInputStream((DocumentEntry) o, stream);
-        fileSizes.put(path.toString(), new Integer(s.available()));
-        files.put(path.toString(), (DocumentEntry) o);
-        s.close();
+        try {
+          fileSizes.put(path.toString(), new Integer(s.available()));
+          files.put(path.toString(), (DocumentEntry) o);
+        }
+        finally {
+          s.close();
+        }
       }
     }
     filePath.removeElementAt(filePath.size() - 1);

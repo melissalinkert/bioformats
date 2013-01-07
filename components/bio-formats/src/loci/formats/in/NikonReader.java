@@ -171,38 +171,43 @@ public class NikonReader extends BaseTiffReader {
       if (!maybeCompressed && dataSize == 14) dataSize = 16;
 
       ByteArrayOutputStream src = new ByteArrayOutputStream();
+      BitBuffer bb = null;
 
-      NikonCodec codec = new NikonCodec();
-      NikonCodecOptions options = new NikonCodecOptions();
-      options.width = getSizeX();
-      options.height = getSizeY();
-      options.bitsPerSample = dataSize;
-      options.curve = curve;
-      if (vPredictor != null) {
-        options.vPredictor = new int[vPredictor.length];
-      }
-      options.lossless = !lossyCompression;
-      options.split = split;
-
-      for (int i=0; i<byteCounts.length; i++) {
-        byte[] t = new byte[(int) byteCounts[i]];
-
-        in.seek(offsets[i]);
-        in.read(t);
-
-        if (compressed) {
-          options.maxBytes = (int) byteCounts[i];
-          System.arraycopy(vPredictor, 0, options.vPredictor, 0,
-            vPredictor.length);
-          t = codec.decompress(t, options);
+      try {
+        NikonCodec codec = new NikonCodec();
+        NikonCodecOptions options = new NikonCodecOptions();
+        options.width = getSizeX();
+        options.height = getSizeY();
+        options.bitsPerSample = dataSize;
+        options.curve = curve;
+        if (vPredictor != null) {
+          options.vPredictor = new int[vPredictor.length];
         }
-        src.write(t);
+        options.lossless = !lossyCompression;
+        options.split = split;
+
+        for (int i=0; i<byteCounts.length; i++) {
+          byte[] t = new byte[(int) byteCounts[i]];
+
+          in.seek(offsets[i]);
+          in.read(t);
+
+          if (compressed) {
+            options.maxBytes = (int) byteCounts[i];
+            System.arraycopy(vPredictor, 0, options.vPredictor, 0,
+              vPredictor.length);
+            t = codec.decompress(t, options);
+          }
+          src.write(t);
+        }
+
+        bb = new BitBuffer(src.toByteArray());
+      }
+      finally {
+        src.close();
       }
 
-      BitBuffer bb = new BitBuffer(src.toByteArray());
       short[] pix = new short[getSizeX() * getSizeY() * 3];
-
-      src.close();
 
       int[] colorMap = {1, 0, 2, 1}; // default color map
       short[] ifdColors = (short[]) ifd.get(COLOR_MAP);
@@ -349,77 +354,85 @@ public class NikonReader extends BaseTiffReader {
             System.arraycopy(b, extra, buf, 0, buf.length - extra);
             RandomAccessInputStream makerNote =
               new RandomAccessInputStream(buf);
-            TiffParser tp = new TiffParser(makerNote);
-            IFD note = null;
             try {
-              note = tp.getFirstIFD();
-            }
-            catch (Exception e) {
-              LOGGER.debug("Failed to parse first IFD", e);
-            }
-            if (note != null) {
-              for (Integer nextKey : note.keySet()) {
-                int nextTag = nextKey.intValue();
-                addGlobalMeta(name, note.get(nextKey));
-                if (nextTag == 150) {
-                  b = (byte[]) note.get(nextKey);
-                  RandomAccessInputStream s = new RandomAccessInputStream(b);
-                  byte check1 = s.readByte();
-                  byte check2 = s.readByte();
+              TiffParser tp = new TiffParser(makerNote);
+              IFD note = null;
+              try {
+                note = tp.getFirstIFD();
+              }
+              catch (Exception e) {
+                LOGGER.debug("Failed to parse first IFD", e);
+              }
+              if (note != null) {
+                for (Integer nextKey : note.keySet()) {
+                  int nextTag = nextKey.intValue();
+                  addGlobalMeta(name, note.get(nextKey));
+                  if (nextTag == 150) {
+                    b = (byte[]) note.get(nextKey);
+                    RandomAccessInputStream s = new RandomAccessInputStream(b);
+                    try {
+                      byte check1 = s.readByte();
+                      byte check2 = s.readByte();
 
-                  lossyCompression = check1 != 0x46;
+                      lossyCompression = check1 != 0x46;
 
-                  vPredictor = new int[4];
-                  for (int q=0; q<vPredictor.length; q++) {
-                    vPredictor[q] = s.readShort();
-                  }
+                      vPredictor = new int[4];
+                      for (int q=0; q<vPredictor.length; q++) {
+                        vPredictor[q] = s.readShort();
+                      }
 
-                  curve = new int[16385];
+                      curve = new int[16385];
 
-                  int bps = ifds.get(0).getBitsPerSample()[0];
-                  int max = 1 << bps & 0x7fff;
-                  int step = 0;
-                  int csize = s.readShort();
-                  if (csize > 1) {
-                    step = max / (csize - 1);
-                  }
+                      int bps = ifds.get(0).getBitsPerSample()[0];
+                      int max = 1 << bps & 0x7fff;
+                      int step = 0;
+                      int csize = s.readShort();
+                      if (csize > 1) {
+                        step = max / (csize - 1);
+                      }
 
-                  if (check1 == 0x44 && check2 == 0x20 && step > 0) {
-                    for (int i=0; i<csize; i++) {
-                      curve[i * step] = s.readShort();
-                    }
-                    for (int i=0; i<max; i++) {
-                      int n = i % step;
-                      curve[i] = (curve[i - n] * (step - n) +
-                        curve[i - n + step] * n) / step;
-                    }
-                    s.seek(562);
-                    split = s.readShort();
-                  }
-                  else {
-                    int maxValue = (int) Math.pow(2, bps) - 1;
-                    Arrays.fill(curve, maxValue);
-                    int nElements =
-                      (int) (s.length() - s.getFilePointer()) / 2;
-                    if (nElements < 100) {
-                      for (int i=0; i<curve.length; i++) {
-                        curve[i] = (short) i;
+                      if (check1 == 0x44 && check2 == 0x20 && step > 0) {
+                        for (int i=0; i<csize; i++) {
+                          curve[i * step] = s.readShort();
+                        }
+                        for (int i=0; i<max; i++) {
+                          int n = i % step;
+                          curve[i] = (curve[i - n] * (step - n) +
+                            curve[i - n + step] * n) / step;
+                        }
+                        s.seek(562);
+                        split = s.readShort();
+                      }
+                      else {
+                        int maxValue = (int) Math.pow(2, bps) - 1;
+                        Arrays.fill(curve, maxValue);
+                        int nElements =
+                          (int) (s.length() - s.getFilePointer()) / 2;
+                        if (nElements < 100) {
+                          for (int i=0; i<curve.length; i++) {
+                            curve[i] = (short) i;
+                          }
+                        }
+                        else {
+                          for (int q=0; q<nElements; q++) {
+                            curve[q] = s.readShort();
+                          }
+                        }
                       }
                     }
-                    else {
-                      for (int q=0; q<nElements; q++) {
-                        curve[q] = s.readShort();
-                      }
+                    finally {
+                      s.close();
                     }
                   }
-                  s.close();
-                }
-                else if (nextTag == WHITE_BALANCE_RGB_COEFFS) {
-                  whiteBalance = (TiffRational[]) note.get(nextKey);
+                  else if (nextTag == WHITE_BALANCE_RGB_COEFFS) {
+                    whiteBalance = (TiffRational[]) note.get(nextKey);
+                  }
                 }
               }
             }
-            makerNote.close();
+            finally {
+              makerNote.close();
+            }
           }
         }
       }

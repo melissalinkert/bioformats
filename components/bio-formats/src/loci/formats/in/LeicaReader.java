@@ -268,9 +268,13 @@ public class LeicaReader extends FormatReader {
       }
       else {
         RandomAccessInputStream s = new RandomAccessInputStream(filename);
-        s.seek(planeIndex * FormatTools.getPlaneSize(this));
-        readPlane(s, x, y, w, h, buf);
-        s.close();
+        try {
+          s.seek(planeIndex * FormatTools.getPlaneSize(this));
+          readPlane(s, x, y, w, h, buf);
+        }
+        finally {
+          s.close();
+        }
       }
     }
 
@@ -354,18 +358,21 @@ public class LeicaReader extends FormatReader {
       if (checkSuffix(id, TiffReader.TIFF_SUFFIXES)) {
         super.initFile(id);
         TiffReader r = new TiffReader();
-        r.setMetadataStore(getMetadataStore());
-        r.setId(id);
+        try {
+          r.setMetadataStore(getMetadataStore());
+          r.setId(id);
 
-        core = r.getCoreMetadata();
-        metadataStore = r.getMetadataStore();
+          core = r.getCoreMetadata();
+          metadataStore = r.getMetadataStore();
 
-        Hashtable globalMetadata = r.getGlobalMetadata();
-        for (Object key : globalMetadata.keySet()) {
-          addGlobalMeta(key.toString(), globalMetadata.get(key));
+          Hashtable globalMetadata = r.getGlobalMetadata();
+          for (Object key : globalMetadata.keySet()) {
+            addGlobalMeta(key.toString(), globalMetadata.get(key));
+          }
         }
-
-        r.close();
+        finally {
+          r.close();
+        }
 
         files = new Vector[] {new Vector()};
         files[0].add(id);

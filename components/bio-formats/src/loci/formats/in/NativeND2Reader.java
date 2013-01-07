@@ -1847,8 +1847,12 @@ public class NativeND2Reader extends FormatReader {
         false, true);
     }
     RandomAccessInputStream s = new RandomAccessInputStream(pix);
-    readPlane(s, x, y, w, h, scanlinePad, buf);
-    s.close();
+    try {
+      readPlane(s, x, y, w, h, scanlinePad, buf);
+    }
+    finally {
+      s.close();
+    }
   }
 
 }

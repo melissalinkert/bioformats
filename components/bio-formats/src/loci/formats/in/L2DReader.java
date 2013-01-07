@@ -202,16 +202,20 @@ public class L2DReader extends FormatReader {
       tiffs = new String[][] {{id}};
 
       TiffReader r = new TiffReader();
-      r.setMetadataStore(getMetadataStore());
-      r.setId(id);
-      core = r.getCoreMetadata();
-      metadataStore = r.getMetadataStore();
+      try {
+        r.setMetadataStore(getMetadataStore());
+        r.setId(id);
+        core = r.getCoreMetadata();
+        metadataStore = r.getMetadataStore();
 
-      Hashtable globalMetadata = r.getGlobalMetadata();
-      for (Object key : globalMetadata.keySet()) {
-        addGlobalMeta(key.toString(), globalMetadata.get(key));
+        Hashtable globalMetadata = r.getGlobalMetadata();
+        for (Object key : globalMetadata.keySet()) {
+          addGlobalMeta(key.toString(), globalMetadata.get(key));
+        }
       }
-      r.close();
+      finally {
+        r.close();
+      }
       reader = new MinimalTiffReader();
       return;
     }

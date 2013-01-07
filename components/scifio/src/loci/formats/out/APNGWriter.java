@@ -172,10 +172,14 @@ public class APNGWriter extends FormatWriter {
 
   /* @see loci.formats.IFormatHandler#close() */
   public void close() throws IOException {
-    if (out != null) {
-      writeFooter();
+    try {
+      if (out != null) {
+        writeFooter();
+      }
     }
-    super.close();
+    finally {
+      super.close();
+    }
     numFrames = 0;
     numFramesPointer = 0;
     nextSequenceNumber = 0;

@@ -253,12 +253,15 @@ public class JPEG2000Codec extends BaseCodec {
 
     try {
       ByteArrayInputStream bis = new ByteArrayInputStream(buf);
-      b = (WritableRaster) service.readRaster(
+      try {
+        b = (WritableRaster) service.readRaster(
           bis, (JPEG2000CodecOptions) options);
-      single = AWTImageTools.getPixelBytes(b, options.littleEndian);
-      bpp = single[0].length / (b.getWidth() * b.getHeight());
-
-      bis.close();
+        single = AWTImageTools.getPixelBytes(b, options.littleEndian);
+        bpp = single[0].length / (b.getWidth() * b.getHeight());
+      }
+      finally {
+        bis.close();
+      }
       b = null;
     }
     catch (IOException e) {

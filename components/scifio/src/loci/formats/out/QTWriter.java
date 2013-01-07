@@ -310,9 +310,13 @@ public class QTWriter extends FormatWriter {
       out.seek(BYTE_COUNT_OFFSET);
 
       RandomAccessInputStream in = new RandomAccessInputStream(currentId);
-      in.seek(BYTE_COUNT_OFFSET);
-      numBytes = in.readInt() - 8;
-      in.close();
+      try {
+        in.seek(BYTE_COUNT_OFFSET);
+        numBytes = in.readInt() - 8;
+      }
+      finally {
+        in.close();
+      }
     }
 
     for (int i=0; i<getPlaneCount(); i++) {
@@ -322,8 +326,12 @@ public class QTWriter extends FormatWriter {
 
   /* @see loci.formats.IFormatHandler#close() */
   public void close() throws IOException {
-    if (out != null) writeFooter();
-    super.close();
+    try {
+      if (out != null) writeFooter();
+    }
+    finally {
+      super.close();
+    }
     numBytes = 0;
     created = 0;
     offsets = null;

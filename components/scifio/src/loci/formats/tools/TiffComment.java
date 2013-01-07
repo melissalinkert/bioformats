@@ -127,10 +127,14 @@ public class TiffComment {
       else if (newComment != null) {
         RandomAccessInputStream in = new RandomAccessInputStream(file);
         RandomAccessOutputStream out = new RandomAccessOutputStream(file);
-        TiffSaver saver = new TiffSaver(out, file);
-        saver.overwriteComment(in, newComment);
-        in.close();
-        out.close();
+        try {
+          TiffSaver saver = new TiffSaver(out, file);
+          saver.overwriteComment(in, newComment);
+        }
+        finally {
+          in.close();
+          out.close();
+        }
       }
       else {
         String comment = new TiffParser(file).getComment();

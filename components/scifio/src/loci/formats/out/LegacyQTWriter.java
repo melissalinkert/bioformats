@@ -299,13 +299,22 @@ public class LegacyQTWriter extends FormatWriter {
         r.exec("name = movFile.getName()");
         r.exec("flags = StdQTConstants.movieInDataForkResID");
         r.exec("movie.addResource(omf, flags, name)");
-        r.exec("QTSession.close()");
       }
       catch (ReflectException e) {
         LOGGER.debug("", e);
         throw new FormatException("Legacy QuickTime writer failed", e);
       }
-      close();
+      finally {
+        try {
+          r.exec("QTSession.close()");
+        }
+        catch (ReflectException e) {
+          LOGGER.debug("", e);
+        }
+        finally {
+          close();
+        }
+      }
     }
   }
 

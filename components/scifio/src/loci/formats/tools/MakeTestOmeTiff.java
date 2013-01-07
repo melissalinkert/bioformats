@@ -175,14 +175,18 @@ public class MakeTestOmeTiff {
     final String id, final OMETiffWriter out) throws FormatException,
     IOException
   {
-    System.out.print(id);
-    for (int i = 0; i < info.imageCount; i++) {
-      final BufferedImage plane = createPlane(name, info, i);
-      out.saveBytes(i, BufferedImageWriter.toBytes(plane, out));
-      System.out.print(".");
+    try {
+      System.out.print(id);
+      for (int i = 0; i < info.imageCount; i++) {
+        final BufferedImage plane = createPlane(name, info, i);
+        out.saveBytes(i, BufferedImageWriter.toBytes(plane, out));
+        System.out.print(".");
+      }
+      System.out.println();
     }
-    System.out.println();
-    out.close();
+    finally {
+      out.close();
+    }
   }
 
   private void ensureNonExisting(final String id) {

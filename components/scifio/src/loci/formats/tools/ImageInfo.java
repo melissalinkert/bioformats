@@ -343,21 +343,26 @@ public class ImageInfo {
   public void mapLocation() throws IOException {
     if (map != null) Location.mapId(id, map);
     else if (preload) {
+      byte[] b = null;
       RandomAccessInputStream f = new RandomAccessInputStream(id);
-      int len = (int) f.length();
-      LOGGER.info("Caching {} bytes:", len);
-      byte[] b = new byte[len];
-      int blockSize = 8 * 1024 * 1024; // 8 MB
-      int read = 0, left = len;
-      while (left > 0) {
-        int r = f.read(b, read, blockSize < left ? blockSize : left);
-        read += r;
-        left -= r;
-        float ratio = (float) read / len;
-        int p = (int) (100 * ratio);
-        LOGGER.info("\tRead {} bytes ({}% complete)", read, p);
+      try {
+        int len = (int) f.length();
+        LOGGER.info("Caching {} bytes:", len);
+        b = new byte[len];
+        int blockSize = 8 * 1024 * 1024; // 8 MB
+        int read = 0, left = len;
+        while (left > 0) {
+          int r = f.read(b, read, blockSize < left ? blockSize : left);
+          read += r;
+          left -= r;
+          float ratio = (float) read / len;
+          int p = (int) (100 * ratio);
+          LOGGER.info("\tRead {} bytes ({}% complete)", read, p);
+        }
       }
-      f.close();
+      finally {
+        f.close();
+      }
       ByteArrayHandle file = new ByteArrayHandle(b);
       Location.mapFile(id, file);
     }
@@ -983,33 +988,36 @@ public class ImageInfo {
     mapLocation();
     configureReaderPreInit();
 
-    // initialize reader
-    long s = System.currentTimeMillis();
-    reader.setId(id);
-    long e = System.currentTimeMillis();
-    float sec = (e - s) / 1000f;
-    LOGGER.info("Initialization took {}s", sec);
+    try {
+      // initialize reader
+      long s = System.currentTimeMillis();
+      reader.setId(id);
+      long e = System.currentTimeMillis();
+      float sec = (e - s) / 1000f;
+      LOGGER.info("Initialization took {}s", sec);
 
-    configureReaderPostInit();
-    checkWarnings();
-    readCoreMetadata();
-    reader.setSeries(series);
-    initPreMinMaxValues();
+      configureReaderPostInit();
+      checkWarnings();
+      readCoreMetadata();
+      reader.setSeries(series);
+      initPreMinMaxValues();
 
-    // read pixels
-    if (pixels) readPixels();
+      // read pixels
+      if (pixels) readPixels();
 
-    // read format-specific metadata table
-    if (doMeta) {
-      printGlobalMetadata();
-      printOriginalMetadata();
+      // read format-specific metadata table
+      if (doMeta) {
+        printGlobalMetadata();
+        printOriginalMetadata();
+      }
+
+      // output and validate OME-XML
+      if (omexml) printOMEXML();
     }
-
-    // output and validate OME-XML
-    if (omexml) printOMEXML();
-
-    if (!pixels) {
-      reader.close();
+    finally {
+      if (!pixels) {
+        reader.close();
+      }
     }
 
     return true;

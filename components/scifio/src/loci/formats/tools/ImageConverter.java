@@ -414,76 +414,80 @@ public final class ImageConverter {
     int first = series == -1 ? 0 : series;
     int last = series == -1 ? num : series + 1;
     long timeLastLogged = System.currentTimeMillis();
-    for (int q=first; q<last; q++) {
-      reader.setSeries(q);
+    try {
+      for (int q=first; q<last; q++) {
+        reader.setSeries(q);
 
-      if (!dimensionsSet) {
-        width = reader.getSizeX();
-        height = reader.getSizeY();
-      }
-
-      int writerSeries = series == -1 ? q : 0;
-      writer.setSeries(writerSeries);
-      writer.setInterleaved(reader.isInterleaved() && !autoscale);
-      writer.setValidBitsPerPixel(reader.getBitsPerPixel());
-      int numImages = writer.canDoStacks() ? reader.getImageCount() : 1;
-
-      int startPlane = (int) Math.max(0, firstPlane);
-      int endPlane = (int) Math.min(numImages, lastPlane);
-      numImages = endPlane - startPlane;
-
-      if (channel >= 0) {
-        numImages /= reader.getEffectiveSizeC();
-      }
-      if (zSection >= 0) {
-        numImages /= reader.getSizeZ();
-      }
-      if (timepoint >= 0) {
-        numImages /= reader.getSizeT();
-      }
-
-      total += numImages;
-
-      int count = 0;
-      for (int i=startPlane; i<endPlane; i++) {
-        int[] coords = reader.getZCTCoords(i);
-
-        if ((zSection >= 0 && coords[0] != zSection) || (channel >= 0 &&
-          coords[1] != channel) || (timepoint >= 0 && coords[2] != timepoint))
-        {
-          continue;
+        if (!dimensionsSet) {
+          width = reader.getSizeX();
+          height = reader.getSizeY();
         }
 
-        writer.setId(FormatTools.getFilename(q, i, reader, out));
-        if (compression != null) writer.setCompression(compression);
+        int writerSeries = series == -1 ? q : 0;
+        writer.setSeries(writerSeries);
+        writer.setInterleaved(reader.isInterleaved() && !autoscale);
+        writer.setValidBitsPerPixel(reader.getBitsPerPixel());
+        int numImages = writer.canDoStacks() ? reader.getImageCount() : 1;
 
-        long s = System.currentTimeMillis();
-        long m = convertPlane(writer, i, startPlane);
-        long e = System.currentTimeMillis();
-        read += m - s;
-        write += e - m;
+        int startPlane = (int) Math.max(0, firstPlane);
+        int endPlane = (int) Math.min(numImages, lastPlane);
+        numImages = endPlane - startPlane;
 
-        // log number of planes processed every second or so
-        if (count == numImages - 1 || (e - timeLastLogged) / 1000 > 0) {
-          int current = (count - startPlane) + 1;
-          int percent = 100 * current / numImages;
-          StringBuilder sb = new StringBuilder();
-          sb.append("\t");
-          int numSeries = last - first;
-          if (numSeries > 1) {
-            sb.append("Series ");
-            sb.append(q);
-            sb.append(": converted ");
+        if (channel >= 0) {
+          numImages /= reader.getEffectiveSizeC();
+        }
+        if (zSection >= 0) {
+          numImages /= reader.getSizeZ();
+        }
+        if (timepoint >= 0) {
+          numImages /= reader.getSizeT();
+        }
+
+        total += numImages;
+
+        int count = 0;
+        for (int i=startPlane; i<endPlane; i++) {
+          int[] coords = reader.getZCTCoords(i);
+
+          if ((zSection >= 0 && coords[0] != zSection) || (channel >= 0 &&
+            coords[1] != channel) || (timepoint >= 0 && coords[2] != timepoint))
+          {
+            continue;
           }
-          else sb.append("Converted ");
-          LOGGER.info(sb.toString() + "{}/{} planes ({}%)",
-            new Object[] {current, numImages, percent});
-          timeLastLogged = e;
+
+          writer.setId(FormatTools.getFilename(q, i, reader, out));
+          if (compression != null) writer.setCompression(compression);
+
+          long s = System.currentTimeMillis();
+          long m = convertPlane(writer, i, startPlane);
+          long e = System.currentTimeMillis();
+          read += m - s;
+          write += e - m;
+
+          // log number of planes processed every second or so
+          if (count == numImages - 1 || (e - timeLastLogged) / 1000 > 0) {
+            int current = (count - startPlane) + 1;
+            int percent = 100 * current / numImages;
+            StringBuilder sb = new StringBuilder();
+            sb.append("\t");
+            int numSeries = last - first;
+            if (numSeries > 1) {
+              sb.append("Series ");
+              sb.append(q);
+              sb.append(": converted ");
+            }
+            else sb.append("Converted ");
+            LOGGER.info(sb.toString() + "{}/{} planes ({}%)",
+              new Object[] {current, numImages, percent});
+            timeLastLogged = e;
+          }
+          count++;
         }
-        count++;
       }
     }
-    writer.close();
+    finally {
+      writer.close();
+    }
     long end = System.currentTimeMillis();
     LOGGER.info("[done]");
 

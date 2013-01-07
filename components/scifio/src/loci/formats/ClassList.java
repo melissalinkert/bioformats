@@ -118,45 +118,49 @@ public class ClassList<T> {
       in = new BufferedReader(new InputStreamReader(
         location.getResourceAsStream(file), Constants.ENCODING));
     }
-    while (true) {
-      String line = null;
-      line = in.readLine();
-      if (line == null) break;
+    try {
+      while (true) {
+        String line = null;
+        line = in.readLine();
+        if (line == null) break;
 
-      // ignore characters following # sign (comments)
-      int ndx = line.indexOf("#");
-      if (ndx >= 0) line = line.substring(0, ndx);
-      line = line.trim();
-      if (line.equals("")) continue;
+        // ignore characters following # sign (comments)
+        int ndx = line.indexOf("#");
+        if (ndx >= 0) line = line.substring(0, ndx);
+        line = line.trim();
+        if (line.equals("")) continue;
 
-      // load class
-      Class<? extends T> c = null;
-      try {
-        Class<?> rawClass = Class.forName(line);
-        c = cast(rawClass);
+        // load class
+        Class<? extends T> c = null;
+        try {
+          Class<?> rawClass = Class.forName(line);
+          c = cast(rawClass);
+        }
+        catch (ClassNotFoundException exc) {
+          LOGGER.debug("Could not find {}", line, exc);
+        }
+        catch (NoClassDefFoundError err) {
+          LOGGER.debug("Could not find {}", line, err);
+        }
+        catch (ExceptionInInitializerError err) {
+          LOGGER.debug("Failed to create an instance of {}", line, err);
+        }
+        catch (RuntimeException exc) {
+          // HACK: workaround for bug in Apache Axis2
+          String msg = exc.getMessage();
+          if (msg != null && msg.indexOf("ClassNotFound") < 0) throw exc;
+          LOGGER.debug("", exc);
+        }
+        if (c == null) {
+          LOGGER.error("\"{}\" is not valid.", line);
+          continue;
+        }
+        classes.add(c);
       }
-      catch (ClassNotFoundException exc) {
-        LOGGER.debug("Could not find {}", line, exc);
-      }
-      catch (NoClassDefFoundError err) {
-        LOGGER.debug("Could not find {}", line, err);
-      }
-      catch (ExceptionInInitializerError err) {
-        LOGGER.debug("Failed to create an instance of {}", line, err);
-      }
-      catch (RuntimeException exc) {
-        // HACK: workaround for bug in Apache Axis2
-        String msg = exc.getMessage();
-        if (msg != null && msg.indexOf("ClassNotFound") < 0) throw exc;
-        LOGGER.debug("", exc);
-      }
-      if (c == null) {
-        LOGGER.error("\"{}\" is not valid.", line);
-        continue;
-      }
-      classes.add(c);
     }
-    in.close();
+    finally {
+      in.close();
+    }
   }
 
   // -- ClassList API methods --

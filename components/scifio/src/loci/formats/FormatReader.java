@@ -535,30 +535,50 @@ public abstract class FormatReader extends FormatHandler
 
     // suffix matching was inconclusive; we need to analyze the file contents
     if (!open) return false; // not allowed to open any files
+    boolean isThisType = false;
+    RandomAccessInputStream stream = null;
     try {
-      RandomAccessInputStream stream = new RandomAccessInputStream(name);
-      boolean isThisType = isThisType(stream);
-      stream.close();
-      return isThisType;
+      stream = new RandomAccessInputStream(name);
+      isThisType = isThisType(stream);
     }
     catch (IOException exc) {
       LOGGER.debug("", exc);
-      return false;
     }
+    finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+        catch (IOException e) {
+          LOGGER.debug("", e);
+        }
+      }
+    }
+    return isThisType;
   }
 
   /* @see IFormatReader#isThisType(byte[]) */
   public boolean isThisType(byte[] block) {
+    RandomAccessInputStream stream = null;
+    boolean isThisType = false;
     try {
-      RandomAccessInputStream stream = new RandomAccessInputStream(block);
-      boolean isThisType = isThisType(stream);
-      stream.close();
-      return isThisType;
+      stream = new RandomAccessInputStream(block);
+      isThisType = isThisType(stream);
     }
     catch (IOException e) {
       LOGGER.debug("", e);
     }
-    return false;
+    finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+        catch (IOException exc) {
+          LOGGER.debug("", exc);
+        }
+      }
+    }
+    return isThisType;
   }
 
   /* @see IFormatReader#isThisType(RandomAccessInputStream) */

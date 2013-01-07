@@ -218,175 +218,184 @@ public class OmeisImporter {
     String path = Location.getMappedId(id);
     if (DEBUG) log("Reading file '" + id + "' --> " + path);
 
-    // verify that all given file IDs were grouped by the reader
-    reader.setId(id);
-    String[] used = reader.getUsedFiles();
-    if (used == null) {
-      throw new FormatException("Invalid file list for " + path);
-    }
-    if (used.length != ids.length) {
-      throw new FormatException("File list length mismatch for " + path +
-        ": used=" + a2s(used) + "; ids=" + a2s(ids));
-    }
+    Document omeDoc = null;
 
-    boolean[] done = new boolean[ids.length];
-    int numLeft = ids.length;
-    for (int i=0; i<used.length; i++) {
-      for (int j=0; j<ids.length; j++) {
-        if (done[j]) continue;
-        if (used[i].equals(ids[j])) {
-          done[j] = true;
-          numLeft--;
-          break;
-        }
+    try {
+      // verify that all given file IDs were grouped by the reader
+      reader.setId(id);
+      String[] used = reader.getUsedFiles();
+      if (used == null) {
+        throw new FormatException("Invalid file list for " + path);
       }
-    }
-    if (numLeft > 0) {
-      throw new FormatException(
-        "File list does not correspond to ID list for " + path);
-    }
-
-    int seriesCount = reader.getSeriesCount();
-
-    // get DOM and Pixels elements for the file's OME-XML metadata
-    OMENode ome = (OMENode) omexmlMeta.getRoot();
-    Document omeDoc = ome.getDOMElement().getOwnerDocument();
-    Vector pix = DOMUtil.findElementList("Pixels", omeDoc);
-    if (pix.size() != seriesCount) {
-      throw new FormatException("Pixels element count (" +
-        pix.size() + ") does not match series count (" +
-        seriesCount + ") for '" + id + "'");
-    }
-    if (DEBUG) log(seriesCount + " series detected.");
-
-    for (int s=0; s<seriesCount; s++) {
-      reader.setSeries(s);
-
-      // gather pixels information for this series
-      int sizeX = reader.getSizeX();
-      int sizeY = reader.getSizeY();
-      int sizeZ = reader.getSizeZ();
-      int sizeC = reader.getSizeC();
-      int sizeT = reader.getSizeT();
-      int pixelType = reader.getPixelType();
-      int bytesPerPixel;
-      boolean isSigned, isFloat;
-      switch (pixelType) {
-        case FormatTools.INT8:
-          bytesPerPixel = 1;
-          isSigned = true;
-          isFloat = false;
-          break;
-        case FormatTools.UINT8:
-          bytesPerPixel = 1;
-          isSigned = false;
-          isFloat = false;
-          break;
-        case FormatTools.INT16:
-          bytesPerPixel = 2;
-          isSigned = true;
-          isFloat = false;
-          break;
-        case FormatTools.UINT16:
-          bytesPerPixel = 2;
-          isSigned = false;
-          isFloat = false;
-          break;
-        case FormatTools.INT32:
-          bytesPerPixel = 4;
-          isSigned = true;
-          isFloat = false;
-          break;
-        case FormatTools.UINT32:
-          bytesPerPixel = 4;
-          isSigned = false;
-          isFloat = false;
-          break;
-        case FormatTools.FLOAT:
-          bytesPerPixel = 4;
-          isSigned = true;
-          isFloat = true;
-          break;
-        case FormatTools.DOUBLE:
-          bytesPerPixel = 8;
-          isSigned = true;
-          isFloat = true;
-          break;
-        default:
-          throw new FormatException("Unknown pixel type for '" +
-            id + "' series #" + s + ": " + pixelType);
-      }
-      boolean little = reader.isLittleEndian();
-      boolean swap = doLittle != little && bytesPerPixel > 1 && !isFloat;
-
-      // ask OMEIS to allocate new pixels file
-      int pixelsId = newPixels(sizeX, sizeY, sizeZ, sizeC, sizeT,
-        bytesPerPixel, isSigned, isFloat);
-      String pixelsPath = getLocalPixelsPath(pixelsId);
-      if (DEBUG) {
-        log("Series #" + s + ": id=" + pixelsId + ", path=" + pixelsPath);
+      if (used.length != ids.length) {
+        throw new FormatException("File list length mismatch for " + path +
+          ": used=" + a2s(used) + "; ids=" + a2s(ids));
       }
 
-      // write pixels to file
-      FileOutputStream out = new FileOutputStream(pixelsPath);
-      int imageCount = reader.getImageCount();
-      if (DEBUG) {
-        log("Processing " + imageCount + " planes (sizeZ=" + sizeZ +
-          ", sizeC=" + sizeC + ", sizeT=" + sizeT + "): ");
-      }
-      // OMEIS expects XYZCT order --
-      // interleaved RGB files will be handled a bit more slowly due to this
-      // ordering (ChannelSeparator must read each plane three times), but
-      // caching performed by the OS helps some
-      for (int t=0; t<sizeT; t++) {
-        for (int c=0; c<sizeC; c++) {
-          for (int z=0; z<sizeZ; z++) {
-            int ndx = reader.getIndex(z, c, t);
-            if (DEBUG) {
-              log("Reading plane #" + ndx +
-                ": z=" + z + ", c=" + c + ", t=" + t);
-            }
-            byte[] plane = reader.openBytes(ndx);
-            if (swap) { // swap endianness
-              for (int b=0; b<plane.length; b+=bytesPerPixel) {
-                for (int k=0; k<bytesPerPixel/2; k++) {
-                  int i1 = b + k;
-                  int i2 = b + bytesPerPixel - k - 1;
-                  byte b1 = plane[i1];
-                  byte b2 = plane[i2];
-                  plane[i1] = b2;
-                  plane[i2] = b1;
-                }
-              }
-            }
-            out.write(plane);
+      boolean[] done = new boolean[ids.length];
+      int numLeft = ids.length;
+      for (int i=0; i<used.length; i++) {
+        for (int j=0; j<ids.length; j++) {
+          if (done[j]) continue;
+          if (used[i].equals(ids[j])) {
+            done[j] = true;
+            numLeft--;
+            break;
           }
         }
       }
-      out.close();
-      if (DEBUG) log("[done]");
-
-      // tell OMEIS we're done
-      pixelsId = finishPixels(pixelsId);
-      if (DEBUG) log("finishPixels called (new id=" + pixelsId + ")");
-
-      // get SHA1 hash for finished pixels
-      String sha1 = getPixelsSHA1(pixelsId);
-      if (DEBUG) log("SHA1=" + sha1);
-
-      // inject important extra attributes into proper Pixels element
-      Element pixels = (Element) pix.elementAt(s);
-      pixels.setAttribute("FileSHA1", sha1);
-      pixels.setAttribute("ImageServerID", "" + pixelsId);
-      pixels.setAttribute("DimensionOrder", "XYZCT"); // ignored anyway
-      String pType = pixels.getAttribute("PixelType");
-      if (pType.startsWith("u")) {
-        pixels.setAttribute("PixelType", pType.replace('u', 'U'));
+      if (numLeft > 0) {
+        throw new FormatException(
+          "File list does not correspond to ID list for " + path);
       }
-      if (DEBUG) log("Pixel attributes injected.");
-    }
 
-    reader.close();
+      int seriesCount = reader.getSeriesCount();
+
+      // get DOM and Pixels elements for the file's OME-XML metadata
+      OMENode ome = (OMENode) omexmlMeta.getRoot();
+      omeDoc = ome.getDOMElement().getOwnerDocument();
+      Vector pix = DOMUtil.findElementList("Pixels", omeDoc);
+      if (pix.size() != seriesCount) {
+        throw new FormatException("Pixels element count (" +
+          pix.size() + ") does not match series count (" +
+          seriesCount + ") for '" + id + "'");
+      }
+      if (DEBUG) log(seriesCount + " series detected.");
+
+      for (int s=0; s<seriesCount; s++) {
+        reader.setSeries(s);
+
+        // gather pixels information for this series
+        int sizeX = reader.getSizeX();
+        int sizeY = reader.getSizeY();
+        int sizeZ = reader.getSizeZ();
+        int sizeC = reader.getSizeC();
+        int sizeT = reader.getSizeT();
+        int pixelType = reader.getPixelType();
+        int bytesPerPixel;
+        boolean isSigned, isFloat;
+        switch (pixelType) {
+          case FormatTools.INT8:
+            bytesPerPixel = 1;
+            isSigned = true;
+            isFloat = false;
+            break;
+          case FormatTools.UINT8:
+            bytesPerPixel = 1;
+            isSigned = false;
+            isFloat = false;
+            break;
+          case FormatTools.INT16:
+            bytesPerPixel = 2;
+            isSigned = true;
+            isFloat = false;
+            break;
+          case FormatTools.UINT16:
+            bytesPerPixel = 2;
+            isSigned = false;
+            isFloat = false;
+            break;
+          case FormatTools.INT32:
+            bytesPerPixel = 4;
+            isSigned = true;
+            isFloat = false;
+            break;
+          case FormatTools.UINT32:
+            bytesPerPixel = 4;
+            isSigned = false;
+            isFloat = false;
+            break;
+          case FormatTools.FLOAT:
+            bytesPerPixel = 4;
+            isSigned = true;
+            isFloat = true;
+            break;
+          case FormatTools.DOUBLE:
+            bytesPerPixel = 8;
+            isSigned = true;
+            isFloat = true;
+            break;
+          default:
+            throw new FormatException("Unknown pixel type for '" +
+              id + "' series #" + s + ": " + pixelType);
+        }
+        boolean little = reader.isLittleEndian();
+        boolean swap = doLittle != little && bytesPerPixel > 1 && !isFloat;
+
+        // ask OMEIS to allocate new pixels file
+        int pixelsId = newPixels(sizeX, sizeY, sizeZ, sizeC, sizeT,
+          bytesPerPixel, isSigned, isFloat);
+        String pixelsPath = getLocalPixelsPath(pixelsId);
+        if (DEBUG) {
+          log("Series #" + s + ": id=" + pixelsId + ", path=" + pixelsPath);
+        }
+
+        // write pixels to file
+        FileOutputStream out = new FileOutputStream(pixelsPath);
+        try {
+          int imageCount = reader.getImageCount();
+          if (DEBUG) {
+            log("Processing " + imageCount + " planes (sizeZ=" + sizeZ +
+              ", sizeC=" + sizeC + ", sizeT=" + sizeT + "): ");
+          }
+          // OMEIS expects XYZCT order --
+          // interleaved RGB files will be handled a bit more slowly due to this
+          // ordering (ChannelSeparator must read each plane three times), but
+          // caching performed by the OS helps some
+          for (int t=0; t<sizeT; t++) {
+            for (int c=0; c<sizeC; c++) {
+              for (int z=0; z<sizeZ; z++) {
+                int ndx = reader.getIndex(z, c, t);
+                if (DEBUG) {
+                  log("Reading plane #" + ndx +
+                    ": z=" + z + ", c=" + c + ", t=" + t);
+                }
+                byte[] plane = reader.openBytes(ndx);
+                if (swap) { // swap endianness
+                  for (int b=0; b<plane.length; b+=bytesPerPixel) {
+                    for (int k=0; k<bytesPerPixel/2; k++) {
+                      int i1 = b + k;
+                      int i2 = b + bytesPerPixel - k - 1;
+                      byte b1 = plane[i1];
+                      byte b2 = plane[i2];
+                      plane[i1] = b2;
+                      plane[i2] = b1;
+                    }
+                  }
+                }
+                out.write(plane);
+              }
+            }
+          }
+        }
+        finally {
+          out.close();
+        }
+        if (DEBUG) log("[done]");
+
+        // tell OMEIS we're done
+        pixelsId = finishPixels(pixelsId);
+        if (DEBUG) log("finishPixels called (new id=" + pixelsId + ")");
+
+        // get SHA1 hash for finished pixels
+        String sha1 = getPixelsSHA1(pixelsId);
+        if (DEBUG) log("SHA1=" + sha1);
+
+        // inject important extra attributes into proper Pixels element
+        Element pixels = (Element) pix.elementAt(s);
+        pixels.setAttribute("FileSHA1", sha1);
+        pixels.setAttribute("ImageServerID", "" + pixelsId);
+        pixels.setAttribute("DimensionOrder", "XYZCT"); // ignored anyway
+        String pType = pixels.getAttribute("PixelType");
+        if (pType.startsWith("u")) {
+          pixels.setAttribute("PixelType", pType.replace('u', 'U'));
+        }
+        if (DEBUG) log("Pixel attributes injected.");
+      }
+    }
+    finally {
+      reader.close();
+    }
 
     // accumulate XML into buffer
     ByteArrayOutputStream xml = new ByteArrayOutputStream();
@@ -396,9 +405,11 @@ public class OmeisImporter {
     catch (javax.xml.transform.TransformerException exc) {
       throw new FormatException(exc);
     }
+    finally {
+      xml.close();
+    }
 
     // output OME-XML to standard output
-    xml.close();
     String xmlString = new String(xml.toByteArray(), Constants.ENCODING);
     if (DEBUG) log(xmlString);
     if (http) printHttpResponseHeader();

@@ -139,8 +139,12 @@ public class JavaWriter extends FormatWriter {
 
   /* @see loci.formats.IFormatHandler#close() */
   public void close() throws IOException {
-    if (out != null) writeFooter();
-    super.close();
+    try {
+      if (out != null) writeFooter();
+    }
+    finally {
+      super.close();
+    }
   }
 
   // -- Helper methods --

@@ -249,28 +249,36 @@ public class TextReader extends FormatReader {
       String mapId = Location.getMappedId(id);
       BufferedReader in = new BufferedReader(
         new InputStreamReader(new FileInputStream(mapId), Constants.ENCODING));
-      int no = 0;
-      while (true) {
-        no++;
-        time = checkTime(time, no, 0, 0);
-        String line = in.readLine();
-        if (line == null) break; // eof
-        lines.add(line);
+      try {
+        int no = 0;
+        while (true) {
+          no++;
+          time = checkTime(time, no, 0, 0);
+          String line = in.readLine();
+          if (line == null) break; // eof
+          lines.add(line);
+        }
       }
-      in.close();
+      finally {
+        in.close();
+      }
     }
     else {
       // read data using RandomAccessInputStream (data may not be a file)
       RandomAccessInputStream in = new RandomAccessInputStream(handle);
-      int no = 0;
-      while (true) {
-        no++;
-        time = checkTime(time, no, in.getFilePointer(), in.length());
-        String line = in.readLine();
-        if (line == null) break; // eof
-        lines.add(line);
+      try {
+        int no = 0;
+        while (true) {
+          no++;
+          time = checkTime(time, no, in.getFilePointer(), in.length());
+          String line = in.readLine();
+          if (line == null) break; // eof
+          lines.add(line);
+        }
       }
-      in.close();
+      finally {
+        in.close();
+      }
     }
     return lines;
   }

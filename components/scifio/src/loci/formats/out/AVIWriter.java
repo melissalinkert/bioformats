@@ -246,24 +246,28 @@ public class AVIWriter extends FormatWriter {
 
     if (out.length() > 0) {
       RandomAccessInputStream in = new RandomAccessInputStream(currentId);
-      in.order(true);
-      in.seek(FRAME_OFFSET);
-      planesWritten = in.readInt();
+      try {
+        in.order(true);
+        in.seek(FRAME_OFFSET);
+        planesWritten = in.readInt();
 
-      in.seek(SAVE_FILE_SIZE);
-      endPos = in.readInt() + SAVE_FILE_SIZE + 4;
+        in.seek(SAVE_FILE_SIZE);
+        endPos = in.readInt() + SAVE_FILE_SIZE + 4;
 
-      in.seek(SAVE_LIST2_SIZE);
-      idx1Pos = in.readInt() + SAVE_LIST2_SIZE + 4;
-      saveidx1Length = idx1Pos + 4;
+        in.seek(SAVE_LIST2_SIZE);
+        idx1Pos = in.readInt() + SAVE_LIST2_SIZE + 4;
+        saveidx1Length = idx1Pos + 4;
 
-      if (planesWritten > 0) in.seek(saveidx1Length + 4);
-      for (int z=0; z<planesWritten; z++) {
-        in.skipBytes(8);
-        savedbLength.add(in.readInt() + 4 + SAVE_MOVI);
-        in.skipBytes(4);
+        if (planesWritten > 0) in.seek(saveidx1Length + 4);
+        for (int z=0; z<planesWritten; z++) {
+          in.skipBytes(8);
+          savedbLength.add(in.readInt() + 4 + SAVE_MOVI);
+          in.skipBytes(4);
+        }
       }
-      in.close();
+      finally {
+        in.close();
+      }
       out.seek(idx1Pos);
     }
 

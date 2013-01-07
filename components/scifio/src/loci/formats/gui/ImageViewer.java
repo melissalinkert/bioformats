@@ -434,12 +434,19 @@ public class ImageViewer extends JFrame implements ActionListener,
         myWriter.savePlane(0, getImage());
         progress.setProgress(1);
       }
-      myWriter.close();
     }
     catch (FormatException exc) { LOGGER.info("", exc); }
     catch (IOException exc) { LOGGER.info("", exc); }
     catch (ServiceException exc) { LOGGER.info("", exc); }
     catch (EnumerationException exc) { LOGGER.info("", exc); }
+    finally {
+      try {
+        myWriter.close();
+      }
+      catch (IOException e) {
+        LOGGER.info("", e);
+      }
+    }
     wait(false);
   }
 

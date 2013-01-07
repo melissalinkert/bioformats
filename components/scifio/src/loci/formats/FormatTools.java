@@ -1015,34 +1015,37 @@ public final class FormatTools {
     String outputFile)
     throws FormatException, IOException
   {
-    MetadataStore store = input.getMetadataStore();
-    MetadataRetrieve meta = null;
     try {
-      ServiceFactory factory = new ServiceFactory();
-      OMEXMLService service = factory.getInstance(OMEXMLService.class);
-      meta = service.asRetrieve(store);
-    }
-    catch (DependencyException de) {
-      throw new MissingLibraryException(OMEXMLServiceImpl.NO_OME_XML_MSG, de);
-    }
+      MetadataStore store = input.getMetadataStore();
+      MetadataRetrieve meta = null;
+      try {
+        ServiceFactory factory = new ServiceFactory();
+        OMEXMLService service = factory.getInstance(OMEXMLService.class);
+        meta = service.asRetrieve(store);
+      }
+      catch (DependencyException de) {
+        throw new MissingLibraryException(OMEXMLServiceImpl.NO_OME_XML_MSG, de);
+      }
 
-    output.setMetadataRetrieve(meta);
-    output.setId(outputFile);
+      output.setMetadataRetrieve(meta);
+      output.setId(outputFile);
 
-    for (int series=0; series<input.getSeriesCount(); series++) {
-      input.setSeries(series);
-      output.setSeries(series);
+      for (int series=0; series<input.getSeriesCount(); series++) {
+        input.setSeries(series);
+        output.setSeries(series);
 
-      byte[] buf = new byte[getPlaneSize(input)];
+        byte[] buf = new byte[getPlaneSize(input)];
 
-      for (int image=0; image<input.getImageCount(); image++) {
-        input.openBytes(image, buf);
-        output.saveBytes(image, buf);
+        for (int image=0; image<input.getImageCount(); image++) {
+          input.openBytes(image, buf);
+          output.saveBytes(image, buf);
+        }
       }
     }
-
-    input.close();
-    output.close();
+    finally {
+      input.close();
+      output.close();
+    }
   }
 
   /**

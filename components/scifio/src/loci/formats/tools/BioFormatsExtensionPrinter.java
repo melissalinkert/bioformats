@@ -71,12 +71,15 @@ public class BioFormatsExtensionPrinter {
 
 		PrintWriter fo = null;
 
-		fo =
-      new PrintWriter(new File("BioFormatsSuffixes.txt"), Constants.ENCODING);
+    try {
+		  fo =
+        new PrintWriter(new File("BioFormatsSuffixes.txt"), Constants.ENCODING);
 
-		for (String s : suffixes) fo.println("*." + s);
-
-		fo.close();
+		  for (String s : suffixes) fo.println("*." + s);
+    }
+    finally {
+		  fo.close();
+    }
 
 		System.out.println(suffixes.length + " suffixes discovered.");
 	}

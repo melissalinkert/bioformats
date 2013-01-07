@@ -194,8 +194,13 @@ public class APNGReader extends BIFormatReader {
     RandomAccessInputStream s =
       new RandomAccessInputStream(stream.toByteArray());
     DataInputStream dis = new DataInputStream(new BufferedInputStream(s, 4096));
-    BufferedImage b = ImageIO.read(dis);
-    dis.close();
+    BufferedImage b = null;
+    try {
+      b = ImageIO.read(dis);
+    }
+    finally {
+      dis.close();
+    }
 
     lastImage = null;
     openPlane(0, 0, 0, getSizeX(), getSizeY());
@@ -292,8 +297,13 @@ public class APNGReader extends BIFormatReader {
 
     RandomAccessInputStream ras = new RandomAccessInputStream(currentId);
     DataInputStream dis = new DataInputStream(ras);
-    BufferedImage img = ImageIO.read(dis);
-    dis.close();
+    BufferedImage img = null;
+    try {
+      img = ImageIO.read(dis);
+    }
+    finally {
+      dis.close();
+    }
 
     core[0].sizeX = img.getWidth();
     core[0].sizeY = img.getHeight();

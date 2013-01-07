@@ -661,14 +661,12 @@ public class DataConverter extends JFrame implements
 
       progress.setValue(2 * swap.getImageCount());
       progress.setString("Finishing");
-      if (writer != null) writer.close();
 
       long end = System.currentTimeMillis();
       double time = (end - start) / 1000.0;
       long avg = (end - start) / (swap.getImageCount());
       progress.setString(time + " s elapsed (" + avg + " ms/plane)");
       progress.setValue(0);
-      if (swap != null) swap.close();
     }
     catch (FormatException exc) {
       LOGGER.info("", exc);
@@ -685,6 +683,15 @@ public class DataConverter extends JFrame implements
       msg("Sorry, an error occurred: " + err);
       progress.setString("");
       progress.setValue(0);
+    }
+    finally {
+      try {
+        if (writer != null) writer.close();
+        if (swap != null) swap.close();
+      }
+      catch (IOException e) {
+        LOGGER.info("", e);
+      }
     }
     convert.setEnabled(true);
     includeZ.setEnabled(true);

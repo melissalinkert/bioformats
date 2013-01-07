@@ -117,11 +117,17 @@ public class OMETiffReader extends FormatReader {
     // parse and populate OME-XML metadata
     String fileName = new Location(id).getAbsoluteFile().getAbsolutePath();
     RandomAccessInputStream ras = new RandomAccessInputStream(fileName);
-    TiffParser tp = new TiffParser(ras);
-    IFD ifd = tp.getFirstIFD();
-    long[] ifdOffsets = tp.getIFDOffsets();
-    ras.close();
-    String xml = ifd.getComment();
+    String xml = null;
+    long[] ifdOffsets = null;
+    try {
+      TiffParser tp = new TiffParser(ras);
+      IFD ifd = tp.getFirstIFD();
+      ifdOffsets = tp.getIFDOffsets();
+      xml = ifd.getComment();
+    }
+    finally {
+      ras.close();
+    }
 
     if (service == null) setupService();
     OMEXMLMetadata meta;
@@ -254,9 +260,13 @@ public class OMETiffReader extends FormatReader {
     IFD ifd = ifdList.get(i);
     RandomAccessInputStream s =
       new RandomAccessInputStream(info[series][no].id);
-    TiffParser p = new TiffParser(s);
-    p.getSamples(ifd, buf, x, y, w, h);
-    s.close();
+    try {
+      TiffParser p = new TiffParser(s);
+      p.getSamples(ifd, buf, x, y, w, h);
+    }
+    finally {
+      s.close();
+    }
     return buf;
   }
 

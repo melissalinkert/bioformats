@@ -565,8 +565,13 @@ public class ICSReader extends FormatReader {
   public boolean isSingleFile(String id) throws FormatException, IOException {
     // check if we have a v2 ICS file - means there is no companion IDS file
     RandomAccessInputStream f = new RandomAccessInputStream(id);
-    boolean singleFile = f.readString(17).trim().equals("ics_version\t2.0");
-    f.close();
+    boolean singleFile = true;
+    try {
+      singleFile = f.readString(17).trim().equals("ics_version\t2.0");
+    }
+    finally {
+      f.close();
+    }
     return singleFile;
   }
 
@@ -693,8 +698,12 @@ public class ICSReader extends FormatReader {
     }
     else if (gzip) {
       RandomAccessInputStream s = new RandomAccessInputStream(data);
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
     }
     else {
       readPlane(in, x, y, w, h, buf);
@@ -779,18 +788,22 @@ public class ICSReader extends FormatReader {
 
     // check if we have a v2 ICS file - means there is no companion IDS file
     RandomAccessInputStream f = new RandomAccessInputStream(icsId);
-    if (f.readString(17).trim().equals("ics_version\t2.0")) {
-      in = new RandomAccessInputStream(icsId);
-      versionTwo = true;
+    try {
+      if (f.readString(17).trim().equals("ics_version\t2.0")) {
+        in = new RandomAccessInputStream(icsId);
+        versionTwo = true;
+      }
+      else {
+        if (idsId == null) throw new FormatException("No IDS file found.");
+        Location idsFile = new Location(idsId);
+        if (!idsFile.exists()) throw new FormatException("IDS file not found.");
+        currentIdsId = idsId;
+        in = new RandomAccessInputStream(currentIdsId);
+      }
     }
-    else {
-      if (idsId == null) throw new FormatException("No IDS file found.");
-      Location idsFile = new Location(idsId);
-      if (!idsFile.exists()) throw new FormatException("IDS file not found.");
-      currentIdsId = idsId;
-      in = new RandomAccessInputStream(currentIdsId);
+    finally {
+      f.close();
     }
-    f.close();
 
     currentIcsId = icsId;
 
@@ -806,9 +819,6 @@ public class ICSReader extends FormatReader {
     // parse key/value pairs from beginning of ICS file
 
     RandomAccessInputStream reader = new RandomAccessInputStream(icsId);
-    reader.seek(0);
-    reader.readString(NL);
-    String line = reader.readString(NL);
     boolean signed = false;
 
     StringBuffer textBlock = new StringBuffer();
@@ -840,445 +850,453 @@ public class ICSReader extends FormatReader {
     String excitationModel = null;
     String emissionModel = null;
 
-    while (line != null && !line.trim().equals("end") &&
-      reader.getFilePointer() < reader.length() - 1)
-    {
-      line = line.trim();
-      if (line.length() > 0) {
+    try {
+      reader.seek(0);
+      reader.readString(NL);
+      String line = reader.readString(NL);
 
-        // split the line into tokens
-        String[] tokens = tokenize(line);
+      while (line != null && !line.trim().equals("end") &&
+        reader.getFilePointer() < reader.length() - 1)
+      {
+        line = line.trim();
+        if (line.length() > 0) {
 
-        String token0 = tokens[0].toLowerCase();
-        String[] keyValue = null;
+          // split the line into tokens
+          String[] tokens = tokenize(line);
 
-        // version category
-        if (token0.equals("ics_version")) {
-          String value = concatenateTokens(tokens, 1, tokens.length);
-          addGlobalMeta(token0, value);
-        }
-        // filename category
-        else if (token0.equals("filename")) {
-          imageName = concatenateTokens(tokens, 1, tokens.length);
-          addGlobalMeta(token0, imageName);
-        }
-        // layout category
-        else if (token0.equals("layout")) {
-          keyValue = findKeyValue(tokens, LAYOUT_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
+          String token0 = tokens[0].toLowerCase();
+          String[] keyValue = null;
 
-          if (key.equalsIgnoreCase("layout sizes")) {
-            StringTokenizer t = new StringTokenizer(value);
-            axisLengths = new int[t.countTokens()];
-            for (int n=0; n<axisLengths.length; n++) {
-              try {
-                axisLengths[n] = Integer.parseInt(t.nextToken().trim());
-              }
-              catch (NumberFormatException e) {
-                LOGGER.debug("Could not parse axis length", e);
-              }
-            }
+          // version category
+          if (token0.equals("ics_version")) {
+            String value = concatenateTokens(tokens, 1, tokens.length);
+            addGlobalMeta(token0, value);
           }
-          else if (key.equalsIgnoreCase("layout order")) {
-            StringTokenizer t = new StringTokenizer(value);
-            axes = new String[t.countTokens()];
-            for (int n=0; n<axes.length; n++) {
-              axes[n] = t.nextToken().trim();
-            }
+          // filename category
+          else if (token0.equals("filename")) {
+            imageName = concatenateTokens(tokens, 1, tokens.length);
+            addGlobalMeta(token0, imageName);
           }
-          else if (key.equalsIgnoreCase("layout significant_bits")) {
-            core[0].bitsPerPixel = Integer.parseInt(value);
-          }
-        }
-        // representation category
-        else if (token0.equals("representation")) {
-          keyValue = findKeyValue(tokens, REPRESENTATION_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
+          // layout category
+          else if (token0.equals("layout")) {
+            keyValue = findKeyValue(tokens, LAYOUT_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
 
-          if (key.equalsIgnoreCase("representation byte_order")) {
-            byteOrder = value;
-          }
-          else if (key.equalsIgnoreCase("representation format")) {
-            rFormat = value;
-          }
-          else if (key.equalsIgnoreCase("representation compression")) {
-            compression = value;
-          }
-          else if (key.equalsIgnoreCase("representation sign")) {
-            signed = value.equals("signed");
-          }
-        }
-        // parameter category
-        else if (token0.equals("parameter")) {
-          keyValue = findKeyValue(tokens, PARAMETER_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
-
-          if (key.equalsIgnoreCase("parameter scale")) {
-            // parse physical pixel sizes and time increment
-            pixelSizes = splitDoubles(value);
-          }
-          else if (key.equalsIgnoreCase("parameter t")) {
-            // parse explicit timestamps
-            timestamps = splitDoubles(value);
-          }
-          else if (key.equalsIgnoreCase("parameter units")) {
-            // parse units for scale
-            units = value.split("\\s+");
-          }
-          if (getMetadataOptions().getMetadataLevel() !=
-              MetadataLevel.MINIMUM)
-          {
-            if (key.equalsIgnoreCase("parameter ch")) {
-              String[] names = value.split(" ");
-              for (int n=0; n<names.length; n++) {
-                channelNames.put(new Integer(n), names[n].trim());
-              }
-            }
-          }
-        }
-        // history category
-        else if (token0.equals("history")) {
-          keyValue = findKeyValue(tokens, HISTORY_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
-
-          Double doubleValue = null;
-          try {
-            doubleValue = new Double(value);
-          }
-          catch (NumberFormatException e) {
-            // ARG this happens a lot; spurious error in most cases
-            LOGGER.debug("Could not parse double value '{}'", value, e);
-          }
-
-          if (key.equalsIgnoreCase("history software") &&
-              value.indexOf("SVI") != -1) {
-            // ICS files written by SVI Huygens are inverted on the Y axis
-            invertY = true;
-          }
-          else if (key.equalsIgnoreCase("history date") ||
-                   key.equalsIgnoreCase("history created on"))
-          {
-            if (value.indexOf(" ") > 0) {
-              date = value.substring(0, value.lastIndexOf(" "));
-              date = DateTools.formatDate(date, DATE_FORMATS);
-            }
-          }
-          else if (key.equalsIgnoreCase("history creation date")) {
-            date = DateTools.formatDate(value, DATE_FORMATS);
-          }
-          else if (key.equalsIgnoreCase("history type")) {
-            // HACK - support for Gray Institute at Oxford's ICS lifetime data
-            if (value.equalsIgnoreCase("time resolved") ||
-                value.equalsIgnoreCase("FluorescenceLifetime"))
-            {
-              lifetime = true;
-            }
-            experimentType = value;
-          }
-          else if (key.equalsIgnoreCase("history labels")) {
-              // HACK - support for Gray Institute at Oxford's ICS lifetime data
-              labels = value;
-          }
-          else if (getMetadataOptions().getMetadataLevel() !=
-                     MetadataLevel.MINIMUM) {
-
-            if (key.equalsIgnoreCase("history") ||
-                key.equalsIgnoreCase("history text"))
-            {
-              textBlock.append(value);
-              textBlock.append("\n");
-              metadata.remove(key);
-            }
-            else if (key.startsWith("history gain")) {
-              Integer n = new Integer(0);
-              try {
-                n = new Integer(key.substring(12).trim());
-                n = new Integer(n.intValue() - 1);
-              }
-              catch (NumberFormatException e) { }
-              if (doubleValue != null) {
-                  gains.put(n, doubleValue);
-              }
-            }
-            else if (key.startsWith("history laser") &&
-                     key.endsWith("wavelength")) {
-              int laser =
-                Integer.parseInt(key.substring(13, key.indexOf(" ", 13))) - 1;
-              value = value.replaceAll("nm", "").trim();
-              try {
-                wavelengths.put(new Integer(laser), new Integer(value));
-              }
-              catch (NumberFormatException e) {
-                LOGGER.debug("Could not parse wavelength", e);
-              }
-            }
-            else if (key.equalsIgnoreCase("history Wavelength*")) {
-              String[] waves = value.split(" ");
-              for (int i=0; i<waves.length; i++) {
-                wavelengths.put(new Integer(i), new Integer(waves[i]));
-              }
-            }
-            else if (key.equalsIgnoreCase("history laser manufacturer")) {
-              laserManufacturer = value;
-            }
-            else if (key.equalsIgnoreCase("history laser model")) {
-              laserModel = value;
-            }
-            else if (key.equalsIgnoreCase("history laser power")) {
-              try {
-                laserPower = new Double(value); //TODO ARG i.e. doubleValue
-              }
-              catch (NumberFormatException e) { }
-            }
-            else if (key.equalsIgnoreCase("history laser rep rate")) {
-              String repRate = value;
-              if (repRate.indexOf(" ") != -1) {
-                repRate = repRate.substring(0, repRate.lastIndexOf(" "));
-              }
-              laserRepetitionRate = new Double(repRate);
-            }
-            else if (key.equalsIgnoreCase("history objective type") ||
-                     key.equalsIgnoreCase("history objective"))
-            {
-              objectiveModel = value;
-            }
-            else if (key.equalsIgnoreCase("history objective immersion")) {
-              immersion = value;
-            }
-            else if (key.equalsIgnoreCase("history objective NA")) {
-              lensNA = doubleValue;
-            }
-            else if (key.equalsIgnoreCase
-                       ("history objective WorkingDistance")) {
-              workingDistance = doubleValue;
-            }
-            else if (key.equalsIgnoreCase("history objective magnification") ||
-                     key.equalsIgnoreCase("history objective mag"))
-            {
-              magnification = doubleValue;
-            }
-            else if (key.equalsIgnoreCase("history camera manufacturer")) {
-              detectorManufacturer = value;
-            }
-            else if (key.equalsIgnoreCase("history camera model")) {
-              detectorModel = value;
-            }
-            else if (key.equalsIgnoreCase("history author") ||
-                     key.equalsIgnoreCase("history experimenter"))
-            {
-              lastName = value;
-            }
-            else if (key.equalsIgnoreCase("history extents")) {
-              String[] lengths = value.split(" ");
-              sizes = new double[lengths.length];
-              for (int n=0; n<sizes.length; n++) {
+            if (key.equalsIgnoreCase("layout sizes")) {
+              StringTokenizer t = new StringTokenizer(value);
+              axisLengths = new int[t.countTokens()];
+              for (int n=0; n<axisLengths.length; n++) {
                 try {
-                  sizes[n] = Double.parseDouble(lengths[n].trim());
+                  axisLengths[n] = Integer.parseInt(t.nextToken().trim());
                 }
                 catch (NumberFormatException e) {
                   LOGGER.debug("Could not parse axis length", e);
                 }
               }
             }
-            else if (key.equalsIgnoreCase("history stage_xyzum")) {
-              String[] positions = value.split(" ");
-              stagePos = new Double[positions.length];
-              for (int n=0; n<stagePos.length; n++) {
-                try {
-                  stagePos[n] = new Double(positions[n]);
-                }
-                catch (NumberFormatException e) {
-                  LOGGER.debug("Could not parse stage position", e);
-                }
+            else if (key.equalsIgnoreCase("layout order")) {
+              StringTokenizer t = new StringTokenizer(value);
+              axes = new String[t.countTokens()];
+              for (int n=0; n<axes.length; n++) {
+                axes[n] = t.nextToken().trim();
               }
             }
-            else if (key.equalsIgnoreCase("history stage positionx")) {
-              if (stagePos == null) {
-                stagePos = new Double[3];
-              }
-              stagePos[0] = new Double(value); //TODO doubleValue
-            }
-            else if (key.equalsIgnoreCase("history stage positiony")) {
-              if (stagePos == null) {
-                stagePos = new Double[3];
-              }
-              stagePos[1] = new Double(value);
-            }
-            else if (key.equalsIgnoreCase("history stage positionz")) {
-              if (stagePos == null) {
-                stagePos = new Double[3];
-              }
-              stagePos[2] = new Double(value);
-            }
-            else if (key.equalsIgnoreCase("history other text")) {
-              description = value;
-            }
-            else if (key.startsWith("history step") && key.endsWith("name")) {
-              Integer n = new Integer(key.substring(12, key.indexOf(" ", 12)));
-              channelNames.put(n, value);
-            }
-            else if (key.equalsIgnoreCase("history cube")) {
-              channelNames.put(new Integer(channelNames.size()), value);
-            }
-            else if (key.equalsIgnoreCase("history cube emm nm")) {
-              if (emWaves == null) {
-                emWaves = new Integer[1];
-              }
-              emWaves[0] = new Integer(value.split(" ")[1].trim());
-            }
-            else if (key.equalsIgnoreCase("history cube exc nm")) {
-              if (exWaves == null) {
-                exWaves = new Integer[1];
-              }
-              exWaves[0] = new Integer(value.split(" ")[1].trim());
-            }
-            else if (key.equalsIgnoreCase("history microscope")) {
-              microscopeModel = value;
-            }
-            else if (key.equalsIgnoreCase("history manufacturer")) {
-              microscopeManufacturer = value;
-            }
-            else if (key.equalsIgnoreCase("history Exposure")) {
-              String expTime = value;
-              if (expTime.indexOf(" ") != -1) {
-                expTime = expTime.substring(0, expTime.indexOf(" "));
-              }
-              exposureTime = new Double(expTime);
-            }
-            else if (key.equalsIgnoreCase("history filterset")) {
-              filterSetModel = value;
-            }
-            else if (key.equalsIgnoreCase("history filterset dichroic name")) {
-              dichroicModel = value;
-            }
-            else if (key.equalsIgnoreCase("history filterset exc name")) {
-              excitationModel = value;
-            }
-            else if (key.equalsIgnoreCase("history filterset emm name")) {
-              emissionModel = value;
+            else if (key.equalsIgnoreCase("layout significant_bits")) {
+              core[0].bitsPerPixel = Integer.parseInt(value);
             }
           }
-        }
-        // document category
-        else if (token0.equals("document")) {
-          keyValue = findKeyValue(tokens, DOCUMENT_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
+          // representation category
+          else if (token0.equals("representation")) {
+            keyValue = findKeyValue(tokens, REPRESENTATION_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
 
-        }
-        // sensor category
-        else if (token0.equals("sensor")) {
-          keyValue = findKeyValue(tokens, SENSOR_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
-          addGlobalMeta(key, value);
+            if (key.equalsIgnoreCase("representation byte_order")) {
+              byteOrder = value;
+            }
+            else if (key.equalsIgnoreCase("representation format")) {
+              rFormat = value;
+            }
+            else if (key.equalsIgnoreCase("representation compression")) {
+              compression = value;
+            }
+            else if (key.equalsIgnoreCase("representation sign")) {
+              signed = value.equals("signed");
+            }
+          }
+          // parameter category
+          else if (token0.equals("parameter")) {
+            keyValue = findKeyValue(tokens, PARAMETER_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
 
-          if (getMetadataOptions().getMetadataLevel() !=
-              MetadataLevel.MINIMUM)
-          {
-            if (key.equalsIgnoreCase("sensor s_params LambdaEm")) {
-              String[] waves = value.split(" ");
-              emWaves = new Integer[waves.length];
-              for (int n=0; n<emWaves.length; n++) {
-                try {
-                  emWaves[n] = new Integer((int) Double.parseDouble(waves[n]));
-                }
-                catch (NumberFormatException e) {
-                  LOGGER.debug("Could not parse emission wavelength", e);
-                }
-              }
+            if (key.equalsIgnoreCase("parameter scale")) {
+              // parse physical pixel sizes and time increment
+              pixelSizes = splitDoubles(value);
             }
-            else if (key.equalsIgnoreCase("sensor s_params LambdaEx")) {
-              String[] waves = value.split(" ");
-              exWaves = new Integer[waves.length];
-              for (int n=0; n<exWaves.length; n++) {
-                try {
-                  exWaves[n] = new Integer((int) Double.parseDouble(waves[n]));
-                }
-                catch (NumberFormatException e) {
-                  LOGGER.debug("Could not parse excitation wavelength", e);
-                }
-              }
+            else if (key.equalsIgnoreCase("parameter t")) {
+              // parse explicit timestamps
+              timestamps = splitDoubles(value);
             }
-            else if (key.equalsIgnoreCase("sensor s_params PinholeRadius")) {
-              String[] pins = value.split(" ");
-              int channel = 0;
-              for (int n=0; n<pins.length; n++) {
-                if (pins[n].trim().equals("")) continue;
-                try {
-                  pinholes.put(new Integer(channel++), new Double(pins[n]));
-                }
-                catch (NumberFormatException e) {
-                  LOGGER.debug("Could not parse pinhole", e);
+            else if (key.equalsIgnoreCase("parameter units")) {
+              // parse units for scale
+              units = value.split("\\s+");
+            }
+            if (getMetadataOptions().getMetadataLevel() !=
+                MetadataLevel.MINIMUM)
+            {
+              if (key.equalsIgnoreCase("parameter ch")) {
+                String[] names = value.split(" ");
+                for (int n=0; n<names.length; n++) {
+                  channelNames.put(new Integer(n), names[n].trim());
                 }
               }
             }
           }
-        }
-        // view category
-        else if (token0.equals("view")) {
-          keyValue = findKeyValue(tokens, VIEW_KEYS);
-          String key = keyValue[0];
-          String value = keyValue[1];
+          // history category
+          else if (token0.equals("history")) {
+            keyValue = findKeyValue(tokens, HISTORY_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
 
-          // handle "view view color lib lut Green Fire green", etc.
-          if (key.equalsIgnoreCase("view view color lib lut")) {
-            int index;
-            int redIndex = value.toLowerCase().lastIndexOf("red");
-            int greenIndex = value.toLowerCase().lastIndexOf("green");
-            int blueIndex = value.toLowerCase().lastIndexOf("blue");
-            if (redIndex > 0 && redIndex > greenIndex && redIndex > blueIndex) {
-              index = redIndex + "red".length();
+            Double doubleValue = null;
+            try {
+              doubleValue = new Double(value);
             }
-            else if (greenIndex > 0 &&
-                     greenIndex > redIndex && greenIndex > blueIndex) {
-              index = greenIndex + "green".length();
+            catch (NumberFormatException e) {
+              // ARG this happens a lot; spurious error in most cases
+              LOGGER.debug("Could not parse double value '{}'", value, e);
             }
-            else if (blueIndex > 0 &&
-                     blueIndex > redIndex && blueIndex > greenIndex) {
-              index = blueIndex + "blue".length();
+
+            if (key.equalsIgnoreCase("history software") &&
+                value.indexOf("SVI") != -1) {
+              // ICS files written by SVI Huygens are inverted on the Y axis
+              invertY = true;
             }
-            else {
-                index = value.indexOf(' ');
+            else if (key.equalsIgnoreCase("history date") ||
+                     key.equalsIgnoreCase("history created on"))
+            {
+              if (value.indexOf(" ") > 0) {
+                date = value.substring(0, value.lastIndexOf(" "));
+                date = DateTools.formatDate(date, DATE_FORMATS);
+              }
             }
-            if (index > 0) {
-              key = key + ' ' + value.substring(0, index);
-              value = value.substring(index + 1);
+            else if (key.equalsIgnoreCase("history creation date")) {
+              date = DateTools.formatDate(value, DATE_FORMATS);
+            }
+            else if (key.equalsIgnoreCase("history type")) {
+              // HACK - support for Gray Institute at Oxford's ICS lifetime data
+              if (value.equalsIgnoreCase("time resolved") ||
+                  value.equalsIgnoreCase("FluorescenceLifetime"))
+              {
+                lifetime = true;
+              }
+              experimentType = value;
+            }
+            else if (key.equalsIgnoreCase("history labels")) {
+                // HACK - support for Gray Institute at Oxford's ICS lifetime data
+                labels = value;
+            }
+            else if (getMetadataOptions().getMetadataLevel() !=
+                       MetadataLevel.MINIMUM) {
+
+              if (key.equalsIgnoreCase("history") ||
+                  key.equalsIgnoreCase("history text"))
+              {
+                textBlock.append(value);
+                textBlock.append("\n");
+                metadata.remove(key);
+              }
+              else if (key.startsWith("history gain")) {
+                Integer n = new Integer(0);
+                try {
+                  n = new Integer(key.substring(12).trim());
+                  n = new Integer(n.intValue() - 1);
+                }
+                catch (NumberFormatException e) { }
+                if (doubleValue != null) {
+                    gains.put(n, doubleValue);
+                }
+              }
+              else if (key.startsWith("history laser") &&
+                       key.endsWith("wavelength")) {
+                int laser =
+                  Integer.parseInt(key.substring(13, key.indexOf(" ", 13))) - 1;
+                value = value.replaceAll("nm", "").trim();
+                try {
+                  wavelengths.put(new Integer(laser), new Integer(value));
+                }
+                catch (NumberFormatException e) {
+                  LOGGER.debug("Could not parse wavelength", e);
+                }
+              }
+              else if (key.equalsIgnoreCase("history Wavelength*")) {
+                String[] waves = value.split(" ");
+                for (int i=0; i<waves.length; i++) {
+                  wavelengths.put(new Integer(i), new Integer(waves[i]));
+                }
+              }
+              else if (key.equalsIgnoreCase("history laser manufacturer")) {
+                laserManufacturer = value;
+              }
+              else if (key.equalsIgnoreCase("history laser model")) {
+                laserModel = value;
+              }
+              else if (key.equalsIgnoreCase("history laser power")) {
+                try {
+                  laserPower = new Double(value); //TODO ARG i.e. doubleValue
+                }
+                catch (NumberFormatException e) { }
+              }
+              else if (key.equalsIgnoreCase("history laser rep rate")) {
+                String repRate = value;
+                if (repRate.indexOf(" ") != -1) {
+                  repRate = repRate.substring(0, repRate.lastIndexOf(" "));
+                }
+                laserRepetitionRate = new Double(repRate);
+              }
+              else if (key.equalsIgnoreCase("history objective type") ||
+                       key.equalsIgnoreCase("history objective"))
+              {
+                objectiveModel = value;
+              }
+              else if (key.equalsIgnoreCase("history objective immersion")) {
+                immersion = value;
+              }
+              else if (key.equalsIgnoreCase("history objective NA")) {
+                lensNA = doubleValue;
+              }
+              else if (key.equalsIgnoreCase
+                         ("history objective WorkingDistance")) {
+                workingDistance = doubleValue;
+              }
+              else if (key.equalsIgnoreCase("history objective magnification") ||
+                       key.equalsIgnoreCase("history objective mag"))
+              {
+                magnification = doubleValue;
+              }
+              else if (key.equalsIgnoreCase("history camera manufacturer")) {
+                detectorManufacturer = value;
+              }
+              else if (key.equalsIgnoreCase("history camera model")) {
+                detectorModel = value;
+              }
+              else if (key.equalsIgnoreCase("history author") ||
+                       key.equalsIgnoreCase("history experimenter"))
+              {
+                lastName = value;
+              }
+              else if (key.equalsIgnoreCase("history extents")) {
+                String[] lengths = value.split(" ");
+                sizes = new double[lengths.length];
+                for (int n=0; n<sizes.length; n++) {
+                  try {
+                    sizes[n] = Double.parseDouble(lengths[n].trim());
+                  }
+                  catch (NumberFormatException e) {
+                    LOGGER.debug("Could not parse axis length", e);
+                  }
+                }
+              }
+              else if (key.equalsIgnoreCase("history stage_xyzum")) {
+                String[] positions = value.split(" ");
+                stagePos = new Double[positions.length];
+                for (int n=0; n<stagePos.length; n++) {
+                  try {
+                    stagePos[n] = new Double(positions[n]);
+                  }
+                  catch (NumberFormatException e) {
+                    LOGGER.debug("Could not parse stage position", e);
+                  }
+                }
+              }
+              else if (key.equalsIgnoreCase("history stage positionx")) {
+                if (stagePos == null) {
+                  stagePos = new Double[3];
+                }
+                stagePos[0] = new Double(value); //TODO doubleValue
+              }
+              else if (key.equalsIgnoreCase("history stage positiony")) {
+                if (stagePos == null) {
+                  stagePos = new Double[3];
+                }
+                stagePos[1] = new Double(value);
+              }
+              else if (key.equalsIgnoreCase("history stage positionz")) {
+                if (stagePos == null) {
+                  stagePos = new Double[3];
+                }
+                stagePos[2] = new Double(value);
+              }
+              else if (key.equalsIgnoreCase("history other text")) {
+                description = value;
+              }
+              else if (key.startsWith("history step") && key.endsWith("name")) {
+                Integer n = new Integer(key.substring(12, key.indexOf(" ", 12)));
+                channelNames.put(n, value);
+              }
+              else if (key.equalsIgnoreCase("history cube")) {
+                channelNames.put(new Integer(channelNames.size()), value);
+              }
+              else if (key.equalsIgnoreCase("history cube emm nm")) {
+                if (emWaves == null) {
+                  emWaves = new Integer[1];
+                }
+                emWaves[0] = new Integer(value.split(" ")[1].trim());
+              }
+              else if (key.equalsIgnoreCase("history cube exc nm")) {
+                if (exWaves == null) {
+                  exWaves = new Integer[1];
+                }
+                exWaves[0] = new Integer(value.split(" ")[1].trim());
+              }
+              else if (key.equalsIgnoreCase("history microscope")) {
+                microscopeModel = value;
+              }
+              else if (key.equalsIgnoreCase("history manufacturer")) {
+                microscopeManufacturer = value;
+              }
+              else if (key.equalsIgnoreCase("history Exposure")) {
+                String expTime = value;
+                if (expTime.indexOf(" ") != -1) {
+                  expTime = expTime.substring(0, expTime.indexOf(" "));
+                }
+                exposureTime = new Double(expTime);
+              }
+              else if (key.equalsIgnoreCase("history filterset")) {
+                filterSetModel = value;
+              }
+              else if (key.equalsIgnoreCase("history filterset dichroic name")) {
+                dichroicModel = value;
+              }
+              else if (key.equalsIgnoreCase("history filterset exc name")) {
+                excitationModel = value;
+              }
+              else if (key.equalsIgnoreCase("history filterset emm name")) {
+                emissionModel = value;
+              }
             }
           }
-          // handle "view view color mode rgb set Default Colors" and
-          // "view view color mode rgb set blue-green-red", etc.
-          else if (key.equalsIgnoreCase("view view color mode rgb set")) {
-              int index = value.toLowerCase().lastIndexOf("colors");
-              if (index > 0) {
-                  index += "colors".length();
+          // document category
+          else if (token0.equals("document")) {
+            keyValue = findKeyValue(tokens, DOCUMENT_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
+
+          }
+          // sensor category
+          else if (token0.equals("sensor")) {
+            keyValue = findKeyValue(tokens, SENSOR_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+            addGlobalMeta(key, value);
+
+            if (getMetadataOptions().getMetadataLevel() !=
+                MetadataLevel.MINIMUM)
+            {
+              if (key.equalsIgnoreCase("sensor s_params LambdaEm")) {
+                String[] waves = value.split(" ");
+                emWaves = new Integer[waves.length];
+                for (int n=0; n<emWaves.length; n++) {
+                  try {
+                    emWaves[n] = new Integer((int) Double.parseDouble(waves[n]));
+                  }
+                  catch (NumberFormatException e) {
+                    LOGGER.debug("Could not parse emission wavelength", e);
+                  }
+                }
+              }
+              else if (key.equalsIgnoreCase("sensor s_params LambdaEx")) {
+                String[] waves = value.split(" ");
+                exWaves = new Integer[waves.length];
+                for (int n=0; n<exWaves.length; n++) {
+                  try {
+                    exWaves[n] = new Integer((int) Double.parseDouble(waves[n]));
+                  }
+                  catch (NumberFormatException e) {
+                    LOGGER.debug("Could not parse excitation wavelength", e);
+                  }
+                }
+              }
+              else if (key.equalsIgnoreCase("sensor s_params PinholeRadius")) {
+                String[] pins = value.split(" ");
+                int channel = 0;
+                for (int n=0; n<pins.length; n++) {
+                  if (pins[n].trim().equals("")) continue;
+                  try {
+                    pinholes.put(new Integer(channel++), new Double(pins[n]));
+                  }
+                  catch (NumberFormatException e) {
+                    LOGGER.debug("Could not parse pinhole", e);
+                  }
+                }
+              }
+            }
+          }
+          // view category
+          else if (token0.equals("view")) {
+            keyValue = findKeyValue(tokens, VIEW_KEYS);
+            String key = keyValue[0];
+            String value = keyValue[1];
+
+            // handle "view view color lib lut Green Fire green", etc.
+            if (key.equalsIgnoreCase("view view color lib lut")) {
+              int index;
+              int redIndex = value.toLowerCase().lastIndexOf("red");
+              int greenIndex = value.toLowerCase().lastIndexOf("green");
+              int blueIndex = value.toLowerCase().lastIndexOf("blue");
+              if (redIndex > 0 && redIndex > greenIndex && redIndex > blueIndex) {
+                index = redIndex + "red".length();
+              }
+              else if (greenIndex > 0 &&
+                       greenIndex > redIndex && greenIndex > blueIndex) {
+                index = greenIndex + "green".length();
+              }
+              else if (blueIndex > 0 &&
+                       blueIndex > redIndex && blueIndex > greenIndex) {
+                index = blueIndex + "blue".length();
               }
               else {
-                index = value.indexOf(' ');
+                  index = value.indexOf(' ');
               }
               if (index > 0) {
                 key = key + ' ' + value.substring(0, index);
                 value = value.substring(index + 1);
               }
+            }
+            // handle "view view color mode rgb set Default Colors" and
+            // "view view color mode rgb set blue-green-red", etc.
+            else if (key.equalsIgnoreCase("view view color mode rgb set")) {
+                int index = value.toLowerCase().lastIndexOf("colors");
+                if (index > 0) {
+                    index += "colors".length();
+                }
+                else {
+                  index = value.indexOf(' ');
+                }
+                if (index > 0) {
+                  key = key + ' ' + value.substring(0, index);
+                  value = value.substring(index + 1);
+                }
+            }
+            addGlobalMeta(key, value);
           }
-          addGlobalMeta(key, value);
+          else {
+            LOGGER.debug("Unknown category " + token0);
+          }
         }
-        else {
-          LOGGER.debug("Unknown category " + token0);
-        }
+        line = reader.readString(NL);
       }
-      line = reader.readString(NL);
     }
-    reader.close();
+    finally {
+      reader.close();
+    }
 
     hasInstrumentData = emWaves != null || exWaves != null || lensNA != null ||
       stagePos != null || magnification != null || workingDistance != null ||

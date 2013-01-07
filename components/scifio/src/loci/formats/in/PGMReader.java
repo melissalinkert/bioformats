@@ -105,26 +105,34 @@ public class PGMReader extends FormatReader {
     else {
       ByteArrayHandle handle = new ByteArrayHandle();
       RandomAccessOutputStream out = new RandomAccessOutputStream(handle);
-      out.order(isLittleEndian());
+      try {
+        out.order(isLittleEndian());
 
-      while (in.getFilePointer() < in.length()) {
-        String line = in.readLine().trim();
-        line = line.replaceAll("[^0-9]", " ");
-        StringTokenizer t = new StringTokenizer(line, " ");
-        while (t.hasMoreTokens()) {
-          int q = Integer.parseInt(t.nextToken().trim());
-          if (getPixelType() == FormatTools.UINT16) {
-            out.writeShort(q);
+        while (in.getFilePointer() < in.length()) {
+          String line = in.readLine().trim();
+          line = line.replaceAll("[^0-9]", " ");
+          StringTokenizer t = new StringTokenizer(line, " ");
+          while (t.hasMoreTokens()) {
+            int q = Integer.parseInt(t.nextToken().trim());
+            if (getPixelType() == FormatTools.UINT16) {
+              out.writeShort(q);
+            }
+            else out.writeByte(q);
           }
-          else out.writeByte(q);
         }
       }
+      finally {
+        out.close();
+      }
 
-      out.close();
       RandomAccessInputStream s = new RandomAccessInputStream(handle);
-      s.seek(0);
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        s.seek(0);
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
     }
 
     return buf;

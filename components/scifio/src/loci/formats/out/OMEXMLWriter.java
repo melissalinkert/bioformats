@@ -125,10 +125,14 @@ public class OMEXMLWriter extends FormatWriter {
 
   /* @see loci.formats.IFormatHandler#close() */
   public void close() throws IOException {
-    if (out != null) {
-      out.writeBytes(xmlFragments.get(xmlFragments.size() - 1));
+    try {
+      if (out != null) {
+        out.writeBytes(xmlFragments.get(xmlFragments.size() - 1));
+      }
     }
-    super.close();
+    finally {
+      super.close();
+    }
     xmlFragments = null;
     service = null;
   }

@@ -177,12 +177,16 @@ public class OMEXMLReader extends FormatReader {
 
       ByteArrayInputStream bais = new ByteArrayInputStream(pixels);
       CBZip2InputStream bzip = new CBZip2InputStream(bais);
-      pixels = new byte[planeSize];
-      bzip.read(pixels, 0, pixels.length);
-      tempPixels = null;
-      bais.close();
-      bais = null;
-      bzip = null;
+      try {
+        pixels = new byte[planeSize];
+        bzip.read(pixels, 0, pixels.length);
+      }
+      finally {
+        tempPixels = null;
+        bais.close();
+        bais = null;
+        bzip = null;
+      }
     }
     else if (compress.equals("zlib")) {
       pixels = new ZlibCodec().decompress(pixels, options);
@@ -234,8 +238,12 @@ public class OMEXMLReader extends FormatReader {
     DefaultHandler handler = new OMEXMLHandler();
     try {
       RandomAccessInputStream s = new RandomAccessInputStream(id);
-      XMLTools.parseXML(s, handler);
-      s.close();
+      try {
+        XMLTools.parseXML(s, handler);
+      }
+      finally {
+        s.close();
+      }
     }
     catch (IOException e) {
       throw new FormatException("Malformed OME-XML", e);

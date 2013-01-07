@@ -1152,41 +1152,46 @@ public class DicomReader extends FormatReader {
     throws FormatException, IOException
   {
     RandomAccessInputStream stream = new RandomAccessInputStream(file);
-    if (!isThisType(stream)) {
-      stream.close();
-      return;
-    }
-    stream.order(true);
-
-    stream.seek(128);
-    if (!stream.readString(4).equals("DICM")) stream.seek(0);
-
     int fileSeries = -1;
-
     String date = null, time = null, instance = null;
-    while (date == null || time == null || instance == null ||
-      (checkSeries && fileSeries < 0))
-    {
-      long fp = stream.getFilePointer();
-      if (fp + 4 >= stream.length() || fp < 0) break;
-      int tag = getNextTag(stream);
-      String key = TYPES.get(new Integer(tag));
-      if ("Instance Number".equals(key)) {
-        instance = stream.readString(elementLength).trim();
-        if (instance.length() == 0) instance = null;
+
+    try {
+      if (!isThisType(stream)) {
+        stream.close();
+        return;
       }
-      else if ("Acquisition Time".equals(key)) {
-        time = stream.readString(elementLength);
+      stream.order(true);
+
+      stream.seek(128);
+      if (!stream.readString(4).equals("DICM")) stream.seek(0);
+
+      while (date == null || time == null || instance == null ||
+        (checkSeries && fileSeries < 0))
+      {
+        long fp = stream.getFilePointer();
+        if (fp + 4 >= stream.length() || fp < 0) break;
+        int tag = getNextTag(stream);
+        String key = TYPES.get(new Integer(tag));
+        if ("Instance Number".equals(key)) {
+          instance = stream.readString(elementLength).trim();
+          if (instance.length() == 0) instance = null;
+        }
+        else if ("Acquisition Time".equals(key)) {
+          time = stream.readString(elementLength);
+        }
+        else if ("Acquisition Date".equals(key)) {
+          date = stream.readString(elementLength);
+        }
+        else if ("Series Number".equals(key)) {
+          fileSeries =
+            Integer.parseInt(stream.readString(elementLength).trim());
+        }
+        else stream.skipBytes(elementLength);
       }
-      else if ("Acquisition Date".equals(key)) {
-        date = stream.readString(elementLength);
-      }
-      else if ("Series Number".equals(key)) {
-        fileSeries = Integer.parseInt(stream.readString(elementLength).trim());
-      }
-      else stream.skipBytes(elementLength);
     }
-    stream.close();
+    finally {
+      stream.close();
+    }
 
     if (date == null || time == null || instance == null ||
       (checkSeries && fileSeries == originalSeries))

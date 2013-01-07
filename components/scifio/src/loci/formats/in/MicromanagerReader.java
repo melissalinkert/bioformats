@@ -115,10 +115,16 @@ public class MicromanagerReader extends FormatReader {
     {
       final int blockSize = 1048576;
       try {
+        String data = "";
+        long length = 0;
         RandomAccessInputStream stream = new RandomAccessInputStream(name);
-        long length = stream.length();
-        String data = stream.readString((int) Math.min(blockSize, length));
-        stream.close();
+        try {
+          length = stream.length();
+          data = stream.readString((int) Math.min(blockSize, length));
+        }
+        finally {
+          stream.close();
+        }
         return length > 0 && (data.indexOf("Micro-Manager") >= 0 ||
           data.indexOf("micromanager") >= 0);
       }
@@ -129,9 +135,14 @@ public class MicromanagerReader extends FormatReader {
     try {
       Location parent = new Location(name).getAbsoluteFile().getParentFile();
       Location metaFile = new Location(parent, METADATA);
+      boolean validTIFF = false;
       RandomAccessInputStream s = new RandomAccessInputStream(name);
-      boolean validTIFF = isThisType(s);
-      s.close();
+      try {
+        validTIFF = isThisType(s);
+      }
+      finally {
+        s.close();
+      }
       return validTIFF && isThisType(metaFile.getAbsolutePath(), open);
     }
     catch (NullPointerException e) { }

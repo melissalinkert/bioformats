@@ -173,9 +173,13 @@ public class NRRDReader extends FormatReader {
     }
     else if (encoding.equals("raw")) {
       RandomAccessInputStream s = new RandomAccessInputStream(dataFile);
-      s.seek(offset + no * FormatTools.getPlaneSize(this));
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        s.seek(offset + no * FormatTools.getPlaneSize(this));
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
       return buf;
     }
     return helper.openBytes(no, buf, x, y, w, h);

@@ -212,13 +212,17 @@ public class TiffWriter extends FormatWriter {
         initialized[series][no] = true;
 
         RandomAccessInputStream tmp = new RandomAccessInputStream(currentId);
-        if (tmp.length() == 0) {
-          synchronized (this) {
-            // write TIFF header
-            tiffSaver.writeHeader();
+        try {
+          if (tmp.length() == 0) {
+            synchronized (this) {
+              // write TIFF header
+              tiffSaver.writeHeader();
+            }
           }
         }
-        tmp.close();
+        finally {
+          tmp.close();
+        }
       }
     }
 

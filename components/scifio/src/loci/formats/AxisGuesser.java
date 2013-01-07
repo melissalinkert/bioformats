@@ -394,13 +394,22 @@ public class AxisGuesser {
           // read dimensional information from first file
           LOGGER.info("Reading first file ");
           ImageReader reader = new ImageReader();
-          reader.setId(id);
-          String dimOrder = reader.getDimensionOrder();
-          int sizeZ = reader.getSizeZ();
-          int sizeT = reader.getSizeT();
-          int sizeC = reader.getSizeC();
-          boolean certain = reader.isOrderCertain();
-          reader.close();
+          String dimOrder = null;
+          int sizeZ = 0;
+          int sizeT = 0;
+          int sizeC = 0;
+          boolean certain = false;
+          try {
+            reader.setId(id);
+            dimOrder = reader.getDimensionOrder();
+            sizeZ = reader.getSizeZ();
+            sizeT = reader.getSizeT();
+            sizeC = reader.getSizeC();
+            certain = reader.isOrderCertain();
+          }
+          finally {
+            reader.close();
+          }
           LOGGER.info("[done]");
           LOGGER.info("\tdimOrder = {} ({})",
             dimOrder, certain ? "certain" : "uncertain");

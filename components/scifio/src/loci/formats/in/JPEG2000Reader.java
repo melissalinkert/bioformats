@@ -166,8 +166,12 @@ public class JPEG2000Reader extends FormatReader {
 
     if (lastSeries == getCoreIndex() && lastSeriesPlane != null) {
       RandomAccessInputStream s = new RandomAccessInputStream(lastSeriesPlane);
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
       return buf;
     }
 
@@ -184,8 +188,12 @@ public class JPEG2000Reader extends FormatReader {
     in.seek(pixelsOffset);
     lastSeriesPlane = new JPEG2000Codec().decompress(in, options);
     RandomAccessInputStream s = new RandomAccessInputStream(lastSeriesPlane);
-    readPlane(s, x, y, w, h, buf);
-    s.close();
+    try {
+      readPlane(s, x, y, w, h, buf);
+    }
+    finally {
+      s.close();
+    }
     lastSeries = getCoreIndex();
     return buf;
   }

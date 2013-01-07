@@ -160,9 +160,13 @@ public class PictReader extends FormatReader {
       }
 
       s = new RandomAccessInputStream(v);
-      s.seek(0);
-      readPlane(s, x, y, w, h, buf);
-      s.close();
+      try {
+        s.seek(0);
+        readPlane(s, x, y, w, h, buf);
+      }
+      finally {
+        s.close();
+      }
 
       return buf;
     }

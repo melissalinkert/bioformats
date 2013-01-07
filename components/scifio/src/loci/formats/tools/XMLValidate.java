@@ -60,12 +60,16 @@ public class XMLValidate {
     throws IOException
   {
     StringBuffer sb = new StringBuffer();
-    while (true) {
-      String line = in.readLine();
-      if (line == null) break;
-      sb.append(line);
+    try {
+      while (true) {
+        String line = in.readLine();
+        if (line == null) break;
+        sb.append(line);
+      }
     }
-    in.close();
+    finally {
+      in.close();
+    }
     XMLTools.validateXML(sb.toString(), label);
   }
 

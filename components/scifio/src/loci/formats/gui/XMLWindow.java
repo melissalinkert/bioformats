@@ -94,8 +94,13 @@ public class XMLWindow extends JFrame {
     DocumentBuilder db = docFact.newDocumentBuilder();
     ByteArrayInputStream is =
       new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
-    Document doc = db.parse(is);
-    is.close();
+    Document doc = null;
+    try {
+      doc = db.parse(is);
+    }
+    finally {
+      is.close();
+    }
 
     setDocument(doc);
   }

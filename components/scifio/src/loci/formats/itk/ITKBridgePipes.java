@@ -88,12 +88,16 @@ public class ITKBridgePipes {
   public void waitForInput() throws FormatException, IOException {
     in =
       new BufferedReader(new InputStreamReader(System.in, Constants.ENCODING));
-    while (true) {
-      final String line = in.readLine(); // blocks until a line is read
-      if (line == null) break; // eof
-      executeCommand(line);
+    try {
+      while (true) {
+        final String line = in.readLine(); // blocks until a line is read
+        if (line == null) break; // eof
+        executeCommand(line);
+      }
     }
-    in.close();
+    finally {
+      in.close();
+    }
   }
 
   /**
@@ -423,60 +427,65 @@ public class ITKBridgePipes {
     }
 	  
 	  writer = new ImageWriter();
-	  writer.setMetadataRetrieve(meta);
-	  writer.setId(fileName);
-	  
-	  // build color model
-	  if(cm != null) {
-	    System.err.println("Using color model...");
-	    writer.setColorModel(cm);
-	  }
-	  
-	 // maybe this isn't enough... 
-	  System.err.println("Using writer for format: " + writer.getFormat());
+    try {
+      writer.setMetadataRetrieve(meta);
+      writer.setId(fileName);
+      
+      // build color model
+      if(cm != null) {
+        System.err.println("Using color model...");
+        writer.setColorModel(cm);
+      }
+      
+     // maybe this isn't enough... 
+      System.err.println("Using writer for format: " + writer.getFormat());
 
-	  int bpp = FormatTools.getBytesPerPixel(pixelType);
-	  
-	  int bytesPerPlane = xCount * yCount * bpp * rgbCCount;
-	  
-	  int numIters = (cCount - cStart) * (tCount - tStart) * (zCount - zStart);
-	  
-	  // tell native code how many times to iterate & how big each iteration is
-	  System.out.print(bytesPerPlane + "\n" + fileName + "\n" + cStart + "\n" + cCount + "\n" + tStart + "\n" + tCount + "\n" + zStart + "\n" + zCount + "\n\n");
-	  System.out.flush();
+      int bpp = FormatTools.getBytesPerPixel(pixelType);
+      
+      int bytesPerPlane = xCount * yCount * bpp * rgbCCount;
+      
+      int numIters = (cCount - cStart) * (tCount - tStart) * (zCount - zStart);
+      
+      // tell native code how many times to iterate & how big each iteration is
+      System.out.print(bytesPerPlane + "\n" + fileName + "\n" + cStart + "\n" + cCount + "\n" + tStart + "\n" + tCount + "\n" + zStart + "\n" + zCount + "\n\n");
+      System.out.flush();
 
-	  int no = 0;
-	  for(int c=cStart; c<cStart+cCount; c++) {
-		  for(int t=tStart; t<tStart+tCount; t++) {
-			  for(int z=zStart; z<zStart+zCount; z++) {
-				  
-				  int bytesRead = 0;
+      int no = 0;
+      for(int c=cStart; c<cStart+cCount; c++) {
+        for(int t=tStart; t<tStart+tCount; t++) {
+          for(int z=zStart; z<zStart+zCount; z++) {
+            
+            int bytesRead = 0;
 
-				  byte[] buf = new byte[bytesPerPlane]; 
-				  BufferedInputStream linein = new BufferedInputStream(System.in);
-				  
-				  while(bytesRead < bytesPerPlane)				  
-				  {
-					  int read = linein.read(buf, bytesRead, (bytesPerPlane - bytesRead));
-					  bytesRead += (read > 0) ? read : 0;
-					  // notify native code that more bytes can be read
-					  System.out.println("Bytes read: " + bytesRead + ". Plane no: " + no + ". Ready for more bytes.\n");
-					  System.out.flush();
-				  }
-				  
-				  writer.saveBytes(no, buf, xStart, yStart, xCount, yCount);
-				  // notify native code that a plane has been saved
-				  System.out.println("Plane no: " + no + " saved.\n");
-				  System.out.flush();
-				  no++;
-			  }
-		  }
-	  }
-	  
-	  if(in != null)
-	    in.close();
-	  if(writer != null)
-	    writer.close();
+            byte[] buf = new byte[bytesPerPlane]; 
+            BufferedInputStream linein = new BufferedInputStream(System.in);
+            
+            while(bytesRead < bytesPerPlane)				  
+            {
+              int read = linein.read(buf, bytesRead, (bytesPerPlane - bytesRead));
+              bytesRead += (read > 0) ? read : 0;
+              // notify native code that more bytes can be read
+              System.out.println("Bytes read: " + bytesRead + ". Plane no: " + no + ". Ready for more bytes.\n");
+              System.out.flush();
+            }
+            
+            writer.saveBytes(no, buf, xStart, yStart, xCount, yCount);
+            // notify native code that a plane has been saved
+            System.out.println("Plane no: " + no + " saved.\n");
+            System.out.flush();
+            no++;
+          }
+        }
+      }
+    }
+    finally {
+	    if(in != null) {
+	      in.close();
+      }
+	    if(writer != null) {
+	      writer.close();
+      }
+    }
 	  return true;
   }
 

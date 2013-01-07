@@ -82,218 +82,222 @@ public final class CacheConsole {
       System.exit(1);
     }
     ImageReader reader = new ImageReader();
-    String id = args[0];
-    System.out.println("Reading " + id);
-    reader.setId(id);
-    System.out.println("Initializing cache");
-    final Cache cache = new Cache(
-      new CrosshairStrategy(getLengths(reader)),
-      new BufferedImageSource(reader), true);
-    CacheListener l = new CacheListener() {
-      public void cacheUpdated(CacheEvent e) {
-        int type = e.getType();
-        int ndx = e.getIndex();
-        int[] len, pos;
-        switch (type) {
-          case CacheEvent.SOURCE_CHANGED:
-            printSource("source ->", cache);
-            break;
-          case CacheEvent.STRATEGY_CHANGED:
-            printStrategy("strategy ->", cache);
-            break;
-          case CacheEvent.POSITION_CHANGED:
-            len = cache.getStrategy().getLengths();
-            pos = FormatTools.rasterToPosition(len, ndx);
-            printArray("pos ->", pos);
-            break;
-          case CacheEvent.PRIORITIES_CHANGED:
-            printArray("priorities ->", cache.getStrategy().getPriorities());
-            break;
-          case CacheEvent.ORDER_CHANGED:
-            printOrder("order ->", cache);
-            break;
-          case CacheEvent.RANGE_CHANGED:
-            printArray("range ->", cache.getStrategy().getRange());
-            break;
-          case CacheEvent.OBJECT_LOADED:
-            len = cache.getStrategy().getLengths();
-            pos = FormatTools.rasterToPosition(len, ndx);
-            printArray("loaded:", pos);
-            break;
-          case CacheEvent.OBJECT_DROPPED:
-            len = cache.getStrategy().getLengths();
-            pos = FormatTools.rasterToPosition(len, ndx);
-            printArray("dropped:", pos);
-            break;
-        }
-      }
-    };
-    cache.addCacheListener(l);
-    BufferedReader r =
-      new BufferedReader(new InputStreamReader(System.in, Constants.ENCODING));
-    System.out.println("Entering Bio-Formats caching test console");
-    while (true) {
-      System.out.print("> ");
-      String cmd = r.readLine().trim();
-      if (cmd.equals("")) continue;
-      else if (cmd.startsWith("c")) { // cache
-        cache.recache();
-      }
-      else if (cmd.startsWith("e") || cmd.startsWith("q")) break; // exit/quit
-      else if (cmd.startsWith("g")) { // gui
-        String[] axes = {"Z", "C", "T"};
-        CacheComponent widget = new CacheComponent(cache, axes, id);
-        widget.setBorder(new EmptyBorder(15, 15, 15, 15));
-        JFrame frame = new JFrame("Cache controls");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setContentPane(widget);
-        frame.pack();
-        frame.setVisible(true);
-      }
-      else if (cmd.startsWith("h")) { // help
-        System.out.println("Available commands:");
-        System.out.println(
-          "  cache    -- begins loading planes into the cache");
-        System.out.println(
-          "  gui      -- pops up a GUI to configure the cache");
-        System.out.println("  info     -- displays the cache state");
-        System.out.println("  position -- changes the current position");
-        System.out.println("  strategy -- changes the cache strategy");
-        System.out.println("  source   -- changes the cache source");
-        System.out.println("  priority -- changes the cache priorities");
-        System.out.println("  order    -- changes the cache order");
-        System.out.println("  range    -- changes the cache ranges");
-        System.out.println("  read     -- gets a plane from the cache");
-        System.out.println("  exit     -- quits the interpreter");
-      }
-      else if (cmd.startsWith("i")) { // info
-        // output dimensional position
-        printArray("pos =", cache.getCurrentPos());
-        // output source information
-        ICacheSource source = cache.getSource();
-        printSource("source =", cache);
-        System.out.println("object count = " + source.getObjectCount());
-        // output strategy information
-        ICacheStrategy strategy = cache.getStrategy();
-        printStrategy("strategy =", cache);
-        printArray("priorities =", strategy.getPriorities());
-        printOrder("order =", cache);
-        printArray("range =", strategy.getRange());
-        printArray("lengths =", strategy.getLengths());
-      }
-      else if (cmd.startsWith("o")) { // order
-        System.out.println(ICacheStrategy.CENTERED_ORDER + " => centered");
-        System.out.println(ICacheStrategy.FORWARD_ORDER + " => forward");
-        System.out.println(ICacheStrategy.BACKWARD_ORDER + " => backward");
-        System.out.print("Z: ");
-        int z = Integer.parseInt(r.readLine().trim());
-        System.out.print("C: ");
-        int c = Integer.parseInt(r.readLine().trim());
-        System.out.print("T: ");
-        int t = Integer.parseInt(r.readLine().trim());
-        ICacheStrategy strategy = cache.getStrategy();
-        strategy.setOrder(z, 0);
-        strategy.setOrder(c, 1);
-        strategy.setOrder(t, 2);
-      }
-      else if (cmd.startsWith("po")) { // position
-        System.out.print("Z: ");
-        int z = Integer.parseInt(r.readLine().trim());
-        System.out.print("C: ");
-        int c = Integer.parseInt(r.readLine().trim());
-        System.out.print("T: ");
-        int t = Integer.parseInt(r.readLine().trim());
-        cache.setCurrentPos(new int[] {z, c, t});
-      }
-      else if (cmd.startsWith("pr")) { // priority
-        System.out.println(ICacheStrategy.MIN_PRIORITY + " => min priority");
-        System.out.println(ICacheStrategy.LOW_PRIORITY + " => low priority");
-        System.out.println(
-          ICacheStrategy.NORMAL_PRIORITY + " => normal priority");
-        System.out.println(ICacheStrategy.HIGH_PRIORITY + " => high priority");
-        System.out.println(ICacheStrategy.MAX_PRIORITY + " => max priority");
-        System.out.print("Z: ");
-        int z = Integer.parseInt(r.readLine().trim());
-        System.out.print("C: ");
-        int c = Integer.parseInt(r.readLine().trim());
-        System.out.print("T: ");
-        int t = Integer.parseInt(r.readLine().trim());
-        ICacheStrategy strategy = cache.getStrategy();
-        strategy.setPriority(z, 0);
-        strategy.setPriority(c, 1);
-        strategy.setPriority(t, 2);
-      }
-      else if (cmd.startsWith("ra")) { // range
-        System.out.print("Z: ");
-        int z = Integer.parseInt(r.readLine().trim());
-        System.out.print("C: ");
-        int c = Integer.parseInt(r.readLine().trim());
-        System.out.print("T: ");
-        int t = Integer.parseInt(r.readLine().trim());
-        cache.getStrategy().setRange(z, 0);
-        cache.getStrategy().setRange(c, 1);
-        cache.getStrategy().setRange(t, 2);
-      }
-      else if (cmd.startsWith("re")) { // read
-        System.out.print("Z: ");
-        int z = Integer.parseInt(r.readLine().trim());
-        System.out.print("C: ");
-        int c = Integer.parseInt(r.readLine().trim());
-        System.out.print("T: ");
-        int t = Integer.parseInt(r.readLine().trim());
-        System.out.println("Retrieving Z" + z + "-C" + c + "-T" + t);
-        Object o = cache.getObject(new int[] {z, c, t});
-        System.out.println(o);
-      }
-      else if (cmd.startsWith("so")) { // source
-        System.out.println("0: BufferedImage");
-        System.out.println("1: byte array");
-        System.out.print("> ");
-        int n = Integer.parseInt(r.readLine().trim());
-        switch (n) {
-          case 0:
-            cache.setSource(new BufferedImageSource(reader));
-            break;
-          case 1:
-            cache.setSource(new ByteArraySource(reader));
-            break;
-          default:
-            System.out.println("Unknown source: " + n);
-        }
-      }
-      else if (cmd.startsWith("st")) { // strategy
-        System.out.println("0: crosshair");
-        System.out.println("1: rectangle");
-        System.out.print("> ");
-        int n = Integer.parseInt(r.readLine().trim());
-        int[] zct = getLengths(reader);
-        ICacheStrategy strategy = null;
-        switch (n) {
-          case 0:
-            strategy = new CrosshairStrategy(zct);
-            break;
-          case 1:
-            strategy = new RectangleStrategy(zct);
-            break;
-          default:
-            System.out.println("Unknown strategy: " + n);
-        }
-        if (strategy != null) {
-          ICacheStrategy old = cache.getStrategy();
-          int[] priorities = old.getPriorities();
-          int[] range = old.getRange();
-          int[] order = old.getOrder();
-          for (int i=0; i<zct.length; i++) {
-            strategy.setPriority(priorities[i], i);
-            strategy.setRange(range[i], i);
-            strategy.setOrder(order[i], i);
+    try {
+      String id = args[0];
+      System.out.println("Reading " + id);
+      reader.setId(id);
+      System.out.println("Initializing cache");
+      final Cache cache = new Cache(
+        new CrosshairStrategy(getLengths(reader)),
+        new BufferedImageSource(reader), true);
+      CacheListener l = new CacheListener() {
+        public void cacheUpdated(CacheEvent e) {
+          int type = e.getType();
+          int ndx = e.getIndex();
+          int[] len, pos;
+          switch (type) {
+            case CacheEvent.SOURCE_CHANGED:
+              printSource("source ->", cache);
+              break;
+            case CacheEvent.STRATEGY_CHANGED:
+              printStrategy("strategy ->", cache);
+              break;
+            case CacheEvent.POSITION_CHANGED:
+              len = cache.getStrategy().getLengths();
+              pos = FormatTools.rasterToPosition(len, ndx);
+              printArray("pos ->", pos);
+              break;
+            case CacheEvent.PRIORITIES_CHANGED:
+              printArray("priorities ->", cache.getStrategy().getPriorities());
+              break;
+            case CacheEvent.ORDER_CHANGED:
+              printOrder("order ->", cache);
+              break;
+            case CacheEvent.RANGE_CHANGED:
+              printArray("range ->", cache.getStrategy().getRange());
+              break;
+            case CacheEvent.OBJECT_LOADED:
+              len = cache.getStrategy().getLengths();
+              pos = FormatTools.rasterToPosition(len, ndx);
+              printArray("loaded:", pos);
+              break;
+            case CacheEvent.OBJECT_DROPPED:
+              len = cache.getStrategy().getLengths();
+              pos = FormatTools.rasterToPosition(len, ndx);
+              printArray("dropped:", pos);
+              break;
           }
-          cache.setStrategy(strategy);
         }
+      };
+      cache.addCacheListener(l);
+      BufferedReader r =
+        new BufferedReader(new InputStreamReader(System.in, Constants.ENCODING));
+      System.out.println("Entering Bio-Formats caching test console");
+      while (true) {
+        System.out.print("> ");
+        String cmd = r.readLine().trim();
+        if (cmd.equals("")) continue;
+        else if (cmd.startsWith("c")) { // cache
+          cache.recache();
+        }
+        else if (cmd.startsWith("e") || cmd.startsWith("q")) break; // exit/quit
+        else if (cmd.startsWith("g")) { // gui
+          String[] axes = {"Z", "C", "T"};
+          CacheComponent widget = new CacheComponent(cache, axes, id);
+          widget.setBorder(new EmptyBorder(15, 15, 15, 15));
+          JFrame frame = new JFrame("Cache controls");
+          frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+          frame.setContentPane(widget);
+          frame.pack();
+          frame.setVisible(true);
+        }
+        else if (cmd.startsWith("h")) { // help
+          System.out.println("Available commands:");
+          System.out.println(
+            "  cache    -- begins loading planes into the cache");
+          System.out.println(
+            "  gui      -- pops up a GUI to configure the cache");
+          System.out.println("  info     -- displays the cache state");
+          System.out.println("  position -- changes the current position");
+          System.out.println("  strategy -- changes the cache strategy");
+          System.out.println("  source   -- changes the cache source");
+          System.out.println("  priority -- changes the cache priorities");
+          System.out.println("  order    -- changes the cache order");
+          System.out.println("  range    -- changes the cache ranges");
+          System.out.println("  read     -- gets a plane from the cache");
+          System.out.println("  exit     -- quits the interpreter");
+        }
+        else if (cmd.startsWith("i")) { // info
+          // output dimensional position
+          printArray("pos =", cache.getCurrentPos());
+          // output source information
+          ICacheSource source = cache.getSource();
+          printSource("source =", cache);
+          System.out.println("object count = " + source.getObjectCount());
+          // output strategy information
+          ICacheStrategy strategy = cache.getStrategy();
+          printStrategy("strategy =", cache);
+          printArray("priorities =", strategy.getPriorities());
+          printOrder("order =", cache);
+          printArray("range =", strategy.getRange());
+          printArray("lengths =", strategy.getLengths());
+        }
+        else if (cmd.startsWith("o")) { // order
+          System.out.println(ICacheStrategy.CENTERED_ORDER + " => centered");
+          System.out.println(ICacheStrategy.FORWARD_ORDER + " => forward");
+          System.out.println(ICacheStrategy.BACKWARD_ORDER + " => backward");
+          System.out.print("Z: ");
+          int z = Integer.parseInt(r.readLine().trim());
+          System.out.print("C: ");
+          int c = Integer.parseInt(r.readLine().trim());
+          System.out.print("T: ");
+          int t = Integer.parseInt(r.readLine().trim());
+          ICacheStrategy strategy = cache.getStrategy();
+          strategy.setOrder(z, 0);
+          strategy.setOrder(c, 1);
+          strategy.setOrder(t, 2);
+        }
+        else if (cmd.startsWith("po")) { // position
+          System.out.print("Z: ");
+          int z = Integer.parseInt(r.readLine().trim());
+          System.out.print("C: ");
+          int c = Integer.parseInt(r.readLine().trim());
+          System.out.print("T: ");
+          int t = Integer.parseInt(r.readLine().trim());
+          cache.setCurrentPos(new int[] {z, c, t});
+        }
+        else if (cmd.startsWith("pr")) { // priority
+          System.out.println(ICacheStrategy.MIN_PRIORITY + " => min priority");
+          System.out.println(ICacheStrategy.LOW_PRIORITY + " => low priority");
+          System.out.println(
+            ICacheStrategy.NORMAL_PRIORITY + " => normal priority");
+          System.out.println(ICacheStrategy.HIGH_PRIORITY + " => high priority");
+          System.out.println(ICacheStrategy.MAX_PRIORITY + " => max priority");
+          System.out.print("Z: ");
+          int z = Integer.parseInt(r.readLine().trim());
+          System.out.print("C: ");
+          int c = Integer.parseInt(r.readLine().trim());
+          System.out.print("T: ");
+          int t = Integer.parseInt(r.readLine().trim());
+          ICacheStrategy strategy = cache.getStrategy();
+          strategy.setPriority(z, 0);
+          strategy.setPriority(c, 1);
+          strategy.setPriority(t, 2);
+        }
+        else if (cmd.startsWith("ra")) { // range
+          System.out.print("Z: ");
+          int z = Integer.parseInt(r.readLine().trim());
+          System.out.print("C: ");
+          int c = Integer.parseInt(r.readLine().trim());
+          System.out.print("T: ");
+          int t = Integer.parseInt(r.readLine().trim());
+          cache.getStrategy().setRange(z, 0);
+          cache.getStrategy().setRange(c, 1);
+          cache.getStrategy().setRange(t, 2);
+        }
+        else if (cmd.startsWith("re")) { // read
+          System.out.print("Z: ");
+          int z = Integer.parseInt(r.readLine().trim());
+          System.out.print("C: ");
+          int c = Integer.parseInt(r.readLine().trim());
+          System.out.print("T: ");
+          int t = Integer.parseInt(r.readLine().trim());
+          System.out.println("Retrieving Z" + z + "-C" + c + "-T" + t);
+          Object o = cache.getObject(new int[] {z, c, t});
+          System.out.println(o);
+        }
+        else if (cmd.startsWith("so")) { // source
+          System.out.println("0: BufferedImage");
+          System.out.println("1: byte array");
+          System.out.print("> ");
+          int n = Integer.parseInt(r.readLine().trim());
+          switch (n) {
+            case 0:
+              cache.setSource(new BufferedImageSource(reader));
+              break;
+            case 1:
+              cache.setSource(new ByteArraySource(reader));
+              break;
+            default:
+              System.out.println("Unknown source: " + n);
+          }
+        }
+        else if (cmd.startsWith("st")) { // strategy
+          System.out.println("0: crosshair");
+          System.out.println("1: rectangle");
+          System.out.print("> ");
+          int n = Integer.parseInt(r.readLine().trim());
+          int[] zct = getLengths(reader);
+          ICacheStrategy strategy = null;
+          switch (n) {
+            case 0:
+              strategy = new CrosshairStrategy(zct);
+              break;
+            case 1:
+              strategy = new RectangleStrategy(zct);
+              break;
+            default:
+              System.out.println("Unknown strategy: " + n);
+          }
+          if (strategy != null) {
+            ICacheStrategy old = cache.getStrategy();
+            int[] priorities = old.getPriorities();
+            int[] range = old.getRange();
+            int[] order = old.getOrder();
+            for (int i=0; i<zct.length; i++) {
+              strategy.setPriority(priorities[i], i);
+              strategy.setRange(range[i], i);
+              strategy.setOrder(order[i], i);
+            }
+            cache.setStrategy(strategy);
+          }
+        }
+        else System.out.println("Unknown command: " + cmd);
       }
-      else System.out.println("Unknown command: " + cmd);
     }
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
   // -- Helper methods --

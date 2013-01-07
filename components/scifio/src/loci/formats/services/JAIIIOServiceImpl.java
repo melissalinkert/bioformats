@@ -101,37 +101,41 @@ public class JAIIIOServiceImpl extends AbstractService
   {
     ImageOutputStream ios = ImageIO.createImageOutputStream(out);
 
-    IIORegistry registry = IIORegistry.getDefaultInstance();
-    Iterator<J2KImageWriterSpi> iter = 
-      ServiceRegistry.lookupProviders(J2KImageWriterSpi.class);
-    registry.registerServiceProviders(iter);
-    J2KImageWriterSpi spi =
-      registry.getServiceProviderByClass(J2KImageWriterSpi.class);
-    J2KImageWriter writer = new J2KImageWriter(spi);
-    writer.setOutput(ios);
+    try {
+      IIORegistry registry = IIORegistry.getDefaultInstance();
+      Iterator<J2KImageWriterSpi> iter = 
+        ServiceRegistry.lookupProviders(J2KImageWriterSpi.class);
+      registry.registerServiceProviders(iter);
+      J2KImageWriterSpi spi =
+        registry.getServiceProviderByClass(J2KImageWriterSpi.class);
+      J2KImageWriter writer = new J2KImageWriter(spi);
+      writer.setOutput(ios);
 
-    String filter = options.lossless ? J2KImageWriteParam.FILTER_53 :
-      J2KImageWriteParam.FILTER_97;
+      String filter = options.lossless ? J2KImageWriteParam.FILTER_53 :
+        J2KImageWriteParam.FILTER_97;
 
-    IIOImage iioImage = new IIOImage(img, null, null);
-    J2KImageWriteParam param =
-      (J2KImageWriteParam) writer.getDefaultWriteParam();
-    param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-    param.setCompressionType("JPEG2000");
-    param.setLossless(options.lossless);
-    param.setFilter(filter);
-    param.setCodeBlockSize(options.codeBlockSize);
-    param.setEncodingRate(options.quality);
-    if (options.tileWidth > 0 && options.tileHeight > 0) {
-      param.setTiling(options.tileWidth, options.tileHeight,
-                      options.tileGridXOffset, options.tileGridYOffset);
+      IIOImage iioImage = new IIOImage(img, null, null);
+      J2KImageWriteParam param =
+        (J2KImageWriteParam) writer.getDefaultWriteParam();
+      param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+      param.setCompressionType("JPEG2000");
+      param.setLossless(options.lossless);
+      param.setFilter(filter);
+      param.setCodeBlockSize(options.codeBlockSize);
+      param.setEncodingRate(options.quality);
+      if (options.tileWidth > 0 && options.tileHeight > 0) {
+        param.setTiling(options.tileWidth, options.tileHeight,
+                        options.tileGridXOffset, options.tileGridYOffset);
+      }
+      if (options.numDecompositionLevels != null) {
+        param.setNumDecompositionLevels(
+            options.numDecompositionLevels.intValue());
+      }
+      writer.write(null, iioImage, param);
     }
-    if (options.numDecompositionLevels != null) {
-      param.setNumDecompositionLevels(
-          options.numDecompositionLevels.intValue());
+    finally {
+      ios.close();
     }
-    writer.write(null, iioImage, param);
-    ios.close();
   }
 
   /**

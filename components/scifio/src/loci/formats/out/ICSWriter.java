@@ -261,9 +261,13 @@ public class ICSWriter extends FormatWriter {
     }
     else if (checkSuffix(currentId, "ics")) {
       RandomAccessInputStream in = new RandomAccessInputStream(currentId);
-      in.findString("\nend\n");
-      pixelOffset = in.getFilePointer();
-      in.close();
+      try {
+        in.findString("\nend\n");
+        pixelOffset = in.getFilePointer();
+      }
+      finally {
+        in.close();
+      }
     }
 
     if (checkSuffix(currentId, "ids")) {
@@ -277,18 +281,21 @@ public class ICSWriter extends FormatWriter {
 
   /* @see loci.formats.IFormatHandler#close() */
   public void close() throws IOException {
-    if (lastPlane != getPlaneCount() - 1 && out != null) {
-      overwriteDimensions(getMetadataRetrieve());
+    try {
+      if (lastPlane != getPlaneCount() - 1 && out != null) {
+        overwriteDimensions(getMetadataRetrieve());
+      }
     }
-
-    super.close();
+    finally {
+      super.close();
+      if (pixels != null) {
+        pixels.close();
+      }
+    }
     pixelOffset = 0;
     lastPlane = -1;
     dimensionOffset = 0;
     dimensionLength = 0;
-    if (pixels != null) {
-      pixels.close();
-    }
     pixels = null;
   }
 

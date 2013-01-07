@@ -233,14 +233,18 @@ public class UpgradeChecker {
 
       InputStream in = conn.getInputStream();
       StringBuffer latestVersion = new StringBuffer();
-      while (true) {
-        int data = in.read();
-        if (data == -1) {
-          break;
+      try {
+        while (true) {
+          int data = in.read();
+          if (data == -1) {
+            break;
+          }
+          latestVersion.append((char) data);
         }
-        latestVersion.append((char) data);
       }
-      in.close();
+      finally {
+        in.close();
+      }
 
       // check to see if the version reported by the registry is greater than
       // the current version - version numbers are in "x.x.x" format
@@ -317,26 +321,33 @@ public class UpgradeChecker {
 
       DataInputStream in = new DataInputStream(
         new BufferedInputStream(urlConn.getInputStream()));
-      int off = 0;
-      while (off < total) {
-        int len = CHUNK_SIZE;
-        if (off + len > total) {
-          len = total - off;
+      try {
+        int off = 0;
+        while (off < total) {
+          int len = CHUNK_SIZE;
+          if (off + len > total) {
+            len = total - off;
+          }
+          int r = in.read(buf, off, len);
+          if (r <= 0) {
+            LOGGER.warn("Truncated JAR file");
+            return false;
+          }
+          off += r;
         }
-        int r = in.read(buf, off, len);
-        if (r <= 0) {
-          LOGGER.warn("Truncated JAR file");
-          return false;
-        }
-        off += r;
       }
-
-      in.close();
+      finally {
+        in.close();
+      }
 
       // write the downloaded JAR to a file on disk
       FileOutputStream out = new FileOutputStream(jar);
-      out.write(buf);
-      out.close();
+      try {
+        out.write(buf);
+      }
+      finally {
+        out.close();
+      }
 
       boolean success = jar.renameTo(new File(downloadPath));
       if (!success) {

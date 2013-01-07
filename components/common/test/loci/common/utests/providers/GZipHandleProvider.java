@@ -63,8 +63,12 @@ class GZipHandleProvider implements IRandomAccessProvider {
     File pageFile = File.createTempFile("page", ".gz");
     pageFile.deleteOnExit();
     OutputStream out = new GZIPOutputStream(new FileOutputStream(pageFile));
-    out.write(page);
-    out.close();
+    try {
+      out.write(page);
+    }
+    finally {
+      out.close();
+    }
 
     return new GZipHandle(pageFile.getAbsolutePath());
   }

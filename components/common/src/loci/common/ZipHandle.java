@@ -127,10 +127,14 @@ public class ZipHandle extends StreamHandle {
 
     IRandomAccess handle = getHandle(file);
     byte[] b = new byte[2];
-    if (handle.length() >= 2) {
-      handle.read(b);
+    try {
+      if (handle.length() >= 2) {
+        handle.read(b);
+      }
     }
-    handle.close();
+    finally {
+      handle.close();
+    }
     return new String(b, Constants.ENCODING).equals("PK");
   }
 

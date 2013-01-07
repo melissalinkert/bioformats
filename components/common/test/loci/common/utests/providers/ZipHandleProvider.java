@@ -63,9 +63,13 @@ class ZipHandleProvider implements IRandomAccessProvider {
     File pageFile = File.createTempFile("page", ".zip");
     pageFile.deleteOnExit();
     ZipOutputStream out = new ZipOutputStream(new FileOutputStream(pageFile));
-    out.putNextEntry(new ZipEntry(pageFile.getName()));
-    out.write(page);
-    out.close();
+    try {
+      out.putNextEntry(new ZipEntry(pageFile.getName()));
+      out.write(page);
+    }
+    finally {
+      out.close();
+    }
 
     return new ZipHandle(pageFile.getAbsolutePath());
   }

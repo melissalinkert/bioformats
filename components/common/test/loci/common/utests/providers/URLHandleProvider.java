@@ -61,8 +61,12 @@ class URLHandleProvider implements IRandomAccessProvider {
     File f = File.createTempFile("url", ".dat");
     f.deleteOnExit();
     FileOutputStream out = new FileOutputStream(f);
-    out.write(page);
-    out.close();
+    try {
+      out.write(page);
+    }
+    finally {
+      out.close();
+    }
 
     return new URLHandle(f.toURL().toString());
   }

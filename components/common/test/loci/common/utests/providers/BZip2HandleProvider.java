@@ -60,8 +60,12 @@ class BZip2HandleProvider implements IRandomAccessProvider {
       byte[] page, String mode, int bufferSize) throws IOException {
     File pageFile = File.createTempFile("page", ".dat");
     FileOutputStream out = new FileOutputStream(pageFile);
-    out.write(page);
-    out.close();
+    try {
+      out.write(page);
+    }
+    finally {
+      out.close();
+    }
 
     Runtime rt = Runtime.getRuntime();
     Process p = rt.exec(new String[] {"bzip2", pageFile.getAbsolutePath()});

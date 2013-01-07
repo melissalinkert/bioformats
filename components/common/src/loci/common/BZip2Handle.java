@@ -89,8 +89,12 @@ public class BZip2Handle extends StreamHandle {
 
     FileInputStream s = new FileInputStream(file);
     byte[] b = new byte[2];
-    s.read(b);
-    s.close();
+    try {
+      s.read(b);
+    }
+    finally {
+      s.close();
+    }
     return new String(b, Constants.ENCODING).equals("BZ");
   }
 

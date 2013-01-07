@@ -66,14 +66,19 @@ public final class DataTools {
 
   /** Reads the contents of the given file into a string. */
   public static String readFile(String id) throws IOException {
+    String data = null;
     RandomAccessInputStream in = new RandomAccessInputStream(id);
-    long idLen = in.length();
-    if (idLen > Integer.MAX_VALUE) {
-      throw new IOException("File too large");
+    try {
+      long idLen = in.length();
+      if (idLen > Integer.MAX_VALUE) {
+        throw new IOException("File too large");
+      }
+      int len = (int) idLen;
+      data = in.readString(len);
     }
-    int len = (int) idLen;
-    String data = in.readString(len);
-    in.close();
+    finally {
+      in.close();
+    }
     return data;
   }
 

@@ -90,8 +90,12 @@ public class GZipHandle extends StreamHandle {
 
     FileInputStream s = new FileInputStream(file);
     byte[] b = new byte[2];
-    s.read(b);
-    s.close();
+    try {
+      s.read(b);
+    }
+    finally {
+      s.close();
+    }
     return DataTools.bytesToInt(b, true) == GZIPInputStream.GZIP_MAGIC;
   }
 

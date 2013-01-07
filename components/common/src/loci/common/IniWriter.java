@@ -75,16 +75,19 @@ public class IniWriter {
     BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
       new FileOutputStream(path, append), Constants.ENCODING));
 
-    for (IniTable table : ini) {
-      String header = table.get(IniTable.HEADER_KEY);
-      out.write("[" + header + "]\n");
-      for (String key : table.keySet()) {
-        out.write(key + " = " + table.get(key) + "\n");
+    try {
+      for (IniTable table : ini) {
+        String header = table.get(IniTable.HEADER_KEY);
+        out.write("[" + header + "]\n");
+        for (String key : table.keySet()) {
+          out.write(key + " = " + table.get(key) + "\n");
+        }
+        out.write("\n");
       }
-      out.write("\n");
     }
-
-    out.close();
+    finally {
+      out.close();
+    }
   }
 
 }

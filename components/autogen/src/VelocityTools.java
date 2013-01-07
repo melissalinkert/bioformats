@@ -82,8 +82,12 @@ public class VelocityTools {
     StringWriter writer = new StringWriter();
     t.merge(context, writer);
     PrintWriter out = new PrintWriter(new File(outFile), "UTF-8");
-    out.print(writer.toString());
-    out.close();
+    try {
+      out.print(writer.toString());
+    }
+    finally {
+      out.close();
+    }
     System.out.println("done.");
   }
 

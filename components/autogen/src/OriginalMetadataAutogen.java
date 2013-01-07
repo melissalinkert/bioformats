@@ -115,12 +115,16 @@ public class OriginalMetadataAutogen {
       return;
     }
 
-    addMetadata(reader.getGlobalMetadata());
-    for (int series=0; series<reader.getSeriesCount(); series++) {
-      reader.setSeries(series);
-      addMetadata(reader.getSeriesMetadata());
+    try {
+      addMetadata(reader.getGlobalMetadata());
+      for (int series=0; series<reader.getSeriesCount(); series++) {
+        reader.setSeries(series);
+        addMetadata(reader.getSeriesMetadata());
+      }
     }
-    reader.close();
+    finally {
+      reader.close();
+    }
   }
 
   private void addMetadata(Hashtable<String, Object> readerMetadata) {

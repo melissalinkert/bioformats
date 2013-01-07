@@ -163,8 +163,12 @@ public class OmeroReader extends FormatReader {
     }
 
     RandomAccessInputStream s = new RandomAccessInputStream(plane);
-    readPlane(s, x, y, w, h, buf);
-    s.close();
+    try {
+      readPlane(s, x, y, w, h, buf);
+    }
+    finally {
+      s.close();
+    }
 
     return buf;
   }
@@ -472,10 +476,11 @@ public class OmeroReader extends FormatReader {
       omeroReader.setId(id);
     }
     catch (Exception e) {
-      omeroReader.close();
       throw e;
     }
-    omeroReader.close();
+    finally {
+      omeroReader.close();
+    }
 
     // delegate the heavy lifting to Bio-Formats ImageInfo utility
     final ImageInfo imageInfo = new ImageInfo();

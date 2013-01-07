@@ -521,38 +521,44 @@ public class OMEWriter extends FormatWriter {
     OMEWriter uploader = new OMEWriter();
 
     FileStitcher reader = new FileStitcher();
-    reader.setOriginalMetadataPopulated(true);
 
     try {
-      ServiceFactory factory = new ServiceFactory();
-      OMEXMLService service = factory.getInstance(OMEXMLService.class);
-      reader.setMetadataStore(service.createOMEXMLMetadata());
-    }
-    catch (DependencyException e) {
-      LOGGER.warn("OMEXMLService not available", e);
-    }
-    catch (ServiceException e) {
-      LOGGER.warn("Could not parse OME-XML", e);
-    }
+      reader.setOriginalMetadataPopulated(true);
 
-    reader.setId(id);
+      try {
+        ServiceFactory factory = new ServiceFactory();
+        OMEXMLService service = factory.getInstance(OMEXMLService.class);
+        reader.setMetadataStore(service.createOMEXMLMetadata());
+      }
+      catch (DependencyException e) {
+        LOGGER.warn("OMEXMLService not available", e);
+      }
+      catch (ServiceException e) {
+        LOGGER.warn("Could not parse OME-XML", e);
+      }
 
-    uploader.setMetadataRetrieve((MetadataRetrieve) reader.getMetadataStore());
-    uploader.setOriginalFiles(reader.getUsedFiles());
-    uploader.setId(server + "?user=" + user + "&password=" + pass);
+      reader.setId(id);
 
-    int start = series == -1 ? 0 : series;
-    int end = series == -1 ? reader.getSeriesCount() : series + 1;
+      uploader.setMetadataRetrieve(
+        (MetadataRetrieve) reader.getMetadataStore());
+      uploader.setOriginalFiles(reader.getUsedFiles());
+      uploader.setId(server + "?user=" + user + "&password=" + pass);
 
-    for (int s=start; s<end; s++) {
-      reader.setSeries(s);
-      uploader.setSeries(s);
-      for (int i=0; i<reader.getImageCount(); i++) {
-        uploader.saveBytes(i, reader.openBytes(i));
+      int start = series == -1 ? 0 : series;
+      int end = series == -1 ? reader.getSeriesCount() : series + 1;
+
+      for (int s=start; s<end; s++) {
+        reader.setSeries(s);
+        uploader.setSeries(s);
+        for (int i=0; i<reader.getImageCount(); i++) {
+          uploader.saveBytes(i, reader.openBytes(i));
+        }
       }
     }
-    reader.close();
-    uploader.close();
+    finally {
+      reader.close();
+      uploader.close();
+    }
   }
 
 }

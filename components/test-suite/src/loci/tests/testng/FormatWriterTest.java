@@ -285,11 +285,19 @@ public class FormatWriterTest {
           if (!success) break;
         }
       }
-      convertedReader.close();
     }
     catch (Throwable t) {
       LOGGER.info("", t);
       success = false;
+    }
+    finally {
+      try {
+        writer.close();
+        convertedReader.close();
+      }
+      catch (IOException e) {
+        LOGGER.info("", e);
+      }
     }
     result(testName, success, msg);
   }

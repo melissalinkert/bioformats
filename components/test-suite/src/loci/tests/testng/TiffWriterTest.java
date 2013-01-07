@@ -126,62 +126,71 @@ public class TiffWriterTest {
     IFD ifd;
     int count;
     int series = reader.getSeriesCount();
-    String[][][] tileMD5s = new String[series][][]; 
-    for (int s = 0; s < series; s++) {
-      reader.setSeries(s);
-      w = reader.getSizeX()/n;
-      h = reader.getSizeY()/m;
-      rowPerStrip = new long[1];
-      rowPerStrip[0] = h;
-      count = reader.getImageCount();
-      tileMD5s[s] = new String[count][m * n];
-      for (int k = 0; k < count; k++) {
-        ifd = new IFD();
-        ifd.put(IFD.TILE_WIDTH, w);
-        ifd.put(IFD.TILE_LENGTH, h);
-        ifd.put(IFD.ROWS_PER_STRIP, rowPerStrip);
-        for (int i = 0; i < m; i++) {
-          y = h*i;
-          for (int j = 0; j < n; j++) {
-            x = w*j;
-            tile = reader.openBytes(k, x, y, w, h);
-            tileMD5s[s][k][(i * n) + j] = TestTools.md5(tile);
-            writer.saveBytes(k, tile, ifd, x, y, w, h);
-          }
-        }
-      }
-    }
-    writer.close();
-    //Now going to read the output.
-    TiffReader outputReader = new TiffReader();
-    outputReader.setId(output);
+    String[][][] tileMD5s = new String[series][][];
 
-    //first series.
-    String writtenDigest;
-    String readDigest;
-    for (int s = 0; s < series; s++) {
-      outputReader.setSeries(s);
-      count = outputReader.getImageCount();
-      h = outputReader.getSizeY()/m;
-      w = outputReader.getSizeX()/n;
-      for (int k = 0; k < count; k++) {
-        for (int i = 0; i < m; i++) {
-          y = h*i;
-          for (int j = 0; j < n; j++) {
-            x = w*j;
-            tile = outputReader.openBytes(k, x, y, w, h);
-            writtenDigest = tileMD5s[s][k][(i * n) + j];
-            readDigest = TestTools.md5(tile);
-            if (!writtenDigest.equals(readDigest)) {
-              fail(String.format(
-                  "Compression:%s MD5:%d;%d;%d;%d;%d; %s != %s",
-                  compression, k, x, y, w, h, writtenDigest, readDigest));
+    try {
+      for (int s = 0; s < series; s++) {
+        reader.setSeries(s);
+        w = reader.getSizeX()/n;
+        h = reader.getSizeY()/m;
+        rowPerStrip = new long[1];
+        rowPerStrip[0] = h;
+        count = reader.getImageCount();
+        tileMD5s[s] = new String[count][m * n];
+        for (int k = 0; k < count; k++) {
+          ifd = new IFD();
+          ifd.put(IFD.TILE_WIDTH, w);
+          ifd.put(IFD.TILE_LENGTH, h);
+          ifd.put(IFD.ROWS_PER_STRIP, rowPerStrip);
+          for (int i = 0; i < m; i++) {
+            y = h*i;
+            for (int j = 0; j < n; j++) {
+              x = w*j;
+              tile = reader.openBytes(k, x, y, w, h);
+              tileMD5s[s][k][(i * n) + j] = TestTools.md5(tile);
+              writer.saveBytes(k, tile, ifd, x, y, w, h);
             }
           }
         }
       }
     }
-    outputReader.close();
+    finally {
+      writer.close();
+    }
+    //Now going to read the output.
+    TiffReader outputReader = new TiffReader();
+    try {
+      outputReader.setId(output);
+
+      //first series.
+      String writtenDigest;
+      String readDigest;
+      for (int s = 0; s < series; s++) {
+        outputReader.setSeries(s);
+        count = outputReader.getImageCount();
+        h = outputReader.getSizeY()/m;
+        w = outputReader.getSizeX()/n;
+        for (int k = 0; k < count; k++) {
+          for (int i = 0; i < m; i++) {
+            y = h*i;
+            for (int j = 0; j < n; j++) {
+              x = w*j;
+              tile = outputReader.openBytes(k, x, y, w, h);
+              writtenDigest = tileMD5s[s][k][(i * n) + j];
+              readDigest = TestTools.md5(tile);
+              if (!writtenDigest.equals(readDigest)) {
+                fail(String.format(
+                  "Compression:%s MD5:%d;%d;%d;%d;%d; %s != %s",
+                  compression, k, x, y, w, h, writtenDigest, readDigest));
+              }
+            }
+          }
+        }
+      }
+    }
+    finally {
+      outputReader.close();
+    }
   }
 
   /**
@@ -206,111 +215,121 @@ public class TiffWriterTest {
     int sizeX, sizeY;
     int n, m;
     int diffWidth, diffHeight;
-    int series = reader.getSeriesCount();
-    String[][][] tileMD5s = new String[series][][]; 
-    for (int s = 0; s < series; s++) {
-      reader.setSeries(s);
-      sizeX = reader.getSizeX();
-      sizeY = reader.getSizeY();
-      if (blockWidth <= 0) blockWidth = sizeX;
-      if (blockHeight <= 0) blockHeight = sizeY;
-      n = sizeX/blockWidth;
-      m = sizeY/blockHeight;
-      if (n == 0) {
-        blockWidth = sizeX;
-        n = 1;
-      }
-      if (m == 0) {
-        blockHeight = sizeY;
-        m = 1;
-      }
-      diffWidth = sizeX-n*blockWidth;
-      diffHeight = sizeY-m*blockHeight;
-      if (diffWidth > 0) n++;
-      if (diffHeight > 0) m++;
-      rowPerStrip = new long[1];
-      rowPerStrip[0] = blockHeight;
-      count = reader.getImageCount();
-      tileMD5s[s] = new String[count][m * n];
-      for (int k = 0; k < count; k++) {
-        x = 0;
-        y = 0;
-        ifd = new IFD();
-        ifd.put(IFD.TILE_WIDTH, blockWidth);
-        ifd.put(IFD.TILE_LENGTH, blockHeight);
-        ifd.put(IFD.ROWS_PER_STRIP, rowPerStrip);
-        for (int i = 0; i < m; i++) {
-          if (diffHeight > 0 && i == (m-1)) {
-            y = sizeY-diffHeight;
-            h = diffHeight;
-          } else {
-            y = blockHeight*i;
-            h = blockHeight;
-          }
-          for (int j = 0; j < n; j++) {
-            if (diffWidth > 0 && j == (n-1)) {
-              x = sizeX-diffWidth;
-              w = diffWidth;
-            } else {
-              x = blockWidth*j;
-              w = blockWidth;
-            }
-            tile = reader.openBytes(k, x, y, w, h);
-            tileMD5s[s][k][(i * n) + j] = TestTools.md5(tile);
-            writer.saveBytes(0, tile, ifd, x, y, w, h);
-          }
-        }
-      }
-    }
-    writer.close();
-    //Now going to read the output.
-    TiffReader outputReader = new TiffReader();
-    outputReader.setId(output);
 
-    //first series.
-    String writtenDigest;
-    String readDigest;
-    for (int s = 0; s < series; s++) {
-      outputReader.setSeries(s);
-      count = outputReader.getImageCount();
-      for (int k = 0; k < count; k++) {
-        sizeX = outputReader.getSizeX();
-        sizeY = outputReader.getSizeY();
+    int series = reader.getSeriesCount();
+    String[][][] tileMD5s = new String[series][][];
+
+    try {
+      for (int s = 0; s < series; s++) {
+        reader.setSeries(s);
+        sizeX = reader.getSizeX();
+        sizeY = reader.getSizeY();
+        if (blockWidth <= 0) blockWidth = sizeX;
+        if (blockHeight <= 0) blockHeight = sizeY;
         n = sizeX/blockWidth;
         m = sizeY/blockHeight;
+        if (n == 0) {
+          blockWidth = sizeX;
+          n = 1;
+        }
+        if (m == 0) {
+          blockHeight = sizeY;
+          m = 1;
+        }
         diffWidth = sizeX-n*blockWidth;
         diffHeight = sizeY-m*blockHeight;
         if (diffWidth > 0) n++;
         if (diffHeight > 0) m++;
-        for (int i = 0; i < m; i++) {
-          if (diffHeight > 0 && i == (m-1)) {
-            y = sizeY-diffHeight;
-            h = diffHeight;
-          } else {
-            y = blockHeight*i;
-            h = blockHeight;
-          }
-          for (int j = 0; j < n; j++) {
-            if (diffWidth > 0 && j == (n-1)) {
-              x = sizeX-diffWidth;
-              w = diffWidth;
+        rowPerStrip = new long[1];
+        rowPerStrip[0] = blockHeight;
+        count = reader.getImageCount();
+        tileMD5s[s] = new String[count][m * n];
+        for (int k = 0; k < count; k++) {
+          x = 0;
+          y = 0;
+          ifd = new IFD();
+          ifd.put(IFD.TILE_WIDTH, blockWidth);
+          ifd.put(IFD.TILE_LENGTH, blockHeight);
+          ifd.put(IFD.ROWS_PER_STRIP, rowPerStrip);
+          for (int i = 0; i < m; i++) {
+            if (diffHeight > 0 && i == (m-1)) {
+              y = sizeY-diffHeight;
+              h = diffHeight;
             } else {
-              x = blockWidth*j;
-              w = blockWidth;
+              y = blockHeight*i;
+              h = blockHeight;
             }
-            tile = outputReader.openBytes(k, x, y, w, h);
-            writtenDigest = tileMD5s[s][k][(i * n) + j];
-            readDigest = TestTools.md5(tile);
-            if (!writtenDigest.equals(readDigest)) {
-                fail(String.format(
-                        "Compression:%s MD5:%d;%d;%d;%d;%d; %s != %s",
-                        compression, k, x, y, w, h, writtenDigest, readDigest));
+            for (int j = 0; j < n; j++) {
+              if (diffWidth > 0 && j == (n-1)) {
+                x = sizeX-diffWidth;
+                w = diffWidth;
+              } else {
+                x = blockWidth*j;
+                w = blockWidth;
+              }
+              tile = reader.openBytes(k, x, y, w, h);
+              tileMD5s[s][k][(i * n) + j] = TestTools.md5(tile);
+              writer.saveBytes(0, tile, ifd, x, y, w, h);
             }
           }
         }
       }
     }
-    outputReader.close();
+    finally {
+      writer.close();
+    }
+    //Now going to read the output.
+    TiffReader outputReader = new TiffReader();
+    try {
+      outputReader.setId(output);
+
+      //first series.
+      String writtenDigest;
+      String readDigest;
+      for (int s = 0; s < series; s++) {
+        outputReader.setSeries(s);
+        count = outputReader.getImageCount();
+        for (int k = 0; k < count; k++) {
+          sizeX = outputReader.getSizeX();
+          sizeY = outputReader.getSizeY();
+          n = sizeX/blockWidth;
+          m = sizeY/blockHeight;
+          diffWidth = sizeX-n*blockWidth;
+          diffHeight = sizeY-m*blockHeight;
+          if (diffWidth > 0) n++;
+          if (diffHeight > 0) m++;
+          for (int i = 0; i < m; i++) {
+            if (diffHeight > 0 && i == (m-1)) {
+              y = sizeY-diffHeight;
+              h = diffHeight;
+            } else {
+              y = blockHeight*i;
+              h = blockHeight;
+            }
+            for (int j = 0; j < n; j++) {
+              if (diffWidth > 0 && j == (n-1)) {
+                x = sizeX-diffWidth;
+                w = diffWidth;
+              } else {
+                x = blockWidth*j;
+                w = blockWidth;
+              }
+              tile = outputReader.openBytes(k, x, y, w, h);
+              writtenDigest = tileMD5s[s][k][(i * n) + j];
+              readDigest = TestTools.md5(tile);
+              if (!writtenDigest.equals(readDigest)) {
+                  fail(String.format(
+                    "Compression:%s MD5:%d;%d;%d;%d;%d; %s != %s",
+                    compression, k, x, y, w, h, writtenDigest, readDigest));
+              }
+            }
+          }
+        }
+      }
+    }
+    finally {
+      outputReader.close();
+    }
   }
 
   @Parameters({"id"})

@@ -71,12 +71,18 @@ public class FileHandleTest {
 
   @Test
   public void testHandleCount() throws FormatException, IOException {
+    ArrayList<String> intermediateHandles = new ArrayList<String>();
     ArrayList<String> initialHandles = getHandles();
     reader = new ImageReader();
-    reader.setId(id);
 
-    ArrayList<String> intermediateHandles = getHandles();
-    reader.close();
+    try {
+      reader.setId(id);
+      intermediateHandles = getHandles();
+    }
+    finally {
+      reader.close();
+    }
+
     ArrayList<String> finalHandles = getHandles();
 
     int intermediateHandleCount = intermediateHandles.size();
@@ -116,31 +122,35 @@ public class FileHandleTest {
     Process p = rt.exec("lsof -Ftn -p " + pid);
     BufferedReader s = new BufferedReader(
       new InputStreamReader(p.getInputStream(), Constants.ENCODING));
-    String line = s.readLine();
-    boolean valid = false;
-    while (true) {
-      try {
-        p.exitValue();
-        if (line == null) {
-          break;
+    try {
+      String line = s.readLine();
+      boolean valid = false;
+      while (true) {
+        try {
+          p.exitValue();
+          if (line == null) {
+            break;
+          }
         }
+        catch (Exception e) {
+          LOGGER.warn("", e);
+        }
+        if (line != null && line.endsWith("REG")) {
+          valid = true;
+        }
+        else if (line != null && line.startsWith("n") && valid) {
+          names.add(line.substring(1, line.length()));
+          valid = false;
+        }
+        line = s.readLine();
       }
-      catch (Exception e) {
-        LOGGER.warn("", e);
-      }
-      if (line != null && line.endsWith("REG")) {
-        valid = true;
-      }
-      else if (line != null && line.startsWith("n") && valid) {
-        names.add(line.substring(1, line.length()));
-        valid = false;
-      }
-      line = s.readLine();
     }
-    s.close();
-    p.getInputStream().close();
-    p.getOutputStream().close();
-    p.getErrorStream().close();
+    finally {
+      s.close();
+      p.getInputStream().close();
+      p.getOutputStream().close();
+      p.getErrorStream().close();
+    }
     return names;
   }
 

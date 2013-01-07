@@ -76,14 +76,18 @@ public class ZipTester {
     System.out.println("cp '" + in.getPath() + "' '" + id + "'");
     FileInputStream fin = new FileInputStream(in);
     FileOutputStream fout = new FileOutputStream(id);
-    byte[] buf = new byte[8192];
-    while (true) {
-      int r = fin.read(buf);
-      if (r <= 0) break;
-      fout.write(buf, 0, r);
+    try {
+      byte[] buf = new byte[8192];
+      while (true) {
+        int r = fin.read(buf);
+        if (r <= 0) break;
+        fout.write(buf, 0, r);
+      }
     }
-    fout.close();
-    fin.close();
+    finally {
+      fout.close();
+      fin.close();
+    }
 
     time(id);
 
@@ -119,16 +123,20 @@ public class ZipTester {
   }
 
   public static void time(String id) throws IOException, FormatException {
-    System.out.print("Timing " + new File(id).getName() + ": ");
-    long t1 = System.currentTimeMillis();
-    boolean result = reader.isThisType(id);
-    long t2 = System.currentTimeMillis();
-    System.out.print((t2 - t1) + " ms to check type (" + result + "); ");
-    long t3 = System.currentTimeMillis();
-    reader.setId(id);
-    long t4 = System.currentTimeMillis();
-    System.out.println((t4 - t3) + " ms to initialize");
-    reader.close();
+    try {
+      System.out.print("Timing " + new File(id).getName() + ": ");
+      long t1 = System.currentTimeMillis();
+      boolean result = reader.isThisType(id);
+      long t2 = System.currentTimeMillis();
+      System.out.print((t2 - t1) + " ms to check type (" + result + "); ");
+      long t3 = System.currentTimeMillis();
+      reader.setId(id);
+      long t4 = System.currentTimeMillis();
+      System.out.println((t4 - t3) + " ms to initialize");
+    }
+    finally {
+      reader.close();
+    }
   }
 
 }

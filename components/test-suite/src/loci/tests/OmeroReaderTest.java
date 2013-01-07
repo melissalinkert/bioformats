@@ -85,14 +85,17 @@ public class OmeroReaderTest {
       "user=" + user + "\n" +
       "pass=" + pass + "\n" +
       "pid=" + pid;
-    omero.setId(id);
+    try {
+      omero.setId(id);
 
-    // print some metadata as a simple test
-    int sizeX = omero.getSizeX();
-    int sizeY = omero.getSizeY();
-    System.out.println("Image dimensions are " + sizeX + " x " + sizeY);
-
-    omero.close();
+      // print some metadata as a simple test
+      int sizeX = omero.getSizeX();
+      int sizeY = omero.getSizeY();
+      System.out.println("Image dimensions are " + sizeX + " x " + sizeY);
+    }
+    finally {
+      omero.close();
+    }
   }
 
 }

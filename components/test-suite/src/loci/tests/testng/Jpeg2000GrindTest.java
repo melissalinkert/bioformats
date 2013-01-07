@@ -158,34 +158,38 @@ public class Jpeg2000GrindTest {
 
   @Test(enabled=true)
   public void testPyramidWriteTiles() throws Exception {
-    pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    short tileCount = (short) TestTools.forEachTile(new TileLoopIteration() {
-      public void run(int z, int c, int t, int x, int y, int tileWidth,
-          int tileHeight, int tileCount) {
-        int planeNumber = FormatTools.getIndex(
+    try {
+      pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+      short tileCount = (short) TestTools.forEachTile(new TileLoopIteration() {
+        public void run(int z, int c, int t, int x, int y, int tileWidth,
+            int tileHeight, int tileCount) {
+          int planeNumber = FormatTools.getIndex(
             "XYZCT", SIZE_Z, SIZE_C, SIZE_T, SIZE_Z * SIZE_C * SIZE_T, z, c, t);
-        if (planeNumber != lastIFD) {
-          pool.shutdown();
-          try {
-            while (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
-              LOGGER.warn("Waiting for runnables to complete...");
+          if (planeNumber != lastIFD) {
+            pool.shutdown();
+            try {
+              while (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
+                LOGGER.warn("Waiting for runnables to complete...");
+              }
+            } catch (InterruptedException e) {
+              LOGGER.error("Caught interuption while waiting for termination.");
             }
-          } catch (InterruptedException e) {
-            LOGGER.error("Caught interuption while waiting for termination.");
+            pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+            lastIFD = planeNumber;
           }
-          pool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-          lastIFD = planeNumber;
+          pool.submit(new TileRunnable(
+              writer, z, c, t, x, y, tileWidth, tileHeight, tileCount));
         }
-        pool.submit(new TileRunnable(
-            writer, z, c, t, x, y, tileWidth, tileHeight, tileCount));
+      }, SIZE_X, SIZE_Y, SIZE_Z, SIZE_C, SIZE_T, TILE_WIDTH, TILE_HEIGHT);
+      pool.shutdown();
+      while (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
+        LOGGER.warn("Waiting for runnables to complete...");
       }
-    }, SIZE_X, SIZE_Y, SIZE_Z, SIZE_C, SIZE_T, TILE_WIDTH, TILE_HEIGHT);
-    pool.shutdown();
-    while (!pool.awaitTermination(30, TimeUnit.SECONDS)) {
-      LOGGER.warn("Waiting for runnables to complete...");
+      assertEquals(tileCount, 960);
     }
-    assertEquals(tileCount, 960);
-    writer.close();
+    finally {
+      writer.close();
+    }
   }
 
   /*

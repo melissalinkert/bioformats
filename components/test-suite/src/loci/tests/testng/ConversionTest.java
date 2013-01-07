@@ -97,45 +97,54 @@ public class ConversionTest {
     File tmp = File.createTempFile("conversionTest", ext);
     tmp.deleteOnExit();
     ImageWriter writer = new ImageWriter();
-    writer.setMetadataRetrieve(createMetadata(
-      pixelType, rgbChannels, seriesCount, littleEndian));
-    writer.setId(tmp.getAbsolutePath());
+    Plane originalPlane = null;
+    try {
+      writer.setMetadataRetrieve(createMetadata(
+        pixelType, rgbChannels, seriesCount, littleEndian));
+      writer.setId(tmp.getAbsolutePath());
 
-    int bytes = FormatTools.getBytesPerPixel(pixelType);
-    byte[] plane = getPlane(WIDTH, HEIGHT, bytes * rgbChannels);
-    Plane originalPlane = new Plane(plane, littleEndian,
-      !writer.isInterleaved(), rgbChannels, pixelType);
+      int bytes = FormatTools.getBytesPerPixel(pixelType);
+      byte[] plane = getPlane(WIDTH, HEIGHT, bytes * rgbChannels);
+      originalPlane = new Plane(plane, littleEndian,
+        !writer.isInterleaved(), rgbChannels, pixelType);
 
-    for (int s=0; s<seriesCount; s++) {
-      writer.setSeries(s);
-      writer.saveBytes(0, plane);
-    }
-
-    writer.close();
-
-    ImageReader reader = new ImageReader();
-    reader.setId(tmp.getAbsolutePath());
-
-    assertEquals(reader.getSeriesCount(), seriesCount);
-
-    for (int s=0; s<seriesCount; s++) {
-      reader.setSeries(s);
-
-      assertEquals(reader.getSizeC(), rgbChannels);
-      assertTrue(reader.getImageCount() == rgbChannels || reader.isRGB());
-
-      byte[] readPlane = reader.openBytes(0);
-
-      if (!lossy) {
-        Plane newPlane = new Plane(readPlane, reader.isLittleEndian(),
-          !reader.isInterleaved(), reader.getRGBChannelCount(),
-          FormatTools.getPixelTypeString(reader.getPixelType()));
-
-        assertTrue(originalPlane.equals(newPlane), tmp.getAbsolutePath());
+      for (int s=0; s<seriesCount; s++) {
+        writer.setSeries(s);
+        writer.saveBytes(0, plane);
       }
     }
+    finally {
+      writer.close();
+    }
 
-    reader.close();
+    assertTrue(originalPlane != null);
+
+    ImageReader reader = new ImageReader();
+    try {
+      reader.setId(tmp.getAbsolutePath());
+
+      assertEquals(reader.getSeriesCount(), seriesCount);
+
+      for (int s=0; s<seriesCount; s++) {
+        reader.setSeries(s);
+
+        assertEquals(reader.getSizeC(), rgbChannels);
+        assertTrue(reader.getImageCount() == rgbChannels || reader.isRGB());
+
+        byte[] readPlane = reader.openBytes(0);
+
+        if (!lossy) {
+          Plane newPlane = new Plane(readPlane, reader.isLittleEndian(),
+            !reader.isInterleaved(), reader.getRGBChannelCount(),
+            FormatTools.getPixelTypeString(reader.getPixelType()));
+
+          assertTrue(originalPlane.equals(newPlane), tmp.getAbsolutePath());
+        }
+      }
+    }
+    finally {
+      reader.close();
+    }
   }
 
   @Test

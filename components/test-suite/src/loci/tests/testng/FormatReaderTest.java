@@ -1435,101 +1435,97 @@ public class FormatReaderTest {
             continue;
           }
 
-          r.setId(base[i]);
+          try {
+            r.setId(base[i]);
 
-          String[] comp = r.getUsedFiles();
+            String[] comp = r.getUsedFiles();
 
-          // If an .mdb file was initialized, then .lsm files are grouped.
-          // If one of the .lsm files is initialized, though, then files
-          // are not grouped.  This is expected behavior; see ticket #3701.
-          if (base[i].toLowerCase().endsWith(".lsm") && comp.length == 1) {
-            r.close();
-            continue;
-          }
+            // If an .mdb file was initialized, then .lsm files are grouped.
+            // If one of the .lsm files is initialized, though, then files
+            // are not grouped.  This is expected behavior; see ticket #3701.
+            if (base[i].toLowerCase().endsWith(".lsm") && comp.length == 1) {
+              continue;
+            }
 
-          // Deltavision datasets are allowed to have different
-          // used file counts.  In some cases, a log file is associated
-          // with multiple .dv files, so initializing the log file
-          // will give different results.
-          if (file.toLowerCase().endsWith(".dv") &&
-            base[i].toLowerCase().endsWith(".log"))
-          {
-            r.close();
-            continue;
-          }
+            // Deltavision datasets are allowed to have different
+            // used file counts.  In some cases, a log file is associated
+            // with multiple .dv files, so initializing the log file
+            // will give different results.
+            if (file.toLowerCase().endsWith(".dv") &&
+              base[i].toLowerCase().endsWith(".log"))
+            {
+              continue;
+            }
 
-          // Hitachi datasets consist of one text file and one pixels file
-          // in a common format (e.g. BMP, JPEG, TIF).
-          // It is acceptable for the pixels file to have a different
-          // used file count from the text file.
-          if (reader.getFormat().equals("Hitachi")) {
-            r.close();
-            continue;
-          }
+            // Hitachi datasets consist of one text file and one pixels file
+            // in a common format (e.g. BMP, JPEG, TIF).
+            // It is acceptable for the pixels file to have a different
+            // used file count from the text file.
+            if (reader.getFormat().equals("Hitachi")) {
+              continue;
+            }
 
-          // JPEG files that are part of a Trestle dataset can be detected
-          // separately
-          if (reader.getFormat().equals("Trestle")) {
-            r.close();
-            continue;
-          }
+            // JPEG files that are part of a Trestle dataset can be detected
+            // separately
+            if (reader.getFormat().equals("Trestle")) {
+              continue;
+            }
 
-          // TIFF files in CellR datasets are detected separately
-          if (reader.getFormat().equals("Olympus APL") &&
-            base[i].toLowerCase().endsWith(".tif"))
-          {
-            r.close();
-            continue;
-          }
+            // TIFF files in CellR datasets are detected separately
+            if (reader.getFormat().equals("Olympus APL") &&
+              base[i].toLowerCase().endsWith(".tif"))
+            {
+              continue;
+            }
 
-          // TIFF files in Li-Cor datasets are detected separately
-          if (reader.getFormat().equals("Li-Cor L2D") &&
-            !base[i].toLowerCase().endsWith("l2d"))
-          {
-            r.close();
-            continue;
-          }
+            // TIFF files in Li-Cor datasets are detected separately
+            if (reader.getFormat().equals("Li-Cor L2D") &&
+              !base[i].toLowerCase().endsWith("l2d"))
+            {
+              continue;
+            }
 
-          // TIFF files in Prairie datasets may be detected as OME-TIFF
-          if (reader.getFormat().equals("Prairie TIFF") &&
-            base[i].toLowerCase().endsWith(".tif") &&
-            r.getFormat().equals("OME-TIFF"))
-          {
-            r.close();
-            continue;
-          }
+            // TIFF files in Prairie datasets may be detected as OME-TIFF
+            if (reader.getFormat().equals("Prairie TIFF") &&
+              base[i].toLowerCase().endsWith(".tif") &&
+              r.getFormat().equals("OME-TIFF"))
+            {
+              continue;
+            }
 
-          if (base[i].endsWith(".bmp") && reader.getFormat().equals("BD Pathway"))
-          {
-            continue;
-          }
+            if (base[i].endsWith(".bmp") && reader.getFormat().equals("BD Pathway"))
+            {
+              continue;
+            }
 
-          if (comp.length != base.length) {
-            success = false;
-            msg = base[i] + " (file list length was " + comp.length +
-              "; expected " + base.length + ")";
-          }
-          if (success) Arrays.sort(comp);
-
-          // NRRD datasets are allowed to have differing used files.
-          // One raw file can have multiple header files associated with
-          // it, in which case selecting the raw file will always produce
-          // a test failure (which we can do nothing about).
-          if (file.toLowerCase().endsWith(".nhdr") ||
-            base[i].toLowerCase().endsWith(".nhdr"))
-          {
-            r.close();
-            continue;
-          }
-
-          for (int j=0; j<comp.length && success; j++) {
-            if (!comp[j].equals(base[j])) {
+            if (comp.length != base.length) {
               success = false;
-              msg = base[i] + "(file @ " + j + " was '" + comp[j] +
-                "', expected '" + base[j] + "')";
+              msg = base[i] + " (file list length was " + comp.length +
+                "; expected " + base.length + ")";
+            }
+            if (success) Arrays.sort(comp);
+
+            // NRRD datasets are allowed to have differing used files.
+            // One raw file can have multiple header files associated with
+            // it, in which case selecting the raw file will always produce
+            // a test failure (which we can do nothing about).
+            if (file.toLowerCase().endsWith(".nhdr") ||
+              base[i].toLowerCase().endsWith(".nhdr"))
+            {
+              continue;
+            }
+
+            for (int j=0; j<comp.length && success; j++) {
+              if (!comp[j].equals(base[j])) {
+                success = false;
+                msg = base[i] + "(file @ " + j + " was '" + comp[j] +
+                  "', expected '" + base[j] + "')";
+              }
             }
           }
-          r.close();
+          finally {
+            r.close();
+          }
         }
       }
     }
@@ -1583,9 +1579,9 @@ public class FormatReaderTest {
 
     boolean success = true;
     String msg = null;
+    IFormatReader resolutionReader = null;
     try {
-      IFormatReader resolutionReader =
-        new BufferedImageReader(new FileStitcher());
+      resolutionReader = new BufferedImageReader(new FileStitcher());
       resolutionReader.setFlattenedResolutions(false);
       resolutionReader.setNormalized(true);
       resolutionReader.setOriginalMetadataPopulated(false);
@@ -1628,11 +1624,20 @@ public class FormatReaderTest {
           }
         }
       }
-      resolutionReader.close();
     }
     catch (Throwable t) {
       LOGGER.info("", t);
       success = false;
+    }
+    finally {
+      if (resolutionReader != null) {
+        try {
+          resolutionReader.close();
+        }
+        catch (IOException e) {
+          LOGGER.info("", e);
+        }
+      }
     }
     result(testName, success, msg);
   }
@@ -1735,9 +1740,9 @@ public class FormatReaderTest {
 
     boolean success = true;
     String msg = null;
+    IFormatReader resolutionReader = null;
     try {
-      IFormatReader resolutionReader =
-        new BufferedImageReader(new FileStitcher());
+      resolutionReader = new BufferedImageReader(new FileStitcher());
       resolutionReader.setFlattenedResolutions(false);
       resolutionReader.setNormalized(true);
       resolutionReader.setOriginalMetadataPopulated(false);
@@ -1780,11 +1785,20 @@ public class FormatReaderTest {
           }
         }
       }
-      resolutionReader.close();
     }
     catch (Throwable t) {
       LOGGER.info("", t);
       success = false;
+    }
+    finally {
+      if (resolutionReader != null) {
+        try {
+        resolutionReader.close();
+        }
+        catch (IOException e) {
+          LOGGER.info("", e);
+        }
+      }
     }
     result(testName, success, msg);
   }
@@ -2052,11 +2066,18 @@ public class FormatReaderTest {
       File f = new File(new Location(file).getParent(), ".bioformats");
       Configuration newConfig = new Configuration(reader, f.getAbsolutePath());
       newConfig.saveToFile();
-      reader.close();
     }
     catch (Throwable t) {
       LOGGER.info("", t);
       assert false;
+    }
+    finally {
+      try {
+        reader.close();
+      }
+      catch (IOException e) {
+        LOGGER.info("", e);
+      }
     }
   }
 
@@ -2068,21 +2089,31 @@ public class FormatReaderTest {
     if (!initFile(false)) return;
     String file = reader.getCurrentFile();
     LOGGER.info("Generating XML: {}", file);
+    OutputStreamWriter writer = null;
     try {
       Location l = new Location(file);
       File f = new File(l.getParent(), l.getName() + ".ome.xml");
-      OutputStreamWriter writer =
+      writer =
         new OutputStreamWriter(new FileOutputStream(f), Constants.ENCODING);
       MetadataStore store = reader.getMetadataStore();
       MetadataRetrieve retrieve = MetadataTools.asRetrieve(store);
       String xml = MetadataTools.getOMEXML(retrieve);
       writer.write(xml);
-      writer.close();
-      reader.close();
     }
     catch (Throwable t) {
       LOGGER.info("", t);
       assert false;
+    }
+    finally {
+      try {
+        if (writer != null) {
+          writer.close();
+        }
+        reader.close();
+      }
+      catch (IOException e) {
+        LOGGER.info("", e);
+      }
     }
   }
 
@@ -2200,20 +2231,26 @@ public class FormatReaderTest {
 
   private static boolean mapFile(String id) throws IOException {
     RandomAccessInputStream stream = new RandomAccessInputStream(id);
-    Runtime rt = Runtime.getRuntime();
-    long maxMem = rt.freeMemory();
-    long length = stream.length();
-    if (length < Integer.MAX_VALUE && length < maxMem) {
-      stream.close();
-      FileInputStream fis = new FileInputStream(id);
-      FileChannel channel = fis.getChannel();
-      ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, 0, length);
-      ByteArrayHandle handle = new ByteArrayHandle(buf);
-      Location.mapFile(id, handle);
-      fis.close();
-      return true;
+    FileInputStream fis = null;
+    try {
+      Runtime rt = Runtime.getRuntime();
+      long maxMem = rt.freeMemory();
+      long length = stream.length();
+      if (length < Integer.MAX_VALUE && length < maxMem) {
+        fis = new FileInputStream(id);
+        FileChannel channel = fis.getChannel();
+        ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, 0, length);
+        ByteArrayHandle handle = new ByteArrayHandle(buf);
+        Location.mapFile(id, handle);
+        return true;
+      }
     }
-    stream.close();
+    finally {
+      if (fis != null) {
+        fis.close();
+      }
+      stream.close();
+    }
     return false;
   }
 

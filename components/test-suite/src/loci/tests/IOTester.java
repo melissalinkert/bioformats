@@ -108,8 +108,12 @@ public class IOTester {
   public void saveData(String filename, byte[] data) throws IOException {
     LOGGER.info("Saving {}...", filename);
     FileOutputStream out = new FileOutputStream(filename);
-    out.write(data);
-    out.close();
+    try {
+      out.write(data);
+    }
+    finally {
+      out.close();
+    }
   }
 
   /** Searches for the divider tag using repeated readChar() calls. */
@@ -118,27 +122,32 @@ public class IOTester {
     long start = System.currentTimeMillis();
 
     RandomAccessInputStream in = new RandomAccessInputStream(filename);
-    int matchIndex = 0;
-    char matchChar = TAG.charAt(0);
-    long inputLen = in.length();
-    for (long i=0; i<inputLen; i++) {
-      char c = in.readChar();
-      if (c == matchChar) {
-        matchIndex++;
-        if (matchIndex == TAG.length()) {
-          break;
+    long offset = 0;
+    try {
+      int matchIndex = 0;
+      char matchChar = TAG.charAt(0);
+      long inputLen = in.length();
+      for (long i=0; i<inputLen; i++) {
+        char c = in.readChar();
+        if (c == matchChar) {
+          matchIndex++;
+          if (matchIndex == TAG.length()) {
+            break;
+          }
+          else {
+            matchChar = TAG.charAt(matchIndex);
+          }
         }
         else {
-          matchChar = TAG.charAt(matchIndex);
+          matchIndex = 0;
+          matchChar = TAG.charAt(0);
         }
       }
-      else {
-        matchIndex = 0;
-        matchChar = TAG.charAt(0);
-      }
+      offset = in.getFilePointer();
     }
-    long offset = in.getFilePointer();
-    in.close();
+    finally {
+      in.close();
+    }
 
     long end = System.currentTimeMillis();
     LOGGER.info("Search result: {} -- in {} ms", offset, end - start);
@@ -151,8 +160,13 @@ public class IOTester {
     long start = System.currentTimeMillis();
 
     RandomAccessInputStream in = new RandomAccessInputStream(filename);
-    long offset = in.findString(blockSize, TAG).length();
-    in.close();
+    long offset = 0;
+    try {
+      offset = in.findString(blockSize, TAG).length();
+    }
+    finally {
+      in.close();
+    }
 
     long end = System.currentTimeMillis();
     LOGGER.info("Search result: {} -- in {} ms", offset, end - start);

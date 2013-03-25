@@ -78,6 +78,21 @@ public class MDBServiceImpl extends AbstractService implements MDBService {
     Catalog.mdb_read_catalog(mdb, Constants.MDB_TABLE);
   }
 
+  /* @see MDBService#readTable(String) */
+  public Vector<String[]> readTable(String tableName) throws IOException {
+    List catalog = mdb.catalog;
+
+    for (Object entry : catalog) {
+      int type = ((MdbCatalogEntry) entry).object_type;
+      String name = ((MdbCatalogEntry) entry).object_name;
+
+      if (type == Constants.MDB_TABLE && name.equals(tableName)) {
+        return fetchTable(name, entry, 0);
+      }
+    }
+    return null;
+  }
+
   /* @see MDBService#parseDatabase() */
   public Vector<Vector<String[]>> parseDatabase() throws IOException {
     List catalog = mdb.catalog;
@@ -91,34 +106,10 @@ public class MDBServiceImpl extends AbstractService implements MDBService {
       String name = ((MdbCatalogEntry) entry).object_name;
 
       if (type == Constants.MDB_TABLE && !name.startsWith("MSys")) {
-        Vector<String[]> tableData = new Vector<String[]>();
-        MdbTableDef table = Table.mdb_read_table((MdbCatalogEntry) entry);
-        Table.mdb_read_columns(table);
+        Vector<String[]> tableData = fetchTable(name, entry,
+          previousColumnCount);
 
-        int numCols = table.num_cols;
-        for (int i=0; i<numCols; i++) {
-          Holder h = new Holder();
-          Data.mdb_bind_column(table, i + 1, h);
-          boundValues.add(h);
-        }
-
-        String[] columnNames = new String[numCols + 1];
-        columnNames[0] = name;
-        for (int i=0; i<numCols; i++) {
-          columnNames[i + 1] = ((MdbColumn) table.columns.get(i)).name;
-        }
-        tableData.add(columnNames);
-
-        while (fetchRow(table)) {
-          String[] row = new String[numCols];
-          for (int i=0; i<numCols; i++) {
-            Holder h = boundValues.get(i + previousColumnCount);
-            row[i] = h.s;
-          }
-          tableData.add(row);
-        }
-
-        previousColumnCount += numCols;
+        previousColumnCount += tableData.get(0).length - 1;
         rtn.add(tableData);
       }
     }
@@ -145,5 +136,39 @@ public class MDBServiceImpl extends AbstractService implements MDBService {
     } catch (Exception e) {
       return false;
     }
+  }
+
+  private Vector<String[]> fetchTable(String name, Object entry,
+    int previousColumnCount)
+    throws IOException
+  {
+    Vector<String[]> tableData = new Vector<String[]>();
+    MdbTableDef table = Table.mdb_read_table((MdbCatalogEntry) entry);
+    Table.mdb_read_columns(table);
+
+    int numCols = table.num_cols;
+    for (int i=0; i<numCols; i++) {
+      Holder h = new Holder();
+      Data.mdb_bind_column(table, i + 1, h);
+      boundValues.add(h);
+    }
+
+    String[] columnNames = new String[numCols + 1];
+    columnNames[0] = name;
+    for (int i=0; i<numCols; i++) {
+      columnNames[i + 1] = ((MdbColumn) table.columns.get(i)).name;
+    }
+    tableData.add(columnNames);
+
+    while (fetchRow(table)) {
+      String[] row = new String[numCols];
+      for (int i=0; i<numCols; i++) {
+        Holder h = boundValues.get(i + previousColumnCount);
+        row[i] = h.s;
+      }
+      tableData.add(row);
+    }
+
+    return tableData;
   }
 }

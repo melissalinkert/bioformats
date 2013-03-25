@@ -62,6 +62,22 @@ public interface MDBService extends Service {
    */
   public Vector<Vector<String[]>> parseDatabase() throws IOException;
 
+  /**
+   * Read the named table from a pre-initialized .mdb file.  The returned
+   * Vector<String[]> represents the whole ta ble; each String[] represents
+   * a row, and each element of the String[] represents the value of a
+   * particular column within the row.  If a table with the given name does
+   * not exist, then null is returned.
+   *
+   * The first row in the table contains the names for each column.
+   * The first entry in the column name row is the name of the table.
+   *
+   * {@link #initialize(String)} must be called before calling readTable(String)
+   *
+   * @throws IOException if there is a problem reading the table data
+   */
+  public Vector<String[]> readTable(String tableName) throws IOException;
+
   /** Close the currently initialized file. */
   public void close();
 

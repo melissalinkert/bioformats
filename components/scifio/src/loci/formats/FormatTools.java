@@ -919,9 +919,13 @@ public final class FormatTools {
 
       int planeSize = getPlaneSize(reader);
       byte[] plane = null;
-      if (planeSize < 0) {
-        int width = reader.getThumbSizeX() * 4;
-        int height = reader.getThumbSizeY() * 4;
+      int width = reader.getSizeX();
+      int height = reader.getSizeY();
+      if (planeSize < 0 || reader.getSizeX() >= 2048 ||
+        reader.getSizeY() >= 2048)
+      {
+        width = reader.getThumbSizeX() * 4;
+        height = reader.getThumbSizeY() * 4;
         int x = (reader.getSizeX() - width) / 2;
         int y = (reader.getSizeY() - height) / 2;
         plane = reader.openBytes(no, x, y, width, height);
@@ -932,8 +936,8 @@ public final class FormatTools {
 
       r.setVar("plane", plane);
       r.setVar("reader", reader);
-      r.setVar("sizeX", reader.getSizeX());
-      r.setVar("sizeY", reader.getSizeY());
+      r.setVar("sizeX", width);
+      r.setVar("sizeY", height);
       r.setVar("thumbSizeX", reader.getThumbSizeX());
       r.setVar("thumbSizeY", reader.getThumbSizeY());
       r.setVar("little", reader.isLittleEndian());

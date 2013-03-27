@@ -76,7 +76,7 @@ public class UnisokuReader extends FormatReader {
       return super.isThisType(name, open);
     }
 
-    if (name.indexOf(".") < 0) {
+    if (name.indexOf(".") < 0 || !open) {
       return false;
     }
 

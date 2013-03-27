@@ -175,8 +175,9 @@ public class ZeissTIFFReader extends BaseZeissReader {
 
   /* @see loci.formats.IFormatReader#isThisType(String, boolean) */
   public boolean isThisType(String name, boolean open) {
-    if (!checkSuffix(name, TIFF_SUFFIXES))
+    if (!checkSuffix(name, TIFF_SUFFIXES) || !open) {
       return false;
+    }
 
     try {
       CaseInsensitiveLocation.invalidateCache();
@@ -186,7 +187,6 @@ public class ZeissTIFFReader extends BaseZeissReader {
       return false;
     }
 
-    if (!open) return false; // not allowed to touch the file system
     return true;
   }
 

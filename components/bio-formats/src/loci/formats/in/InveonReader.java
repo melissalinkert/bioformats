@@ -77,6 +77,9 @@ public class InveonReader extends FormatReader {
     if (checkSuffix(name, "hdr")) {
       return super.isThisType(name, open);
     }
+    if (!open) {
+      return false;
+    }
 
     Location file = new Location(name + ".hdr");
 

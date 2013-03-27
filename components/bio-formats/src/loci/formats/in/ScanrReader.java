@@ -142,6 +142,9 @@ public class ScanrReader extends FormatReader {
     {
       return true;
     }
+    if (!open) {
+      return false;
+    }
 
     Location parent = new Location(name).getAbsoluteFile().getParentFile();
     if (checkSuffix(name, "tif") && parent.getName().equalsIgnoreCase("Data"))

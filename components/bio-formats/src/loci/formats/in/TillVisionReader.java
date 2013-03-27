@@ -107,6 +107,9 @@ public class TillVisionReader extends FormatReader {
     if (checkSuffix(name, "vws") || checkSuffix(name, "pst")) {
       return true;
     }
+    if (!open) {
+      return false;
+    }
     String pstFile = name;
     if (name.indexOf(".") != -1) {
       pstFile = pstFile.substring(0, pstFile.lastIndexOf("."));

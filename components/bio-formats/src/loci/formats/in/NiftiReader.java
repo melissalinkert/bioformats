@@ -99,10 +99,10 @@ public class NiftiReader extends FormatReader {
   /* @see loci.formats.IFormatReader#isThisType(String, boolean) */
   public boolean isThisType(String name, boolean open) {
     if (checkSuffix(name, "nii")) return true;
+    if (!open) return false;
     int dot = name.lastIndexOf(".");
     if (dot == 0) dot = name.length() - 1;
     if (dot < 0) return false;
-    if (!open) return false;
     String headerFile = name.substring(0, dot) + ".hdr";
     try {
       RandomAccessInputStream header = new RandomAccessInputStream(headerFile);

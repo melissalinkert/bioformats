@@ -37,6 +37,7 @@ import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
+import loci.formats.tiff.IFD;
 import loci.formats.tiff.TiffParser;
 import ome.xml.model.primitives.PositiveFloat;
 
@@ -75,10 +76,10 @@ public class ImprovisionTiffReader extends BaseTiffReader {
 
   // -- IFormatReader API methods --
 
-  /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
-  public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    TiffParser tp = new TiffParser(stream);
-    String comment = tp.getComment();
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
+  protected boolean isThisType(IFD ifd) {
+    if (ifd == null) return false;
+    String comment = ifd.getComment();
     if (comment == null) return false;
     return comment.indexOf(IMPROVISION_MAGIC_STRING) >= 0;
   }

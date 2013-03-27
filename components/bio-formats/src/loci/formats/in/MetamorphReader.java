@@ -179,10 +179,8 @@ public class MetamorphReader extends BaseTiffReader {
     return super.isThisType(name, open);
   }
 
-  /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
-  public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    TiffParser tp = new TiffParser(stream);
-    IFD ifd = tp.getFirstIFD();
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
+  protected boolean isThisType(IFD ifd) {
     if (ifd == null) return false;
     String software = ifd.getIFDTextValue(IFD.SOFTWARE);
     boolean validSoftware = software != null &&

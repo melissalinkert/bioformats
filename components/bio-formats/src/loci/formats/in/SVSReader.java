@@ -80,59 +80,26 @@ public class SVSReader extends BaseTiffReader {
 
   // -- IFormatReader API methods --
 
-  /* (non-Javadoc)
-   * @see loci.formats.FormatReader#isThisType(java.lang.String, boolean)
-   */
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
   @Override
-  public boolean isThisType(String name, boolean open) {
-    boolean isThisType = super.isThisType(name, open);
-    if (!isThisType && open) {
-      RandomAccessInputStream stream = null;
-      try {
-        stream = new RandomAccessInputStream(name);
-        TiffParser tiffParser = new TiffParser(stream);
-        tiffParser.setDoCaching(false);
-        if (!tiffParser.isValidHeader()) {
-          return false;
-        }
-        IFD ifd = tiffParser.getFirstIFD();
-        if (ifd == null) {
-          return false;
-        }
-        Object description = ifd.get(IFD.IMAGE_DESCRIPTION);
-        if (description != null) {
-          String imageDescription = null;
+  protected boolean isThisType(IFD ifd) {
+    if (ifd == null) {
+      return false;
+    }
+    Object description = ifd.get(IFD.IMAGE_DESCRIPTION);
+    if (description != null) {
+      String imageDescription = null;
 
-          if (description instanceof TiffIFDEntry) {
-            imageDescription =
-              tiffParser.getIFDValue((TiffIFDEntry) description).toString();
-          }
-          else if (description instanceof String) {
-            imageDescription = (String) description;
-          }
-          if (imageDescription != null
-              && imageDescription.startsWith(APERIO_IMAGE_DESCRIPTION_PREFIX)) {
-            return true;
-          }
-        }
-        return false;
+      if (description instanceof String) {
+        imageDescription = (String) description;
       }
-      catch (IOException e) {
-        LOGGER.debug("I/O exception during isThisType() evaluation.", e);
-        return false;
-      }
-      finally {
-        try {
-          if (stream != null) {
-            stream.close();
-          }
-        }
-        catch (IOException e) {
-          LOGGER.debug("I/O exception during stream closure.", e);
-        }
+      if (imageDescription != null &&
+        imageDescription.startsWith(APERIO_IMAGE_DESCRIPTION_PREFIX))
+      {
+        return true;
       }
     }
-    return isThisType;
+    return false;
   }
 
   /**

@@ -78,6 +78,11 @@ public class MinimalTiffReader extends FormatReader {
   private static final Logger LOGGER =
     LoggerFactory.getLogger(MinimalTiffReader.class);
 
+  // -- IFD cache for isThisType --
+
+  protected static String isThisTypeId = null;
+  protected static IFD isThisTypeIFD = null;
+
   // -- Fields --
 
   /** List of IFDs for the current TIFF. */
@@ -141,9 +146,53 @@ public class MinimalTiffReader extends FormatReader {
 
   // -- IFormatReader API methods --
 
+  /* @see loci.formats.IFormatReader#isThisType(String, boolean) */
+  public boolean isThisType(String name, boolean open) {
+    if (checkSuffix(name, suffixes)) {
+      if (suffixSufficient) {
+        return true;
+      }
+    }
+    else if (suffixNecessary) {
+      return false;
+    }
+    if (!name.equals(isThisTypeId) || isThisTypeIFD == null) {
+      isThisTypeId = name;
+      RandomAccessInputStream stream = null;
+      try {
+        stream = new RandomAccessInputStream(name);
+        TiffParser parser = new TiffParser(stream);
+        //parser.setDoCaching(false);
+        parser.setAssumeEqualStrips(equalStrips);
+        isThisTypeIFD = parser.getFirstIFD();
+      }
+      catch (IOException e) {
+        LOGGER.debug("", e);
+      }
+      finally {
+        if (stream != null) {
+          try {
+            stream.close();
+          }
+          catch (IOException e) {
+
+          }
+        }
+      }
+    }
+    if (open) {
+      return isThisType(isThisTypeIFD);
+    }
+    return super.isThisType(name, open);
+  }
+
   /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
   public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    return new TiffParser(stream).isValidHeader();
+    TiffParser parser = new TiffParser(stream);
+    if (!parser.isValidHeader()) {
+      return false;
+    }
+    return isThisType(parser.getFirstIFD());
   }
 
   /* @see loci.formats.IFormatReader#get8BitLookupTable() */
@@ -585,5 +634,9 @@ public class MinimalTiffReader extends FormatReader {
     LOGGER.debug("Using JPEG 2000 resolution level {}",
         j2kCodecOptions.resolution);
     tiffParser.setCodecOptions(j2kCodecOptions);
+  }
+
+  protected boolean isThisType(IFD ifd) {
+    return ifd != null;
   }
 }

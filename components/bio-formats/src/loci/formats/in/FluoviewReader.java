@@ -129,19 +129,6 @@ public class FluoviewReader extends BaseTiffReader {
 
   // -- IFormatReader API methods --
 
-  /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
-  public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    TiffParser tp = new TiffParser(stream);
-    IFD ifd = tp.getFirstIFD();
-    if (ifd == null) return false;
-    String com = ifd.getComment();
-    if (com == null) com = "";
-    return (com.indexOf(FLUOVIEW_MAGIC_STRING) != -1 &&
-      ifd.containsKey(new Integer(MMHEADER)) ||
-      ifd.containsKey(new Integer(MMSTAMP))) ||
-      com.startsWith(ANDOR_MAGIC_STRING);
-  }
-
   /**
    * @see loci.formats.IFormatReader#openBytes(int, byte[], int, int, int, int)
    */
@@ -844,6 +831,16 @@ public class FluoviewReader extends BaseTiffReader {
     if (lengths[0] == 0) lengths[0] = 1;
     if (lengths[1] == 0) lengths[1] = 1;
     return FormatTools.rasterToPosition(lengths, seriesIndex);
+  }
+
+  protected boolean isThisType(IFD ifd) {
+    if (ifd == null) return false;
+    String com = ifd.getComment();
+    if (com == null) com = "";
+    return (com.indexOf(FLUOVIEW_MAGIC_STRING) != -1 &&
+      ifd.containsKey(new Integer(MMHEADER)) ||
+      ifd.containsKey(new Integer(MMSTAMP))) ||
+      com.startsWith(ANDOR_MAGIC_STRING);
   }
 
 }

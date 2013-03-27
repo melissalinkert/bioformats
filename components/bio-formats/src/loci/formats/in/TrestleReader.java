@@ -104,10 +104,8 @@ public class TrestleReader extends BaseTiffReader {
     return false;
   }
 
-  /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
-  public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    TiffParser parser = new TiffParser(stream);
-    IFD ifd = parser.getFirstIFD();
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
+  protected boolean isThisType(IFD ifd) {
     if (ifd == null) return false;
     String copyright = ifd.getIFDTextValue(IFD.COPYRIGHT);
     if (copyright == null) return false;

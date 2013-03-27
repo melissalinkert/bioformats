@@ -87,53 +87,24 @@ public class LeicaSCNReader extends BaseTiffReader {
 
   // -- IFormatReader API methods --
 
-  /* (non-Javadoc)
-   * @see loci.formats.FormatReader#isThisType(java.lang.String, boolean)
-   */
-  @Override
-  public boolean isThisType(String name, boolean open) {
-    boolean isThisType = super.isThisType(name, open);
-    if (isThisType && open) {
-      isThisType = false;
-      RandomAccessInputStream stream = null;
-      try {
-        stream = new RandomAccessInputStream(name);
-        TiffParser tiffParser = new TiffParser(stream);
-        if (!tiffParser.isValidHeader()) {
-          isThisType = false;
-        } else {
-          String imageDescription = tiffParser.getComment();
-          if (imageDescription != null) {
-            try {
-              // Test if XML is valid SCN metadata
-              LeicaSCNHandler handler = new LeicaSCNHandler();
-              XMLTools.parseXML(imageDescription, handler);
-              isThisType = true;
-            }
-            catch (Exception se) {
-              isThisType = false;
-            }
-          }
-        }
-      }
-      catch (IOException e) {
-        LOGGER.debug("I/O exception during isThisType() evaluation.", e);
-        isThisType = false;
-      }
-      finally {
-        try {
-          if (stream != null) {
-            stream.close();
-          }
-        }
-        catch (IOException e) {
-          LOGGER.debug("I/O exception during stream closure.", e);
-        }
-      }
-    } else {
-      isThisType = false;
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
+  protected boolean isThisType(IFD ifd) {
+    if (ifd == null) {
+      return false;
     }
-    return isThisType;
+    String imageDescription = ifd.getComment();
+    if (imageDescription != null) {
+      try {
+        // Test if XML is valid SCN metadata
+        LeicaSCNHandler handler = new LeicaSCNHandler();
+        XMLTools.parseXML(imageDescription, handler);
+        return true;
+      }
+      catch (Exception se) {
+        LOGGER.debug("", se);
+      }
+    }
+    return false;
   }
 
   private int imageIFD(int no) {

@@ -81,10 +81,8 @@ public class SISReader extends BaseTiffReader {
 
   // -- IFormatReader API methods --
 
-  /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
-  public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    TiffParser tp = new TiffParser(stream);
-    IFD ifd = tp.getFirstIFD();
+  /* @see loci.formats.in.MinimalTiffReader#isThisType(IFD) */
+  protected boolean isThisType(IFD ifd) {
     if (ifd == null) return false;
     String software = ifd.getIFDTextValue(IFD.SOFTWARE);
     return ifd.get(SIS_TAG) != null &&

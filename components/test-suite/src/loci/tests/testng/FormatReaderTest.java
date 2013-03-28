@@ -1547,6 +1547,9 @@ public class FormatReaderTest {
     if (config == null) throw new SkipException("No config tree");
     String testName = "testUnflattenedPixelsHashes";
     if (!initFile()) result(testName, false, "initFile");
+    if (reader.getSeriesCount() == 1) {
+      throw new SkipException("Only one series");
+    }
 
     boolean success = true;
     String msg = null;
@@ -1693,6 +1696,9 @@ public class FormatReaderTest {
     if (config == null) throw new SkipException("No config tree");
     String testName = "testUnflattenedSubimagePixelsHashes";
     if (!initFile()) result(testName, false, "initFile");
+    if (reader.getSeriesCount() == 1) {
+      throw new SkipException("Only one series");
+    }
 
     boolean success = true;
     String msg = null;

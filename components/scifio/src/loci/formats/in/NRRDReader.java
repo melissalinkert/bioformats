@@ -39,6 +39,7 @@ package loci.formats.in;
 import java.io.File;
 import java.io.IOException;
 
+import loci.common.ByteArrayHandle;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.ClassList;
@@ -160,7 +161,24 @@ public class NRRDReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     if (initializeHelper && dataFile != null) {
-      helper.setId(dataFile);
+      if (encoding.equals("raw")) {
+        helper.setId(dataFile);
+      }
+      else if (encoding.equals("gzip")) {
+        RandomAccessInputStream s = new RandomAccessInputStream(dataFile);
+        byte[] b = null;
+        try {
+          b = new byte[(int) s.length()];
+          s.readFully(b);
+        }
+        finally {
+          s.close();
+        }
+
+        Location.mapFile(dataFile, new ByteArrayHandle(b));
+        helper.setId(dataFile);
+        initializeHelper = false;
+      }
     }
 
     // TODO : add support for additional encoding types
@@ -198,6 +216,7 @@ public class NRRDReader extends FormatReader {
       offset = 0;
       pixelSizes = null;
       initializeHelper = false;
+      Location.mapFile(dataFile, null);
     }
   }
 

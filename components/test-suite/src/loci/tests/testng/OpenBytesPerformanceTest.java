@@ -275,7 +275,7 @@ public class OpenBytesPerformanceTest
                 "%s.alloc_tile.%s.[%d:%d]",
                 ((ReaderWrapper) reader).unwrap().getClass().getName(),
                 filename, series, image));
-            reader.openBytes(0, x, y, actualTileWidth, actualTileHeight);
+            reader.openBytes(image, x, y, actualTileWidth, actualTileHeight);
             stopWatch.stop();
           }
         }

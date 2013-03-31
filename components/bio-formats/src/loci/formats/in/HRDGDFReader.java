@@ -64,7 +64,9 @@ public class HRDGDFReader extends FormatReader {
 
   // -- Fields --
 
-  private double[][] surfaceWind;
+  private String[] data;
+  private byte[][] surfaceWind;
+  private int pixelLine;
 
   // -- Constructor --
 
@@ -94,15 +96,40 @@ public class HRDGDFReader extends FormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
-    int nextBufIndex = 0;
+    if (surfaceWind == null) {
+      surfaceWind = new byte[2][getSizeX() * getSizeY() * 8];
+
+      int pixIndex = 0;
+
+      int lineNumber = pixelLine;
+      while (lineNumber < data.length) {
+        String line = data[lineNumber++];
+
+        while (line.indexOf("(") != -1) {
+          int end = line.indexOf(")");
+
+          String pixel = line.substring(line.indexOf("(") + 1, end);
+          line = line.substring(end + 1);
+
+          int comma = pixel.indexOf(",");
+
+          double firstWind = new Double(pixel.substring(0, comma).trim());
+          double secondWind = new Double(pixel.substring(comma + 1).trim());
+
+          long v = Double.doubleToLongBits(firstWind);
+          DataTools.unpackBytes(
+            v, surfaceWind[0], pixIndex, 8, isLittleEndian());
+          v = Double.doubleToLongBits(secondWind);
+          DataTools.unpackBytes(
+            v, surfaceWind[1], pixIndex, 8, isLittleEndian());
+          pixIndex += 8;
+        }
+      }
+    }
 
     for (int row=y; row<h+y; row++) {
-      for (int col=x; col<w+x; col++) {
-        long v =
-          Double.doubleToLongBits(surfaceWind[no][row * getSizeX() + col]);
-        DataTools.unpackBytes(v, buf, nextBufIndex, 8, isLittleEndian());
-        nextBufIndex += 8;
-      }
+      System.arraycopy(surfaceWind[no], 8 * (row * getSizeX() + x),
+        buf, (row - y) * w * 8, w * 8);
     }
 
     return buf;
@@ -113,6 +140,8 @@ public class HRDGDFReader extends FormatReader {
     super.close(fileOnly);
     if (!fileOnly) {
       surfaceWind = null;
+      pixelLine = 0;
+      data = null;
     }
   }
 
@@ -122,7 +151,7 @@ public class HRDGDFReader extends FormatReader {
   protected void initFile(String id) throws FormatException, IOException {
     super.initFile(id);
 
-    String[] data = DataTools.readFile(id).split("[\r\n]");
+    data = DataTools.readFile(id).split("[\r\n]");
 
     String hurricane = data[0].substring(data[0].lastIndexOf(" ") + 1);
 
@@ -141,32 +170,18 @@ public class HRDGDFReader extends FormatReader {
     // skip ahead to the surface wind section
 
     int lineNumber = 3;
-    while (!data[lineNumber++].startsWith("SURFACE WIND COMPONENTS"));
+    while (!data[lineNumber++].startsWith("SURFACE WIND COMPONENTS")) {
+      int count = Integer.parseInt(data[lineNumber++].trim());
+      lineNumber += count / 6;
+      if (count % 6 != 0) {
+        lineNumber++;
+      }
+    }
 
     String dims = data[lineNumber++].trim();
     String x = dims.substring(0, dims.indexOf(" ")).trim();
     String y = dims.substring(dims.indexOf(" ") + 1).trim();
-    surfaceWind = new double[2][Integer.parseInt(y) * Integer.parseInt(x)];
-
-    int pixIndex = 0;
-
-    while (lineNumber < data.length) {
-      String line = data[lineNumber++];
-
-      while (line.indexOf("(") != -1) {
-        int end = line.indexOf(")");
-
-        String pixel = line.substring(line.indexOf("(") + 1, end);
-        line = line.substring(end + 1);
-
-        int comma = pixel.indexOf(",");
-
-        surfaceWind[0][pixIndex] = new Double(pixel.substring(0, comma).trim());
-        surfaceWind[1][pixIndex] =
-          new Double(pixel.substring(comma + 1).trim());
-        pixIndex++;
-      }
-    }
+    pixelLine = lineNumber;
 
     addGlobalMeta("Hurricane", hurricane);
     addGlobalMeta("DX (kilometers)", pixelSize);

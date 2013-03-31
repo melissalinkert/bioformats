@@ -235,10 +235,8 @@ public class ScanrReader extends FormatReader {
       try {
         reader.setId(tiffs[index]);
         reader.openBytes(0, buf, x, y, w, h);
-        reader.close();
       }
       catch (FormatException e) {
-        reader.close();
         return buf;
       }
 

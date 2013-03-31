@@ -83,6 +83,18 @@ public class OperettaReader extends FormatReader {
 
   // -- IFormatReader API methods --
 
+  /* @see loci.formats.IFormatReader#getOptimalTileWidth() */
+  public int getOptimalTileWidth() {
+    FormatTools.assertId(currentId, true, 1);
+    return reader.getOptimalTileWidth();
+  }
+
+  /* @see loci.formats.IFormatReader#getOptimalTileHeight() */
+  public int getOptimalTileHeight() {
+    FormatTools.assertId(currentId, true, 1);
+    return reader.getOptimalTileHeight();
+  }
+
   /* @see loci.formats.IFormatReader#getRequiredDirectories(String[]) */
   public int getRequiredDirectories(String[] files)
     throws FormatException, IOException
@@ -172,7 +184,6 @@ public class OperettaReader extends FormatReader {
         }
         reader.setId(p.filename);
         reader.openBytes(0, buf, x, y, w, h);
-        reader.close();
       }
     }
 

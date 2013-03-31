@@ -205,7 +205,6 @@ public class ZeissTIFFReader extends BaseZeissReader {
       Plane p = planes.get(no);
       tiffReader.setId(p.filename);
       tiffReader.openBytes(0, buf, x, y, w, h);
-      tiffReader.close();
     } else {
       LOGGER.warn("File for image #{} ({}) is missing.", no, imageFiles[no]);
     }
@@ -264,10 +263,9 @@ public class ZeissTIFFReader extends BaseZeissReader {
 
     TIFFInfo info = new TIFFInfo();
 
-    CaseInsensitiveLocation l;
     CaseInsensitiveLocation lxml;
 
-    l = new CaseInsensitiveLocation(id);
+    CaseInsensitiveLocation l = new CaseInsensitiveLocation(id);
     String name = l.getAbsolutePath();
     // This "original" name is only tentative; it might be set to to eiher the top-level image or thumbnail (if it's the XML file, and the top-level file exists, or the XML file if it does not exist)
     if (name.endsWith(".tif")) {

@@ -448,7 +448,6 @@ public class MinimalTiffReader extends FormatReader {
     super.initFile(id);
     in = new RandomAccessInputStream(id);
     tiffParser = new TiffParser(in);
-    tiffParser.setDoCaching(false);
     tiffParser.setUse64BitOffsets(use64Bit);
     Boolean littleEndian = tiffParser.checkHeader();
     if (littleEndian == null) {
@@ -456,6 +455,9 @@ public class MinimalTiffReader extends FormatReader {
     }
     boolean little = littleEndian.booleanValue();
     in.order(little);
+
+    String comment = tiffParser.getComment();
+    tiffParser.setDoCaching(comment == null || !comment.startsWith("ImageJ"));
 
     LOGGER.info("Reading IFDs");
 

@@ -85,34 +85,6 @@ public class IMODReader extends FormatReader {
     throws FormatException, IOException
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
-
-    // draw points given for each contour
-
-    /*
-    Region image = new Region(x, y, w, h);
-    int pixel =
-      getRGBChannelCount() * FormatTools.getBytesPerPixel(getPixelType());
-
-    for (int obj=0; obj<points.length; obj++) {
-      for (int contour=0; contour<points[obj].length; contour++) {
-        for (int point=0; point<points[obj][contour].length; point++) {
-          if (points[obj][contour][point][2] == no) {
-            int xc = (int) points[obj][contour][point][0];
-            int yc = getSizeY() - (int) points[obj][contour][point][1] - 1;
-
-            if (image.containsPoint(xc, yc)) {
-              xc -= x;
-              yc -= y;
-
-              int index = pixel * (yc * w + xc);
-              System.arraycopy(colors[obj], 0, buf, index, colors[obj].length);
-            }
-          }
-        }
-      }
-    }
-    */
-
     return buf;
   }
 

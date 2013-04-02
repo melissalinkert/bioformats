@@ -28,9 +28,13 @@ package loci.formats.in;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Vector;
 
+import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
+import loci.common.services.DependencyException;
+import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
@@ -39,10 +43,12 @@ import loci.formats.MetadataTools;
 import loci.formats.UnsupportedCompressionException;
 import loci.formats.codec.ZlibCodec;
 import loci.formats.meta.MetadataStore;
+import loci.formats.services.MDBService;
 
 import ome.xml.model.enums.NamingConvention;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveFloat;
+import ome.xml.model.primitives.Timestamp;
 
 /**
  * Reader for Cellomics C01 files.
@@ -60,6 +66,10 @@ public class CellomicsReader extends FormatReader {
   // -- Fields --
 
   private String[] files;
+  private String plateDescription;
+  private String acqDate, acqTime;
+  private String externalID;
+  private String plateName;
 
   // -- Constructor --
 
@@ -93,11 +103,15 @@ public class CellomicsReader extends FormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
-    String file = files[getSeries()];
+    int[] coords = getZCTCoords(no);
+    int imageCount = files.length / getSeriesCount();
+    int image = getIndex(0, coords[1], coords[2]);
+
+    String file = files[getSeries() * imageCount + image];
     RandomAccessInputStream s = getDecompressedStream(file);
 
     int planeSize = FormatTools.getPlaneSize(this);
-    s.seek(52 + no * planeSize);
+    s.seek(52 + coords[0] * planeSize);
     readPlane(s, x, y, w, h, buf);
     s.close();
 
@@ -109,6 +123,11 @@ public class CellomicsReader extends FormatReader {
     super.close(fileOnly);
     if (!fileOnly) {
       files = null;
+      plateDescription = null;
+      acqDate = null;
+      acqTime = null;
+      externalID = null;
+      plateName = null;
     }
   }
 
@@ -134,7 +153,7 @@ public class CellomicsReader extends FormatReader {
     Location parent = baseFile.getParentFile();
     ArrayList<String> pixelFiles = new ArrayList<String>();
 
-    String plateName = getPlateName(baseFile.getName());
+    plateName = getPlateName(baseFile.getName());
 
     if (plateName != null && isGroupFiles()) {
       String[] list = parent.list(true);
@@ -158,14 +177,19 @@ public class CellomicsReader extends FormatReader {
     ArrayList<String> uniqueRows = new ArrayList<String>();
     ArrayList<String> uniqueCols = new ArrayList<String>();
     ArrayList<String> uniqueFields = new ArrayList<String>();
+    ArrayList<String> uniqueTimepoints = new ArrayList<String>();
     for (String f : files) {
       String wellRow = getWellRow(f);
       String wellCol = getWellColumn(f);
       String field = getField(f);
+      String timepoint = getTimepoint(f);
 
       if (!uniqueRows.contains(wellRow)) uniqueRows.add(wellRow);
       if (!uniqueCols.contains(wellCol)) uniqueCols.add(wellCol);
       if (!uniqueFields.contains(field)) uniqueFields.add(field);
+      if (!uniqueTimepoints.contains(timepoint)) {
+        uniqueTimepoints.add(timepoint);
+      }
     }
 
     fields = uniqueFields.size();
@@ -176,10 +200,11 @@ public class CellomicsReader extends FormatReader {
       files = new String[] {id};
     }
 
-    core = new CoreMetadata[files.length];
+    core = new CoreMetadata[files.length / uniqueTimepoints.size()];
 
     for (int i=0; i<core.length; i++) {
       core[i] = new CoreMetadata();
+      core[i].sizeT = uniqueTimepoints.size();
     }
 
     in = getDecompressedStream(id);
@@ -229,13 +254,20 @@ public class CellomicsReader extends FormatReader {
       core[i].sizeX = x;
       core[i].sizeY = y;
       core[i].sizeZ = nPlanes;
-      core[i].sizeT = 1;
       core[i].sizeC = 1;
-      core[i].imageCount = getSizeZ();
+      core[i].imageCount = getSizeZ() * getSizeT();
       core[i].littleEndian = true;
       core[i].dimensionOrder = "XYCZT";
       core[i].pixelType =
         FormatTools.pixelTypeFromBytes(nBits / 8, false, false);
+    }
+
+    LOGGER.info("Looking for database file");
+
+    String mdb = findMDB();
+    if (mdb != null) {
+      LOGGER.info("Parsing database file");
+      parseMDB(mdb);
     }
 
     LOGGER.info("Populating metadata store");
@@ -247,6 +279,8 @@ public class CellomicsReader extends FormatReader {
     store.setPlateName(plateName, 0);
     store.setPlateRowNamingConvention(NamingConvention.LETTER, 0);
     store.setPlateColumnNamingConvention(NamingConvention.NUMBER, 0);
+    store.setPlateDescription(plateDescription, 0);
+    store.setPlateExternalIdentifier(externalID, 0);
 
     int realRows = wellRows;
     int realCols = wellColumns;
@@ -313,6 +347,17 @@ public class CellomicsReader extends FormatReader {
       }
       store.setImageName(
         "Well " + wellRow + wellColumn + ", Field #" + field, i);
+
+      if (acqDate != null && acqTime != null) {
+        String timestamp = acqDate.substring(0, acqDate.indexOf(" ")) + " " +
+          acqTime.substring(acqTime.indexOf(" ") + 1);
+        timestamp = DateTools.formatDate(timestamp, "M/d/yyyy HH:mm:ss");
+        try {
+          store.setImageAcquisitionDate(new Timestamp(timestamp), i);
+        }
+        catch (NullPointerException e) {
+        }
+      }
     }
 
     if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
@@ -349,7 +394,7 @@ public class CellomicsReader extends FormatReader {
   }
 
   private String getWellName(String filename) {
-    String wellName = filename.substring(filename.lastIndexOf("_") + 1);
+    String wellName = filename.substring(filename.lastIndexOf("f") - 3);
     while (!Character.isLetter(wellName.charAt(0)) ||
       !Character.isDigit(wellName.charAt(1)))
     {
@@ -373,6 +418,14 @@ public class CellomicsReader extends FormatReader {
     return well.substring(start, end);
   }
 
+  private String getTimepoint(String filename) {
+    int fieldIndex = filename.lastIndexOf("f");
+    if (filename.charAt(fieldIndex - 7) == 't') {
+      return filename.substring(fieldIndex - 6, fieldIndex);
+    }
+    return "0";
+  }
+
   private RandomAccessInputStream getDecompressedStream(String filename)
     throws FormatException, IOException
   {
@@ -388,6 +441,87 @@ public class CellomicsReader extends FormatReader {
       return new RandomAccessInputStream(file);
     }
     return s;
+  }
+
+  private String findMDB() {
+    Location file = new Location(currentId).getAbsoluteFile();
+    Location parent = file.getParentFile();
+
+    String[] list = parent.list(true);
+    for (String f : list) {
+      if (checkSuffix(f, "mdb")) {
+        String name = f.substring(0, f.lastIndexOf("."));
+        if (file.getName().startsWith(name)) {
+          return new Location(parent, f).getAbsolutePath();
+        }
+      }
+    }
+    return null;
+  }
+
+  private void parseMDB(String filename) throws FormatException, IOException {
+    MDBService mdbService = null;
+    try {
+      ServiceFactory factory = new ServiceFactory();
+      mdbService = factory.getInstance(MDBService.class);
+    }
+    catch (DependencyException e) {
+      LOGGER.warn("MDB Tools Java library not found", e);
+      return;
+    }
+
+    try {
+      mdbService.initialize(filename);
+    }
+    catch (Exception e) {
+      LOGGER.debug("", e);
+      return;
+    }
+
+    Vector<String[]> asnPlate = mdbService.readTable("asnPlate");
+    Vector<String[]> asnWell = mdbService.readTable("asnWell");
+    Vector<String[]> asnFormFactor = mdbService.readTable("asnFormFactor");
+    Vector<String[]> fImage = mdbService.readTable("FImage");
+
+    mdbService.close();
+
+    if (asnPlate != null) {
+      addTable(asnPlate);
+    }
+
+    if (asnFormFactor != null) {
+      addTable(asnFormFactor);
+    }
+  }
+
+  private void addTable(Vector<String[]> table) {
+    String[] columns = table.get(0);
+    for (int row=1; row<table.size(); row++) {
+      String[] rowData = table.get(row);
+      for (int col=1; col<columns.length; col++) {
+        String key = columns[0] + " " + columns[col];
+        if (table.size() > 2) {
+          key += " #" + row;
+        }
+        addGlobalMeta(key, rowData[col - 1]);
+
+        if (key.equals("asnFormFactor Description")) {
+          plateDescription = rowData[col - 1];
+        }
+        else if (key.equals("asnPlate CreationDate")) {
+          acqDate = rowData[col - 1];
+        }
+        else if (key.equals("asnPlate CreationTime")) {
+          acqTime = rowData[col - 1];
+        }
+        else if (key.equals("asnPlate ScanID")) {
+          externalID = rowData[col - 1];
+        }
+        else if (key.equals("asnPlate Name")) {
+          plateName = rowData[col - 1];
+        }
+      }
+    }
   }
 
 }

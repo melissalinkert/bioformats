@@ -59,6 +59,12 @@ public class FileInfo {
    */
   public boolean usedToInitialize;
 
+  /** Other files belonging to the same fileset.*/
+  public String[] usedFiles;
+
+  /** Whether or not this set of files belongs to a Screen or Plate. */
+  public boolean isSPW;
+
   // -- Object API methods --
 
   public String toString() {

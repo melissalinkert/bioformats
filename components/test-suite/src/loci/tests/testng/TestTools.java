@@ -35,8 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -46,8 +45,7 @@ import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
-import loci.formats.IFormatReader;
-import loci.formats.IFormatWriter;
+import loci.formats.DirectoryParser;
 import loci.formats.ImageReader;
 
 import org.apache.log4j.Level;
@@ -196,101 +194,46 @@ public class TestTools {
 
   /** Recursively generate a list of files to test. */
   public static void getFiles(String root, List files,
-    final ConfigurationTree config, String toplevelConfig)
+    final ConfigurationTree config, final String toplevelConfig)
   {
     getFiles(root, files, config, toplevelConfig, null);
   }
 
   /** Recursively generate a list of files to test. */
   public static void getFiles(String root, List files,
-    final ConfigurationTree config, String toplevelConfig, String[] subdirs)
+    final ConfigurationTree config, final String toplevelConfig,
+    String[] subdirs)
   {
-    Location f = new Location(root);
-    String[] subs = f.list();
-    if (subs == null) subs = new String[0];
-    if (subdirs != null) {
-      subs = subdirs;
+    final boolean hasToplevel =
+      toplevelConfig != null && new File(toplevelConfig).exists();
+    ImageReader reader = new ImageReader();
+    DirectoryParser parser = new DirectoryParser(reader, 6, null) {
+      public void handleFile(File file, int depth, Collection collection) {
+        if ((!hasToplevel && file.getName().equals(".bioformats")) ||
+          (hasToplevel && file.getAbsolutePath().equals(toplevelConfig)))
+        {
+          // special config file for the test suite
+          LOGGER.info("\tconfig file");
+          try {
+            config.parseConfigFile(file.getAbsolutePath());
+          }
+          catch (IOException exc) {
+            LOGGER.info("", exc);
+          }
+          catch (Exception e) { }
+        }
+
+        super.handleFile(file, depth, collection);
+      }
+    };
+
+    parser.getFilesets(subdirs == null ? new String[] {root} : subdirs);
+    files.addAll(parser.getPaths());
+    try {
+      reader.close();
     }
-
-    boolean isToplevel =
-     toplevelConfig != null && new File(toplevelConfig).exists();
-
-    // make sure that if a config file exists, it is first on the list
-    for (int i=0; i<subs.length; i++) {
-      Location file = new Location(root, subs[i]);
-      subs[i] = file.getAbsolutePath();
-      if ((!isToplevel && file.getName().equals(".bioformats")) ||
-        (isToplevel && subs[i].equals(toplevelConfig)))
-      {
-        String tmp = subs[0];
-        subs[0] = subs[i];
-        subs[i] = tmp;
-
-        // special config file for the test suite
-        LOGGER.info("\tconfig file");
-        try {
-          config.parseConfigFile(subs[0]);
-        }
-        catch (IOException exc) {
-          LOGGER.info("", exc);
-        }
-        catch (Exception e) { }
-      }
-    }
-
-    Arrays.sort(subs, new Comparator() {
-      public int compare(Object o1, Object o2) {
-        String s1 = o1.toString();
-        String s2 = o2.toString();
-
-        Configuration c1 = null;
-        Configuration c2 = null;
-
-        try {
-          c1 = config.get(s1);
-        }
-        catch (IOException e) { }
-        try {
-          c2 = config.get(s2);
-        }
-        catch (IOException e) { }
-
-        if (c1 == null && c2 != null) {
-          return 1;
-        }
-        else if (c1 != null && c2 == null) {
-          return -1;
-        }
-
-        return s1.compareTo(s2);
-      }
-    });
-
-    ImageReader typeTester = new ImageReader();
-
-    for (int i=0; i<subs.length; i++) {
-      Location file = new Location(subs[i]);
-      LOGGER.info("Checking {}:", subs[i]);
-
-      if (file.getName().equals(".bioformats")) {
-        continue;
-      }
-      else if (isIgnoredFile(subs[i], config)) {
-        LOGGER.info("\tignored");
-        continue;
-      }
-      else if (file.isDirectory()) {
-        LOGGER.info("\tdirectory");
-        getFiles(subs[i], files, config, null);
-      }
-      else if (!subs[i].endsWith("readme.txt")) {
-        if (typeTester.isThisType(subs[i])) {
-          LOGGER.info("\tOK");
-          files.add(file.getAbsolutePath());
-        }
-        else LOGGER.info("\tunknown type");
-      }
-      file = null;
+    catch (IOException e) {
+      LOGGER.debug("", e);
     }
   }
 

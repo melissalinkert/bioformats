@@ -36,61 +36,42 @@
 
 package loci.formats.tools;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Vector;
 
-import loci.common.Constants;
-import loci.common.xml.XMLTools;
+import loci.formats.FormatException;
+import loci.formats.FormatTools;
+import loci.formats.IFormatReader;
+import loci.formats.ImageReader;
 import loci.formats.UpgradeChecker;
-import loci.formats.tiff.TiffParser;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Attempts to validate the given XML files.
+ * Class containing methods useful for many command line tools.
  *
  * <dl><dt><b>Source code:</b></dt>
- * <dd><a href="http://trac.openmicroscopy.org.uk/ome/browser/bioformats.git/components/bio-formats/src/loci/formats/tools/XMLValidate.java">Trac</a>,
- * <a href="http://git.openmicroscopy.org/?p=bioformats.git;a=blob;f=components/bio-formats/src/loci/formats/tools/XMLValidate.java;hb=HEAD">Gitweb</a></dd></dl>
+ * <dd><a href="http://trac.openmicroscopy.org.uk/ome/browser/bioformats.git/components/bio-formats/src/loci/formats/tools/CommandLineTool.java">Trac</a>,
+ * <a href="http://git.openmicroscopy.org/?p=bioformats.git;a=blob;f=components/bio-formats/src/loci/formats/tools/CommandLineTool.java;hb=HEAD">Gitweb</a></dd></dl>
  */
-public class XMLValidate {
+public class CommandLineTool {
 
-  public static void process(String label, BufferedReader in)
-    throws IOException
-  {
-    StringBuffer sb = new StringBuffer();
-    while (true) {
-      String line = in.readLine();
-      if (line == null) break;
-      sb.append(line);
-    }
-    in.close();
-    XMLTools.validateXML(sb.toString(), label);
-  }
+  private static final Logger LOGGER =
+    LoggerFactory.getLogger(CommandLineTool.class);
 
-  public static void main(String[] args) throws Exception {
-    CommandLineTool.logUpgradeCheck();
+  public static final String NO_UPGRADE_CHECK = "-no-upgrade";
 
-    if (args.length == 0) {
-      // read from stdin
-      process("<stdin>", new BufferedReader(
-        new InputStreamReader(System.in, Constants.ENCODING)));
-    }
-    else {
-      // read from file(s)
-      for (int i=0; i<args.length; i++) {
-        if (args[i].toLowerCase().endsWith("tif") ||
-          args[i].toLowerCase().endsWith("tiff"))
-        {
-          String comment = new TiffParser(args[i]).getComment();
-          process(args[i], new BufferedReader(new StringReader(comment)));
-        }
-        else {
-          process(args[i], new BufferedReader(new InputStreamReader(
-            new FileInputStream(args[i]), Constants.ENCODING)));
-        }
-      }
+  public static void logUpgradeCheck() {
+    UpgradeChecker checker = new UpgradeChecker();
+    boolean canUpgrade =
+      checker.newVersionAvailable(UpgradeChecker.DEFAULT_CALLER);
+    if (canUpgrade) {
+      LOGGER.info("*** A new stable version is available. ***");
+      LOGGER.info("*** Install the new version using:     ***");
+      LOGGER.info("***   'upgradechecker -install'        ***");
     }
   }
 

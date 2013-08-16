@@ -97,8 +97,6 @@ public final class ImageConverter {
   private static final Logger LOGGER =
     LoggerFactory.getLogger(ImageConverter.class);
 
-  private static final String NO_UPGRADE_CHECK = "-no-upgrade";
-
   // -- Fields --
 
   private String in = null, out = null;
@@ -179,7 +177,7 @@ public final class ImageConverter {
             width = Integer.parseInt(tokens[2]);
             height = Integer.parseInt(tokens[3]);
           }
-          else if (!args[i].equals(NO_UPGRADE_CHECK)) {
+          else if (!args[i].equals(CommandLineTool.NO_UPGRADE_CHECK)) {
             LOGGER.error("Found unknown command flag: {}; exiting.", args[i]);
             return false;
           }
@@ -653,15 +651,8 @@ public final class ImageConverter {
   // -- Main method --
 
   public static void main(String[] args) throws FormatException, IOException {
-    if (DataTools.indexOf(args, NO_UPGRADE_CHECK) == -1) {
-      UpgradeChecker checker = new UpgradeChecker();
-      boolean canUpgrade =
-        checker.newVersionAvailable(UpgradeChecker.DEFAULT_CALLER);
-      if (canUpgrade) {
-        LOGGER.info("*** A new stable version is available. ***");
-        LOGGER.info("*** Install the new version using:     ***");
-        LOGGER.info("***   'upgradechecker -install'        ***");
-      }
+    if (DataTools.indexOf(args, CommandLineTool.NO_UPGRADE_CHECK) == -1) {
+      CommandLineTool.logUpgradeCheck();
     }
     ImageConverter converter = new ImageConverter();
     if (!converter.testConvert(new ImageWriter(), args)) System.exit(1);

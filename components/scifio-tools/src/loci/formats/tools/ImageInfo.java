@@ -95,8 +95,6 @@ public class ImageInfo {
   private static final Logger LOGGER = LoggerFactory.getLogger(ImageInfo.class);
   private static final String NEWLINE = System.getProperty("line.separator");
 
-  private static final String NO_UPGRADE_CHECK = "-no-upgrade";
-
   // -- Fields --
 
   private String id = null;
@@ -255,7 +253,7 @@ public class ImageInfo {
         }
         else if (args[i].equals("-map")) map = args[++i];
         else if (args[i].equals("-format")) format = args[++i];
-        else if (!args[i].equals(NO_UPGRADE_CHECK)) {
+        else if (!args[i].equals(CommandLineTool.NO_UPGRADE_CHECK)) {
           LOGGER.error("Found unknown command flag: {}; exiting.", args[i]);
           return false;
         }
@@ -1049,15 +1047,8 @@ public class ImageInfo {
   // -- Main method --
 
   public static void main(String[] args) throws Exception {
-    if (DataTools.indexOf(args, NO_UPGRADE_CHECK) == -1) {
-      UpgradeChecker checker = new UpgradeChecker();
-      boolean canUpgrade =
-        checker.newVersionAvailable(UpgradeChecker.DEFAULT_CALLER);
-      if (canUpgrade) {
-        LOGGER.info("*** A new stable version is available. ***");
-        LOGGER.info("*** Install the new version using:     ***");
-        LOGGER.info("***   'upgradechecker -install'        ***");
-      }
+    if (DataTools.indexOf(args, CommandLineTool.NO_UPGRADE_CHECK) == -1) {
+      CommandLineTool.logUpgradeCheck();
     }
     if (!new ImageInfo().testRead(args)) System.exit(1);
   }

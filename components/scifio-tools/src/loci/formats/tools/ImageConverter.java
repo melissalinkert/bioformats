@@ -197,9 +197,7 @@ public final class ImageConverter {
     }
 
     if (printVersion) {
-      LOGGER.info("Version: {}", FormatTools.VERSION);
-      LOGGER.info("VCS revision: {}", FormatTools.VCS_REVISION);
-      LOGGER.info("Build date: {}", FormatTools.DATE);
+      CommandLineTool.logVersion();
       return true;
     }
 

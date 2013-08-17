@@ -75,4 +75,20 @@ public class CommandLineTool {
     }
   }
 
+  public static void logVersion() {
+    LOGGER.info("Version: {}", FormatTools.VERSION);
+    LOGGER.info("VCS revision: {}", FormatTools.VCS_REVISION);
+    LOGGER.info("Build date: {}", FormatTools.DATE);
+  }
+
+  public static void logUsage(String description, String command,
+    HashMap<String, String> flagArguments, HashMap<String> flagDescriptions)
+  {
+    LOGGER.info(description);
+
+    for (String flag : flagDescriptions.keySet()) {
+      LOGGER.info("{}: {}", flag, flagDescriptions.get(flag));
+    }
+  }
+
 }

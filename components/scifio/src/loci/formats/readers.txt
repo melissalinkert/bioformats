@@ -125,6 +125,7 @@ loci.formats.in.JPKReader             # jpk
 loci.formats.in.NDPIReader            # ndpi
 
 # TIFF-based readers with slow isThisType
+loci.formats.in.CombinedOMETiffReader # ome.tif
 loci.formats.in.OMETiffReader         # tif
 loci.formats.in.PyramidTiffReader     # tif, tiff
 loci.formats.in.MIASReader            # tif

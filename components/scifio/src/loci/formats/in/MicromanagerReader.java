@@ -615,6 +615,14 @@ public class MicromanagerReader extends FormatReader {
             stamps.add(new Double(t / 1000));
           }
           else if (key.equals("Channel")) {
+            if (p.channels == null) {
+              p.channels = new String[1];
+            }
+            else if (p.channels.length <= slice[1]) {
+              String[] tmp = p.channels;
+              p.channels = new String[tmp.length + 1];
+              System.arraycopy(tmp, 0, p.channels, 0, tmp.length);
+            }
             p.channels[slice[1]] = value;
           }
           else if (key.equals("Core-Camera")) p.cameraRef = value;

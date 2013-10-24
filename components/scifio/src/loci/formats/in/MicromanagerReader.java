@@ -496,12 +496,7 @@ public class MicromanagerReader extends FormatReader {
         addSeriesMeta(key, value);
         if (key.equals("Channels")) {
           ms.sizeC = Integer.parseInt(value);
-        }
-        else if (key.equals("ChNames")) {
-          p.channels = value.split(",");
-          for (int q=0; q<p.channels.length; q++) {
-            p.channels[q] = p.channels[q].replaceAll("\"", "").trim();
-          }
+          p.channels = new String[ms.sizeC];
         }
         else if (key.equals("Frames")) {
           ms.sizeT = Integer.parseInt(value);
@@ -613,6 +608,9 @@ public class MicromanagerReader extends FormatReader {
             double t = Double.parseDouble(value);
             stamps.add(new Double(t / 1000));
           }
+          else if (key.equals("Channel")) {
+            p.channels[slice[1]] = value;
+          }
           else if (key.equals("Core-Camera")) p.cameraRef = value;
           else if (key.equals(p.cameraRef + "-Binning")) {
             if (value.indexOf("x") != -1) p.binning = value;
@@ -709,9 +707,6 @@ public class MicromanagerReader extends FormatReader {
 
           if (blocks[2].length() > 0) {
             String channel = p.channels[c];
-            if (channel.indexOf("-") != -1) {
-              channel = channel.substring(0, channel.indexOf("-"));
-            }
             filename.append(channel);
           }
           filename.append("_");

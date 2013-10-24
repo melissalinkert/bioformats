@@ -498,6 +498,12 @@ public class MicromanagerReader extends FormatReader {
           ms.sizeC = Integer.parseInt(value);
           p.channels = new String[ms.sizeC];
         }
+        else if (key.equals("ChNames")) {
+          p.channels = value.split(",");
+          for (int q=0; q<p.channels.length; q++) {
+            p.channels[q] = p.channels[q].replaceAll("\"", "").trim();
+          }
+        }
         else if (key.equals("Frames")) {
           ms.sizeT = Integer.parseInt(value);
         }

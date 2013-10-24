@@ -496,7 +496,6 @@ public class MicromanagerReader extends FormatReader {
         addSeriesMeta(key, value);
         if (key.equals("Channels")) {
           ms.sizeC = Integer.parseInt(value);
-          p.channels = new String[ms.sizeC];
         }
         else if (key.equals("ChNames")) {
           p.channels = value.split(",");
@@ -623,7 +622,9 @@ public class MicromanagerReader extends FormatReader {
               p.channels = new String[tmp.length + 1];
               System.arraycopy(tmp, 0, p.channels, 0, tmp.length);
             }
-            p.channels[slice[1]] = value;
+            if (value != null) {
+              p.channels[slice[1]] = value;
+            }
           }
           else if (key.equals("Core-Camera")) p.cameraRef = value;
           else if (key.equals(p.cameraRef + "-Binning")) {

@@ -619,7 +619,7 @@ public class MicromanagerReader extends FormatReader {
             }
             else if (p.channels.length <= slice[1]) {
               String[] tmp = p.channels;
-              p.channels = new String[tmp.length + 1];
+              p.channels = new String[slice[1] + 1];
               System.arraycopy(tmp, 0, p.channels, 0, tmp.length);
             }
             if (value != null) {

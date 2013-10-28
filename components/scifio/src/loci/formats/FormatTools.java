@@ -38,14 +38,14 @@ package loci.formats;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Properties;
 import java.util.Vector;
 
 import loci.common.Constants;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
-import loci.common.ReflectException;
-import loci.common.ReflectedUniverse;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
@@ -1006,38 +1006,24 @@ public final class FormatTools {
     // NB: Dependency on AWT here is unfortunate, but very difficult to
     // eliminate in general. We use reflection to limit class loading
     // problems with AWT on Mac OS X.
-    ReflectedUniverse r = new ReflectedUniverse();
     byte[][] bytes = null;
     try {
-      r.exec("import loci.formats.gui.AWTImageTools");
-
-      int planeSize = getPlaneSize(reader);
-      byte[] plane = null;
-      if (planeSize < 0) {
-        int width = reader.getThumbSizeX() * 4;
-        int height = reader.getThumbSizeY() * 4;
-        int x = (reader.getSizeX() - width) / 2;
-        int y = (reader.getSizeY() - height) / 2;
-        plane = reader.openBytes(no, x, y, width, height);
-      }
-      else {
-        plane = reader.openBytes(no);
-      }
-
-      r.setVar("plane", plane);
-      r.setVar("reader", reader);
-      r.setVar("sizeX", reader.getSizeX());
-      r.setVar("sizeY", reader.getSizeY());
-      r.setVar("thumbSizeX", reader.getThumbSizeX());
-      r.setVar("thumbSizeY", reader.getThumbSizeY());
-      r.setVar("little", reader.isLittleEndian());
-      r.exec("img = AWTImageTools.openImage(plane, reader, sizeX, sizeY)");
-      r.exec("img = AWTImageTools.makeUnsigned(img)");
-      r.exec("thumb = AWTImageTools.scale(img, thumbSizeX, thumbSizeY, false)");
-      bytes = (byte[][]) r.exec("AWTImageTools.getPixelBytes(thumb, little)");
+      Class awtTools = Class.forName("loci.formats.gui.AWTImageTools");
+      Method getThumbnail =
+        awtTools.getMethod("getThumbnailBytes", IFormatReader.class, int.class);
+      bytes = (byte[][]) getThumbnail.invoke(null, reader, no);
     }
-    catch (ReflectException exc) {
-      throw new FormatException(exc);
+    catch (ClassNotFoundException e) {
+      throw new FormatException(e);
+    }
+    catch (NoSuchMethodException e) {
+      throw new FormatException(e);
+    }
+    catch (IllegalAccessException e) {
+      throw new FormatException(e);
+    }
+    catch (InvocationTargetException e) {
+      throw new FormatException(e);
     }
 
     if (bytes.length == 1) return bytes[0];

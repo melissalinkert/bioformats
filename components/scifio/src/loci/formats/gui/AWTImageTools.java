@@ -1989,4 +1989,30 @@ public final class AWTImageTools {
     return lut;
   }
 
+  // -- Thumbnail retrieval --
+
+  public static byte[][] getThumbnailBytes(IFormatReader reader, int no)
+    throws FormatException, IOException
+  {
+    int planeSize = FormatTools.getPlaneSize(reader);
+    byte[] plane = null;
+    if (planeSize < 0) {
+      int width = reader.getThumbSizeX() * 4;
+      int height = reader.getThumbSizeY() * 4;
+      int x = (reader.getSizeX() - width) / 2;
+      int y = (reader.getSizeY() - height) / 2;
+      plane = reader.openBytes(no, x, y, width, height);
+    }
+    else {
+      plane = reader.openBytes(no);
+    }
+
+    BufferedImage img =
+      openImage(plane, reader, reader.getSizeX(), reader.getSizeY());
+    img = makeUnsigned(img);
+    BufferedImage thumbnail =
+      scale(img, reader.getThumbSizeX(), reader.getThumbSizeY(), false);
+    return getPixelBytes(thumbnail, reader.isLittleEndian());
+  }
+
 }

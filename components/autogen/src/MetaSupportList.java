@@ -32,9 +32,9 @@ import java.util.Vector;
 import loci.common.IniList;
 import loci.common.IniParser;
 import loci.common.IniTable;
-import loci.common.ReflectException;
-import loci.common.ReflectedUniverse;
 import loci.formats.IFormatHandler;
+import loci.formats.IFormatReader;
+import loci.formats.IFormatWriter;
 
 /**
  * An ugly data structure for organizing the status of each metadata property
@@ -156,37 +156,48 @@ public class MetaSupportList {
 
   /** Gets the name of the format for the current handler. */
   public String format() {
-    ReflectedUniverse r = new ReflectedUniverse();
-    IFormatHandler handler;
+    Class handlerClass = null;
     try {
-      r.exec("import loci.formats.in." + handlerName);
+      handlerClass = Class.forName("loci.formats.in." + handlerName);
     }
-    catch (ReflectException exc) { }
+    catch (ClassNotFoundException exc) { }
     try {
-      r.exec("import loci.formats.out." + handlerName);
+      handlerClass = Class.forName("loci.formats.out." + handlerName);
     }
-    catch (ReflectException exc) { }
-    try {
-      handler = (IFormatHandler) r.exec("new " + handlerName + "()");
-      return handler.getFormat();
+    catch (ClassNotFoundException exc) { }
+    if (handlerClass != null) {
+      try {
+        IFormatHandler handler = (IFormatHandler) handlerClass.newInstance();
+        if (handler != null) {
+          return handler.getFormat();
+        }
+      }
+      catch (InstantiationException e) { }
+      catch (IllegalAccessException e) { }
     }
-    catch (ReflectException exc) { }
     return null;
   }
 
   /** Gets the type (reader or writer) for the current handler. */
   public String handlerType() {
-    ReflectedUniverse r = new ReflectedUniverse();
+    Class handlerClass = null;
     try {
-      r.exec("import loci.formats.in." + handlerName);
-      return "reader";
+      handlerClass = Class.forName("loci.formats.in." + handlerName);
     }
-    catch (ReflectException exc) { }
+    catch (ClassNotFoundException exc) { }
     try {
-      r.exec("import loci.formats.out." + handlerName);
-      return "writer";
+      handlerClass = Class.forName("loci.formats.out." + handlerName);
     }
-    catch (ReflectException exc) { }
+    catch (ClassNotFoundException exc) { }
+
+    if (handlerClass != null) {
+      if (IFormatReader.class.isAssignableFrom(handlerClass)) {
+        return "reader";
+      }
+      else if (IFormatWriter.class.isAssignableFrom(handlerClass)) {
+        return "writer";
+      }
+    }
     return "handler";
   }
 

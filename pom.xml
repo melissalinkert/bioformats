@@ -28,6 +28,7 @@
     <module>components/loci-tools</module>
     <module>components/metakit</module>
     <module>components/ome-io</module>
+    <module>components/ome-jpegxr</module>
     <module>components/ome-plugins</module>
     <module>components/ome-tools</module>
     <module>components/ome-xml</module>

@@ -25,9 +25,16 @@
 
 package loci.ome.io.services;
 
+import java.io.IOException;
+import java.util.HashMap;
+
 import loci.common.services.Service;
+import loci.formats.CoreMetadata;
 import loci.formats.IFormatReader;
 import loci.formats.IFormatWriter;
+import loci.formats.meta.MetadataRetrieve;
+
+import loci.ome.io.OMECredentials;
 
 /**
  * <dl><dt><b>Source code:</b></dt>
@@ -61,5 +68,29 @@ public interface OMEReaderWriterService extends Service {
    * @return See above.
    */
   public IFormatWriter newOMEROWriter();
+
+  public void doLogin(OMECredentials credentials) throws IOException;
+
+  public void initializeImportRepository(OMECredentials credentials)
+    throws IOException;
+
+  public void uploadOriginalFiles(String[] files) throws IOException;
+
+  public int uploadPlane(OMECredentials credentials, MetadataRetrieve retrieve,
+    int series, byte[] buf, int written) throws IOException;
+
+  public void finalizeImport(OMECredentials credentials, MetadataRetrieve retrieve,
+    int series) throws IOException;
+
+  public CoreMetadata populateCoreMetadata(OMECredentials credentials)
+    throws IOException;
+
+  public HashMap<String, String> getOriginalMetadata(OMECredentials credentials)
+    throws IOException;
+
+  public byte[] getPlane(int z, int c, int t, OMECredentials credentials)
+    throws IOException;
+
+  public void close();
 
 }

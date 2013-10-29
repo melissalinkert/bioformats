@@ -43,6 +43,7 @@ public class OMECredentials {
   // -- Fields --
 
   public String server;
+  public String omeis;
   public String port;
   public String username;
   public String password;

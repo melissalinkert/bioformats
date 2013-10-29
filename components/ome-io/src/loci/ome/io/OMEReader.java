@@ -26,17 +26,20 @@
 package loci.ome.io;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 import loci.common.RandomAccessInputStream;
-import loci.common.ReflectException;
-import loci.common.ReflectedUniverse;
+import loci.common.services.DependencyException;
+import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
+
+import loci.ome.io.services.OMEReaderWriterService;
 
 /**
  * OMEReader retrieves images on demand from an OME database.
@@ -59,36 +62,7 @@ public class OMEReader extends FormatReader {
   /** Authentication credentials. */
   private OMECredentials credentials;
 
-  // -- Static fields --
-
-  private static boolean hasOMEJava = true;
-  private static ReflectedUniverse r = createReflectedUniverse();
-
-  private static ReflectedUniverse createReflectedUniverse() {
-    // NB: avoid dependencies on optional org.openmicroscopy.ds packages
-    r = null;
-    try {
-      r = new ReflectedUniverse();
-      r.exec("import java.awt.image.BufferedImage");
-      r.exec("import java.lang.Class");
-      r.exec("import java.util.List");
-      r.exec("import org.openmicroscopy.ds.Criteria");
-      r.exec("import org.openmicroscopy.ds.DataFactory");
-      r.exec("import org.openmicroscopy.ds.DataServer");
-      r.exec("import org.openmicroscopy.ds.DataServices");
-      r.exec("import org.openmicroscopy.ds.FieldsSpecification");
-      r.exec("import org.openmicroscopy.ds.RemoteCaller");
-      r.exec("import org.openmicroscopy.ds.dto.Image");
-      r.exec("import org.openmicroscopy.ds.st.Pixels");
-      r.exec("import org.openmicroscopy.ds.st.Repository");
-      r.exec("import org.openmicroscopy.is.PixelsFactory");
-    }
-    catch (ReflectException e) {
-      LOGGER.debug("Could not find OME Java library", e);
-      hasOMEJava = false;
-    }
-    return r;
-  }
+  private OMEReaderWriterService service;
 
   // -- Constructor --
 
@@ -101,7 +75,17 @@ public class OMEReader extends FormatReader {
   protected void initFile(String id) throws FormatException, IOException {
     if (id.equals(currentId)) return;
 
-    if (!hasOMEJava) throw new FormatException(OMEUtils.NO_OME_MSG);
+    // TODO: construct service
+
+    try {
+      ServiceFactory factory = new ServiceFactory();
+      service = factory.getInstance(OMEReaderWriterService.class);
+    }
+    catch (DependencyException e) { }
+
+    if (service == null) {
+      throw new FormatException(OMEUtils.NO_OME_MSG);
+    }
 
     credentials = new OMECredentials(id);
     id = String.valueOf(credentials.imageID);
@@ -122,122 +106,24 @@ public class OMEReader extends FormatReader {
 
     currentId = credentials.server + ":" + credentials.imageID;
 
-    String omeis = "http://" + credentials.server + "/cgi-bin/omeis";
+    credentials.omeis = "http://" + credentials.server + "/cgi-bin/omeis";
     credentials.server = "http://" + credentials.server + "/shoola/";
     credentials.isOMERO = false;
 
     String user = credentials.username;
     String pass = credentials.password;
 
-    CoreMetadata m = core.get(0);
+    CoreMetadata m = service.populateCoreMetadata(credentials);
 
-    try {
-      r.exec("c = new Criteria()");
-      r.setVar("ID", "id");
-      r.setVar("DEFAULT_PIXELS", "default_pixels");
-      r.setVar("PIXEL_TYPE", "PixelType");
-      r.setVar("SIZE_X", "SizeX");
-      r.setVar("SIZE_Y", "SizeY");
-      r.setVar("SIZE_Z", "SizeZ");
-      r.setVar("SIZE_C", "SizeC");
-      r.setVar("SIZE_T", "SizeT");
-      r.setVar("IMAGE_SERVER_ID", "ImageServerID");
-      r.setVar("REPOSITORY", "Repository");
-      r.setVar("IMAGE_SERVER_URL", "ImageServerURL");
-      r.setVar("DEFAULT_PIXELS_REPOSITORY", "default_pixels.Repository");
-      r.setVar("EQUALS", "=");
-      r.setVar("IMAGE_ID", String.valueOf(credentials.imageID));
-      r.exec("c.addWantedField(ID)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, PIXEL_TYPE)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, SIZE_X)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, SIZE_Y)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, SIZE_Z)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, SIZE_C)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, SIZE_T)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, IMAGE_SERVER_ID)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS, REPOSITORY)");
-      r.exec("c.addWantedField(DEFAULT_PIXELS_REPOSITORY, IMAGE_SERVER_URL)");
-      r.exec("c.addFilter(ID, EQUALS, IMAGE_ID)");
-
-      r.exec("fs = new FieldsSpecification()");
-      r.exec("fs.addWantedField(REPOSITORY)");
-      r.exec("fs.addWantedField(REPOSITORY, IMAGE_SERVER_URL)");
-      r.exec("c.addWantedFields(DEFAULT_PIXELS, fs)");
-
-      r.setVar("server", credentials.server);
-      r.exec("rs = DataServer.getDefaultServices(server)");
-      r.exec("rc = rs.getRemoteCaller()");
-
-      r.setVar("user", user);
-      r.setVar("pass", pass);
-      r.exec("rc.login(user, pass)");
-
-      r.setVar("DATA_FACTORY_CLASS", "org.openmicroscopy.ds.DataFactory");
-      r.exec("DATA_FACTORY_CLASS = Class.forName(DATA_FACTORY_CLASS)");
-      r.setVar("PIXELS_FACTORY_CLASS", "org.openmicroscopy.is.PixelsFactory");
-      r.exec("PIXELS_FACTORY_CLASS = Class.forName(PIXELS_FACTORY_CLASS)");
-      r.exec("df = rs.getService(DATA_FACTORY_CLASS)");
-      r.exec("pf = rs.getService(PIXELS_FACTORY_CLASS)");
-
-      r.setVar("omeis", omeis);
-      r.setVar("IMAGE_CLASS", "org.openmicroscopy.ds.dto.Image");
-      r.exec("IMAGE_CLASS = Class.forName(IMAGE_CLASS)");
-      r.setVar("zero", 0);
-
-      r.exec("images = df.retrieveList(IMAGE_CLASS, c)");
-      r.exec("img = images.get(zero)");
-      r.exec("pixels = img.getDefaultPixels()");
-      r.exec("repository = pixels.getRepository()");
-      r.exec("repository.setImageServerURL(omeis)");
-
-      r.exec("thumb = pf.getThumbnail(pixels)");
-
-      m.sizeX = ((Integer) r.exec("pixels.getSizeX()")).intValue();
-      m.sizeY = ((Integer) r.exec("pixels.getSizeY()")).intValue();
-      m.sizeZ = ((Integer) r.exec("pixels.getSizeZ()")).intValue();
-      m.sizeC = ((Integer) r.exec("pixels.getSizeC()")).intValue();
-      m.sizeT = ((Integer) r.exec("pixels.getSizeT()")).intValue();
-
-      String type = (String) r.exec("pixels.getPixelType()");
-
-      m.pixelType = FormatTools.pixelTypeFromString(type);
-      m.dimensionOrder = "XYZCT";
-
-      m.imageCount = getSizeZ() * getSizeC() * getSizeT();
-      m.rgb = false;
-
-      m.thumbSizeX = ((Integer) r.exec("thumb.getWidth()")).intValue();
-      m.thumbSizeY = ((Integer) r.exec("thumb.getHeight()")).intValue();
-
-      // grab original metadata
-
-      r.setVar("IMG_ID", "image_id");
-      r.setVar("NAME", "Name");
-      r.setVar("VALUE", "Value");
-      r.exec("c = new Criteria()");
-      r.exec("c.addWantedField(ID)");
-      r.exec("c.addWantedField(NAME)");
-      r.exec("c.addWantedField(VALUE)");
-      r.exec("c.addWantedField(IMG_ID)");
-      r.exec("c.addFilter(IMG_ID, EQUALS, IMAGE_ID)");
-      r.setVar("ORIGINAL_METADATA", "OriginalMetadata");
-      r.exec("original = df.retrieveList(ORIGINAL_METADATA, c)");
-
-      List l = (List) r.getVar("original");
-      for (int i=0; i<l.size(); i++) {
-        r.setVar("index", i);
-        r.exec("v = original.get(index)");
-        addGlobalMeta((String) r.exec("v.getStringElement(NAME)"),
-          (String) r.exec("v.getStringElement(VALUE)"));
-      }
-    }
-    catch (ReflectException e) {
-      throw new FormatException(e);
+    HashMap<String, String> originalMetadata =
+      service.getOriginalMetadata(credentials);
+    for (String key : originalMetadata.keySet()) {
+      addGlobalMeta(key, originalMetadata.get(key));
     }
 
     m.littleEndian = true;
     m.interleaved = false;
+    core.set(0, m);
 
     MetadataStore store = getMetadataStore();
     MetadataTools.populatePixels(store, this);
@@ -261,26 +147,12 @@ public class OMEReader extends FormatReader {
     FormatTools.checkBufferSize(this, buf.length);
     int[] indices = getZCTCoords(no);
 
-    r.setVar("zIndex", indices[0]);
-    r.setVar("cIndex", indices[1]);
-    r.setVar("tIndex", indices[2]);
-    r.setVar("bigEndian", false);
-    try {
-      r.exec("buf = pf.getPlane(pixels, zIndex, cIndex, tIndex, bigEndian)");
-      buf = (byte[]) r.getVar("buf");
-    }
-    catch (ReflectException e) {
-      throw new FormatException(e);
-    }
-    return buf;
+    return service.getPlane(indices[0], indices[1], indices[2], credentials);
   }
 
   /* @see loci.formats.IFormatReader#close(boolean) */
   public void close(boolean fileOnly) throws IOException {
-    try {
-      r.exec("rc.logout()");
-    }
-    catch (ReflectException e) { }
+    service.close();
     if (!fileOnly) currentId = null;
   }
 

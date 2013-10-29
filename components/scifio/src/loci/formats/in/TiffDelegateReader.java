@@ -48,7 +48,6 @@ import loci.formats.DelegateReader;
  * <a href="http://git.openmicroscopy.org/?p=bioformats.git;a=blob;f=components/bio-formats/src/loci/formats/in/TiffDelegateReader.java;hb=HEAD">Gitweb</a></dd></dl>
  *
  * @see TiffReader
- * @see TiffJAIReader
  */
 public class TiffDelegateReader extends DelegateReader {
 
@@ -58,7 +57,7 @@ public class TiffDelegateReader extends DelegateReader {
   public TiffDelegateReader() {
     super("Tagged Image File Format", TiffReader.TIFF_SUFFIXES);
     nativeReader = new TiffReader();
-    legacyReader = new TiffJAIReader();
+    legacyReader = new TiffReader();
     nativeReaderInitialized = false;
     legacyReaderInitialized = false;
     suffixNecessary = false;

@@ -4418,25 +4418,6 @@ Plane.TheC = Yes
 Plane.TheT = Yes
 Plane.TheZ = Yes
 
-[TiffJAIReader]
-Channel.ID = Yes
-Channel.SamplesPerPixel = Yes
-Image.AcquisitionDate = Yes
-Image.ID = Yes
-Image.Name = Yes
-Pixels.BinDataBigEndian = Yes
-Pixels.DimensionOrder = Yes
-Pixels.ID = Yes
-Pixels.SizeC = Yes
-Pixels.SizeT = Yes
-Pixels.SizeX = Yes
-Pixels.SizeY = Yes
-Pixels.SizeZ = Yes
-Pixels.Type = Yes
-Plane.TheC = Yes
-Plane.TheT = Yes
-Plane.TheZ = Yes
-
 [TiffReader]
 Channel.ID = Yes
 Channel.SamplesPerPixel = Yes

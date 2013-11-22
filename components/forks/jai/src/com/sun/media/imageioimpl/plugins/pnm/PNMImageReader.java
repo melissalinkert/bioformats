@@ -132,8 +132,7 @@ public class PNMImageReader extends ImageReader {
 
     static {
         if (lineSeparator == null) {
-            String ls = (String)java.security.AccessController.doPrivileged(
-               new sun.security.action.GetPropertyAction("line.separator"));
+            String ls = System.getProperty("line.separator");
             lineSeparator = ls.getBytes();
         }
     }

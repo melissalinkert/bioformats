@@ -23,6 +23,7 @@ Type "ant -p" for a list of targets.
       compile-mdbtools,
       compile-metakit,
       compile-ome-io,
+      compile-ome-jxr,
       compile-ome-plugins,
       compile-ome-xml,
       compile-poi-loci,
@@ -45,6 +46,7 @@ Type "ant -p" for a list of targets.
       jar-mdbtools,
       jar-metakit,
       jar-ome-io,
+      jar-ome-jxr,
       jar-ome-plugins,
       jar-ome-xml,
       jar-poi-loci,
@@ -68,6 +70,7 @@ Type "ant -p" for a list of targets.
       osgi-mdbtools,
       osgi-metakit,
       osgi-ome-io,
+      osgi-ome-jxr,
       osgi-ome-plugins,
       osgi-ome-xml,
       osgi-poi-loci,
@@ -93,6 +96,7 @@ Type "ant -p" for a list of targets.
       findbugs-loci-plugins,
       findbugs-metakit,
       findbugs-ome-io,
+      findbugs-ome-jxr,
       findbugs-ome-plugins,
       findbugs-scifio,
       findbugs-scifio-devel,
@@ -112,6 +116,7 @@ Type "ant -p" for a list of targets.
       clean-mdbtools,
       clean-metakit,
       clean-ome-io,
+      clean-ome-jxr,
       clean-ome-plugins,
       clean-ome-xml,
       clean-poi-loci,
@@ -137,6 +142,7 @@ Type "ant -p" for a list of targets.
       test-mdbtools,
       test-metakit,
       test-ome-io,
+      test-ome-jxr,
       test-ome-plugins,
       test-ome-xml,
       test-poi-loci,
@@ -342,6 +348,42 @@ Type "ant -p" for a list of targets.
   <target name="test-metakit" depends="jar-metakit, testing-deps"
     description="compile and run tests for Metakit Java library">
     <ant dir="components/metakit" target="test"/>
+  </target>
+
+  <!-- OME JPEG XR library -->
+
+  <target name="deps-ome-jxr"
+    depends="jar-loci-legacy"/>
+
+  <target name="compile-ome-jxr" depends="deps-ome-jxr"
+    description="compile classes for OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="ome-jxr.compile"/>
+  </target>
+
+  <target name="jar-ome-jxr" depends="deps-ome-jxr"
+    description="generate JAR file for OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="ome-jxr.jar"/>
+  </target>
+
+  <target name="osgi-ome-jxr" depends="jar-ome-jxr"
+    description="generate OSGi bundle for OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="ome-jxr.osgi"/>
+  </target>
+
+  <target name="findbugs-ome-jxr" depends="jar-ome-jxr"
+    description="run findbugs on OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="ome-jxr.findbugs"/>
+  </target>
+
+  <target name="clean-ome-jxr"
+    depends="clean-loci-legacy"
+    description="remove build files for OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="ome-jxr.clean"/>
+  </target>
+
+  <target name="test-ome-jxr" depends="jar-ome-jxr, testing-deps"
+    description="compile and run tests for OME JPEG XR Java library">
+    <ant dir="components/ome-jxr" target="test"/>
   </target>
 
   <!-- OME-XML Java library -->
@@ -559,6 +601,7 @@ Type "ant -p" for a list of targets.
     depends="jar-loci-legacy,
       jar-mdbtools,
       jar-metakit,
+      jar-ome-jxr,
       jar-ome-xml,
       jar-poi-loci,
       jar-scifio"/>
@@ -587,6 +630,7 @@ Type "ant -p" for a list of targets.
     depends="clean-loci-legacy,
       clean-mdbtools,
       clean-metakit,
+      clean-ome-jxr,
       clean-ome-xml,
       clean-poi-loci,
       clean-scifio"
@@ -917,6 +961,7 @@ Type "ant -p" for a list of targets.
       jar-loci-plugins,
       jar-mdbtools,
       jar-metakit,
+      jar-ome-jxr,
       jar-ome-xml,
       jar-poi-loci,
       jar-scifio,

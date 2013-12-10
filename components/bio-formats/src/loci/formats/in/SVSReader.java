@@ -39,11 +39,14 @@ import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
+import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
 import loci.formats.tiff.IFD;
 import loci.formats.tiff.PhotoInterp;
 import loci.formats.tiff.TiffIFDEntry;
 import loci.formats.tiff.TiffParser;
+import ome.scifio.common.Constants;
+import ome.xml.model.primitives.PositiveFloat;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
@@ -69,13 +72,14 @@ public class SVSReader extends BaseTiffReader {
 
   // -- Fields --
 
-  private float[] pixelSize;
+  private double[] pixelSize;
   private String[] comments;
   private int[] ifdmap;
 
   private double emissionWavelength, excitationWavelength;
   private double exposureTime, exposureScale;
   private String date, time;
+  private double[] magnification;
 
   // -- Constructor --
 
@@ -234,13 +238,16 @@ public class SVSReader extends BaseTiffReader {
 
     int seriesCount = ifds.size();
 
-    pixelSize = new float[seriesCount];
+    pixelSize = new double[seriesCount];
     comments = new String[seriesCount];
+    magnification = new double[seriesCount];
 
     core.clear();
     for (int i=0; i<seriesCount; i++) {
       core.add(new CoreMetadata());
     }
+
+    int bitsPerPixel = 0;
 
     for (int i=0; i<seriesCount; i++) {
       setSeries(i);
@@ -267,7 +274,7 @@ public class SVSReader extends BaseTiffReader {
               value = t.substring(t.indexOf("=") + 1).trim();
               addSeriesMeta(key, value);
               if (key.equals("MPP")) {
-                pixelSize[i] = Float.parseFloat(value);
+                pixelSize[i] = Double.parseDouble(value);
               }
               else if (key.equals("Date")) {
                 date = value;
@@ -286,6 +293,12 @@ public class SVSReader extends BaseTiffReader {
               }
               else if (key.equals("Exposure Scale")) {
                 exposureScale = Double.parseDouble(value);
+              }
+              else if (key.equals("AppMag")) {
+                magnification[i] = Double.parseDouble(value);
+              }
+              else if (key.equals("Acquisition Bit Depth")) {
+                bitsPerPixel = Integer.parseInt(value);
               }
             }
           }
@@ -321,6 +334,9 @@ public class SVSReader extends BaseTiffReader {
       ms.interleaved = false;
       ms.falseColor = false;
       ms.dimensionOrder = "XYCZT";
+      if (bitsPerPixel > 0 && s < ms.resolutionCount) {
+        ms.bitsPerPixel = bitsPerPixel;
+      }
       ms.thumbnail = s != 0;
     }
 
@@ -333,9 +349,30 @@ public class SVSReader extends BaseTiffReader {
 
     MetadataStore store = makeFilterMetadata();
 
+    store.setInstrumentID(MetadataTools.createLSID("Instrument", 0), 0);
+
+    int nextObjective = 0;
     for (int i=0; i<getSeriesCount(); i++) {
+      setSeries(i);
+
+      Double mag = getMagnification(i);
+      if (mag != null && mag > Constants.EPSILON) {
+        String objectiveID =
+          MetadataTools.createLSID("Objective", 0, nextObjective);
+        store.setObjectiveID(objectiveID, 0, nextObjective);
+        store.setObjectiveNominalMagnification(mag, 0, nextObjective);
+        store.setObjectiveSettingsID(objectiveID, i);
+
+        nextObjective++;
+      }
+
       store.setImageName("Series " + (i + 1), i);
       store.setImageDescription(comments[i], i);
+
+      if (pixelSize[i] > Constants.EPSILON) {
+        store.setPixelsPhysicalSizeX(new PositiveFloat(pixelSize[i]), i);
+        store.setPixelsPhysicalSizeY(new PositiveFloat(pixelSize[i]), i);
+      }
 
       if (getDatestamp() != null) {
         store.setImageAcquisitionDate(getDatestamp(), i);
@@ -351,7 +388,11 @@ public class SVSReader extends BaseTiffReader {
         }
       }
 
+      for (int p=0; p<getImageCount(); p++) {
+        store.setPlaneExposureTime(getExposureTime(), i, p);
+      }
     }
+    setSeries(0);
   }
 
   private int getIFDIndex(int coreIndex) {
@@ -412,6 +453,14 @@ public class SVSReader extends BaseTiffReader {
 
   protected Double getExposureTime() {
     return exposureTime;
+  }
+
+  protected Double getMagnification(int series) {
+    return magnification[series];
+  }
+
+  protected Double getPixelSize(int series) {
+    return pixelSize[series];
   }
 
   protected Timestamp getDatestamp() {

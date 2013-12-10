@@ -41,6 +41,8 @@ import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
+import ome.scifio.common.Constants;
+import ome.xml.model.primitives.PositiveFloat;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
@@ -240,6 +242,8 @@ public class AFIReader extends FormatReader {
       PositiveInteger[] excitation = new PositiveInteger[pixels.size()];
       Double[] exposure = new Double[pixels.size()];
       Timestamp[] datestamp = new Timestamp[pixels.size()];
+      Double[] physicalSize = null;
+      Double[] magnification = new Double[getSeriesCount()];
 
       for (int c=0; c<pixels.size(); c++) {
         SVSReader baseReader = (SVSReader) reader[c].getReader();
@@ -247,11 +251,41 @@ public class AFIReader extends FormatReader {
         excitation[c] = baseReader.getExcitation();
         exposure[c] = baseReader.getExposureTime();
         datestamp[c] = baseReader.getDatestamp();
+
+        if (c == 0) {
+          physicalSize = new Double[baseReader.getSeriesCount()];
+          for (int i=0; i<baseReader.getSeriesCount(); i++) {
+            physicalSize[i] = baseReader.getPixelSize(i);
+            magnification[i] = baseReader.getMagnification(i);
+          }
+        }
       }
+
+
+      store.setInstrumentID(MetadataTools.createLSID("Instrument", 0), 0);
+      int nextObjective = 0;
 
       for (int i=0; i<getSeriesCount() - EXTRA_IMAGES; i++) {
         if (datestamp[0] != null) {
           store.setImageAcquisitionDate(datestamp[0], i);
+        }
+
+        if (physicalSize != null && physicalSize[i] != null &&
+          physicalSize[i] > Constants.EPSILON)
+        {
+          store.setPixelsPhysicalSizeX(new PositiveFloat(physicalSize[i]), i);
+          store.setPixelsPhysicalSizeY(new PositiveFloat(physicalSize[i]), i);
+        }
+
+        if (magnification[i] != null && magnification[i] > Constants.EPSILON) {
+          String objectiveID =
+            MetadataTools.createLSID("Objective", 0, nextObjective);
+          store.setObjectiveID(objectiveID, 0, nextObjective);
+          store.setObjectiveNominalMagnification(
+            magnification[i], 0, nextObjective);
+          store.setObjectiveSettingsID(objectiveID, i);
+
+          nextObjective++;
         }
 
         for (int c=0; c<channelNames.length; c++) {

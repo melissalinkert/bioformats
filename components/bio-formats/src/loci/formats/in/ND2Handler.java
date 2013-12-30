@@ -431,7 +431,7 @@ public class ND2Handler extends BaseHandler {
         if (ms0.sizeZ == 0) {
           ms0.sizeZ = 1;
         }
-        if (core.size() == 1) {
+        if (core.size() == 1 && ms0.sizeZ != nImages) {
           ms0.sizeZ *= Integer.parseInt(value);
         }
       }

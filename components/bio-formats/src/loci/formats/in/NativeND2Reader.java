@@ -877,7 +877,7 @@ public class NativeND2Reader extends FormatReader {
         }
       }
 
-      if (extraZDataCount > 1 && getSizeZ() == 1 && getSeriesCount() > 1) {
+      if ((extraZDataCount > 1) && getSizeZ() == 1 && getSeriesCount() > 1) {
         CoreMetadata ms0 = core.get(0);
         ms0.sizeZ = getSeriesCount();
         core = new ArrayList<CoreMetadata>();
@@ -938,11 +938,15 @@ public class NativeND2Reader extends FormatReader {
       else if (planeSize > 0 &&
         availableBytes > DataTools.safeMultiply64(planeSize, 3))
       {
-        core.get(0).sizeC = 3;
-        core.get(0).rgb = true;
-        if (getPixelType() == FormatTools.INT8) {
-          core.get(0).pixelType = availableBytes > planeSize * 5 ?
-            FormatTools.UINT16 : FormatTools.UINT8;
+        if (availableBytes <= DataTools.safeMultiply64(planeSize, 5) ||
+          getPixelType() == FormatTools.INT8)
+        {
+          core.get(0).sizeC = 3;
+          core.get(0).rgb = true;
+          if (getPixelType() == FormatTools.INT8) {
+            core.get(0).pixelType = availableBytes > planeSize * 5 ?
+              FormatTools.UINT16 : FormatTools.UINT8;
+          }
         }
       }
       else if (((planeSize > 0 &&
@@ -979,12 +983,24 @@ public class NativeND2Reader extends FormatReader {
       }
 
       // calculate the image count
+      boolean noAdjust = false;
       for (int i=0; i<getSeriesCount(); i++) {
         CoreMetadata ms = core.get(i);
         ms.imageCount = getSizeZ() * getSizeT() * getSizeC();
         if (imageOffsets.size() / getSeriesCount() < ms.imageCount) {
           ms.imageCount /= getSizeC();
         }
+
+        if (imageOffsets.size() % getSeriesCount() != 0 && (imageOffsets.size() < ms.imageCount * getSeriesCount() / 2))
+        {
+          CoreMetadata ms0 = core.get(0);
+          core = new ArrayList<CoreMetadata>();
+          core.add(ms0);
+          numSeries = 1;
+          noAdjust = true;
+          continue;
+        }
+
         if (ms.imageCount > imageOffsets.size() / getSeriesCount()) {
           if (ms.imageCount == imageOffsets.size()) {
             CoreMetadata ms0 = core.get(0);
@@ -1006,7 +1022,9 @@ public class NativeND2Reader extends FormatReader {
         }
       }
 
-      if (numSeries * getImageCount() == 1 && imageOffsets.size() > 1) {
+      if (numSeries * getImageCount() == 1 && imageOffsets.size() > 1 &&
+        !noAdjust)
+      {
         for (int i=0; i<getSeriesCount(); i++) {
           core.get(i).imageCount = imageOffsets.size() / getSeriesCount();
           core.get(i).sizeZ = getImageCount();
@@ -1015,7 +1033,7 @@ public class NativeND2Reader extends FormatReader {
       }
 
       if (getSizeZ() * getSizeT() * (split ? 1 : getSizeC()) <
-        imageOffsets.size() / getSeriesCount())
+        imageOffsets.size() / getSeriesCount() && !noAdjust)
       {
         int count = imageOffsets.size() / getSeriesCount();
         if (!split) {

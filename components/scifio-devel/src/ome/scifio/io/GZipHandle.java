@@ -89,7 +89,7 @@ public class GZipHandle extends StreamHandle {
 
   /** Returns true if the given filename is a gzip file. */
   public static boolean isGZipFile(String file) throws IOException {
-    if (!file.toLowerCase().endsWith(".gz")) return false;
+    if (!file.toLowerCase().endsWith("gz")) return false;
 
     FileInputStream s = new FileInputStream(file);
     byte[] b = new byte[2];

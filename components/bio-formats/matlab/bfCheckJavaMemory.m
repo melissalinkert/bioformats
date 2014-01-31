@@ -33,22 +33,29 @@ function [] = bfCheckJavaMemory(varargin)
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-runtime = java.lang.Runtime.getRuntime();
-maxMemory = runtime.maxMemory() / (1024 * 1024);
 
-ip = inputParser;
-ip.addOptional('minMemory', 512, @isscalar);
-ip.parse(varargin{:});
-minMemory = ip.Results.minMemory;
-
-warningID = 'BF:lowJavaMemory';
-
-if maxMemory < minMemory
-    warning_msg = [...
-        '*** Insufficient memory detected. ***\n'...
-        '*** %dm found ***\n'...
-        '*** %dm or greater is recommended ***\n'...
-        '*** See http://www.mathworks.com/matlabcentral/answers/92813 ***\n'...
-        '*** for instructions on increasing memory allocation. ***\n'];
-    warning(warningID, warning_msg, round(maxMemory), minMemory);
+if ~exist('bf_warninglog.txt','file')
+    runtime = java.lang.Runtime.getRuntime();
+    maxMemory = runtime.maxMemory() / (1024 * 1024);
+    
+    ip = inputParser;
+    ip.addOptional('minMemory', 512, @isscalar);
+    ip.parse(varargin{:});
+    minMemory = ip.Results.minMemory;
+    
+    warningID = 'BF:lowJavaMemory';
+    
+    if maxMemory < minMemory        
+        diary('bf_warninglog.txt')
+        warning_msg = [...
+            '*** Insufficient memory detected. ***\n'...
+            '*** %dm found ***\n'...
+            '*** %dm or greater is recommended ***\n'...
+            '*** See http://www.mathworks.com/matlabcentral/answers/92813 ***\n'...
+            '*** for instructions on increasing memory allocation. ***\n'];
+        warning(warningID, warning_msg, round(maxMemory), minMemory);
+    end
+    
 end
+
+

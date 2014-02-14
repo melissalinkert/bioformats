@@ -60,7 +60,7 @@ public class MissingOMEXMLServiceTest {
     sf = new ServiceFactory();
   }
 
-  @Test(expectedExceptions={DependencyException.class})
+  @Test
   public void testInstantiate() throws DependencyException {
     OMEXMLService service = sf.getInstance(OMEXMLService.class);
     assertNotNull(service);

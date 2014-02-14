@@ -60,7 +60,7 @@ public class MissingJAIIIOServiceTest {
     sf = new ServiceFactory();
   }
 
-  @Test(expectedExceptions={DependencyException.class})
+  @Test
   public void testInstantiate() throws DependencyException {
     JAIIIOService service = sf.getInstance(JAIIIOService.class);
     assertNotNull(service);

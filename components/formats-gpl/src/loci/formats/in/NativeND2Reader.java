@@ -1746,7 +1746,7 @@ public class NativeND2Reader extends FormatReader {
             // Leave level - move top (out)
             LEVELS.remove(name);
             }
-            in.seek(off + elementStartPosition);
+            in.seek(off + in.getFilePointer());
             /* ***** Index is pointer +  NumberofItemes*8B ***** */
             in.skipBytes(numberOfItems * 8);
             break;

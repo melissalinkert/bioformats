@@ -118,87 +118,88 @@ public class NativeND2Reader extends FormatReader {
   /** *********** CHANNELS ************** */
   public class NDChannel extends Channel 
   {
-		// ExcitationWavelength property
-		protected ArrayList<Double> excitationWavelengths = new ArrayList<Double>();
-		
-		// EmissionWavelength property
-		protected ArrayList<Double> emissionWavelengths = new ArrayList<Double>();
-		
-		
-		/**
-		 * @return the excitationWavelengths
-		 */
-		public ArrayList<Double> getExcitationWavelengths() {
-			return excitationWavelengths;
-		}
+    // ExcitationWavelength property
+    protected ArrayList<Double> excitationWavelengths = new ArrayList<Double>();
 
-		/**
-		 * @param excitationWavelengths the excitationWavelengths to set
-		 */
-		public void setExcitationWavelengths(ArrayList<Double> excitationWavelengths) {
-			this.excitationWavelengths = excitationWavelengths;
-		}
+    // EmissionWavelength property
+    protected ArrayList<Double> emissionWavelengths = new ArrayList<Double>();
 
-		/**
-		 * @return the emissionWavelengths
-		 */
-		public ArrayList<Double> getEmissionWavelengths() {
-			return emissionWavelengths;
-		}
 
-		/**
-		 * @param emissionWavelengths the emissionWavelengths to set
-		 */
-		public void setEmissionWavelengths(ArrayList<Double> emissionWavelengths) {
-			this.emissionWavelengths = emissionWavelengths;
-		}
+    /**
+     * @return the excitationWavelengths
+     */
+    public ArrayList<Double> getExcitationWavelengths() {
+      return excitationWavelengths;
+    }
 
-		public void addExcitationWaveLength(Double length)
-		{
-			excitationWavelengths.add(length);
-		}
-  
-		public void addEmissionWaveLength(Double length)
-		{
-			emissionWavelengths.add(length);
-		}
-		/**
-		 * @override
-		 */
-		public PositiveFloat getExcitationWavelength()
-		{
-			return this.getMean(excitationWavelengths);
-		}
-		/**
-		 * @override
-		 */
-		public PositiveFloat getEmissionWavelength()
-		{
-			return this.getMean(emissionWavelengths);
-		}
-		 
-		private PositiveFloat getMean( ArrayList<Double> wave)
-		{
-			int size = wave.size();
-			Double waveToReturn = 0.0;
-			
-			if (0 < size)
-			{
-				for (Double pf:wave)
-					waveToReturn += pf;
-				
-				waveToReturn /= size;
-			}
-			
-			return new PositiveFloat(waveToReturn);
-		}
+    /**
+     * @param excitationWavelengths the excitationWavelengths to set
+     */
+    public void setExcitationWavelengths(ArrayList<Double> excitationWavelengths) {
+      this.excitationWavelengths = excitationWavelengths;
+    }
+
+    /**
+     * @return the emissionWavelengths
+     */
+    public ArrayList<Double> getEmissionWavelengths() {
+      return emissionWavelengths;
+    }
+
+    /**
+     * @param emissionWavelengths the emissionWavelengths to set
+     */
+    public void setEmissionWavelengths(ArrayList<Double> emissionWavelengths) {
+      this.emissionWavelengths = emissionWavelengths;
+    }
+
+    public void addExcitationWaveLength(Double length)
+    {
+      excitationWavelengths.add(length);
+    }
+
+    public void addEmissionWaveLength(Double length)
+    {
+      emissionWavelengths.add(length);
+    }
+    /**
+     * @override
+     */
+    public PositiveFloat getExcitationWavelength()
+    {
+      return this.getMean(excitationWavelengths);
+    }
+    /**
+     * @override
+     */
+    public PositiveFloat getEmissionWavelength()
+    {
+      return this.getMean(emissionWavelengths);
+    }
+
+    private PositiveFloat getMean( ArrayList<Double> wave)
+    {
+      int size = wave.size();
+      Double waveToReturn = 0.0;
+
+      if (0 < size) {
+        for (Double pf:wave) {
+          waveToReturn += pf;
+        }
+
+        waveToReturn /= size;
+      }
+
+      return new PositiveFloat(waveToReturn);
+    }
   }
-  
+
   private static final String channelPatternName = "[a]{1}[0-9]+";
   private static final String unknownChannelName = "a999";
   private ArrayList<String>  LEVELS =  new ArrayList<String>();
   private HashMap<String, NDChannel> channels = new  HashMap<String, NDChannel>();
-  
+  private boolean textData = false;
+
   // -- Constructor --
 
   /** Constructs a new ND2 reader. */
@@ -1581,76 +1582,76 @@ public class NativeND2Reader extends FormatReader {
         }
       }
     }
-   
+
     populateMetadataStore(handler);
   }
-  
-  protected void parseUsefulMetada(ND2Handler handler) {	  
-	  String numericalAperture = getGlobalMetaAsString("Numerical Aperture");
-	  handler.parseKeyAndValue("Numerical Aperture", numericalAperture, "");
+
+  protected void parseUsefulMetada(ND2Handler handler) {
+    String numericalAperture = getGlobalMetaAsString("Numerical Aperture");
+    handler.parseKeyAndValue("Numerical Aperture", numericalAperture, "");
   }
-  
+
   protected void parseTextInfo(ND2Handler handler) {
-	  // Some useful data are in global metadata
-	  
-	    String imageId = getGlobalMetaAsString("TextInfoItem_0");
-	    handler.parseKeyAndValue("TextInfoItem_0", imageId, "");
+    // Some useful data are in global metadata
 
-	    // *** Type field
-	    String typeField = getGlobalMetaAsString("TextInfoItem_1");
-	    handler.parseKeyAndValue("TextInfoItem_1", typeField, "");
+      String imageId = getGlobalMetaAsString("TextInfoItem_0");
+      handler.parseKeyAndValue("TextInfoItem_0", imageId, "");
 
-	    // *** Group field
-	    String group  = getGlobalMetaAsString("TextInfoItem_2");
-	    handler.parseKeyAndValue("TextInfoItem_2", group, "");
+      // *** Type field
+      String typeField = getGlobalMetaAsString("TextInfoItem_1");
+      handler.parseKeyAndValue("TextInfoItem_1", typeField, "");
 
-	    // *** SampleID field
-	    String imageIdField = getGlobalMetaAsString("TextInfoItem_3");
-	    handler.parseKeyAndValue("TextInfoItem_3", imageIdField, "");
+      // *** Group field
+      String group  = getGlobalMetaAsString("TextInfoItem_2");
+      handler.parseKeyAndValue("TextInfoItem_2", group, "");
 
-	    // *** Author field
-	    String author = getGlobalMetaAsString("TextInfoItem_4");
-	    handler.parseKeyAndValue("TextInfoItem_4", author, "");
+      // *** SampleID field
+      String imageIdField = getGlobalMetaAsString("TextInfoItem_3");
+      handler.parseKeyAndValue("TextInfoItem_3", imageIdField, "");
 
-	    // *** Description field
-	    String description = getGlobalMetaAsString("TextInfoItem_5");
-	    handler.parseKeyAndValue("TextInfoItem_5", description, "");
+      // *** Author field
+      String author = getGlobalMetaAsString("TextInfoItem_4");
+      handler.parseKeyAndValue("TextInfoItem_4", author, "");
 
-	    // *** Capturing field
-	    String capturing = getGlobalMetaAsString("TextInfoItem_6");
-	    handler.parseKeyAndValue("TextInfoItem_6", capturing, "");
+      // *** Description field
+      String description = getGlobalMetaAsString("TextInfoItem_5");
+      handler.parseKeyAndValue("TextInfoItem_5", description, "");
 
-	    // *** Type Sampling
-	    String typeSampling = getGlobalMetaAsString("TextInfoItem_7");
-	    handler.parseKeyAndValue("TextInfoItem_7", typeSampling, "");
+      // *** Capturing field
+      String capturing = getGlobalMetaAsString("TextInfoItem_6");
+      handler.parseKeyAndValue("TextInfoItem_6", capturing, "");
 
-	    // *** Type Location
-	    String typeLocation = getGlobalMetaAsString("TextInfoItem_8");
-	    handler.parseKeyAndValue("TextInfoItem_8", typeLocation, "");
+      // *** Type Sampling
+      String typeSampling = getGlobalMetaAsString("TextInfoItem_7");
+      handler.parseKeyAndValue("TextInfoItem_7", typeSampling, "");
 
-	    // *** Date field
-	    String date = getGlobalMetaAsString("TextInfoItem_9");
-	    handler.parseKeyAndValue("TextInfoItem_9", date, "");
+      // *** Type Location
+      String typeLocation = getGlobalMetaAsString("TextInfoItem_8");
+      handler.parseKeyAndValue("TextInfoItem_8", typeLocation, "");
 
-	    // *** Conclusion field
-	    String conclusion  = getGlobalMetaAsString("TextInfoItem_10");
-	    handler.parseKeyAndValue("TextInfoItem_10", conclusion, "");
+      // *** Date field
+      String date = getGlobalMetaAsString("TextInfoItem_9");
+      handler.parseKeyAndValue("TextInfoItem_9", date, "");
 
-	    // *** Info1 field
-	    String info1 = getGlobalMetaAsString("TextInfoItem_11");
-	    handler.parseKeyAndValue("TextInfoItem_11", info1, "");
+      // *** Conclusion field
+      String conclusion  = getGlobalMetaAsString("TextInfoItem_10");
+      handler.parseKeyAndValue("TextInfoItem_10", conclusion, "");
 
-	    // *** Info2 field
-	    String info2 = getGlobalMetaAsString("TextInfoItem_12");
-	    handler.parseKeyAndValue("TextInfoItem_12", info2, "");
+      // *** Info1 field
+      String info1 = getGlobalMetaAsString("TextInfoItem_11");
+      handler.parseKeyAndValue("TextInfoItem_11", info1, "");
 
-	    // *** Optics field
-	    String optics = getGlobalMetaAsString("TextInfoItem_13");
-	    handler.parseKeyAndValue("TextInfoItem_13", optics, "");
-	  
+      // *** Info2 field
+      String info2 = getGlobalMetaAsString("TextInfoItem_12");
+      handler.parseKeyAndValue("TextInfoItem_12", info2, "");
+
+      // *** Optics field
+      String optics = getGlobalMetaAsString("TextInfoItem_13");
+      handler.parseKeyAndValue("TextInfoItem_13", optics, "");
+
   }
 
-  // -- Helper methods -- 
+  // -- Helper methods --
   /**
    * Function for iterating through ND2 metaAttributes
    * @param in    stream of bytes from file
@@ -1661,8 +1662,8 @@ public class NativeND2Reader extends FormatReader {
 
     try {
       while (in.getFilePointer() < stop) {
+        long elementStartPosition = in.getFilePointer();
 
-      	  long elementStartPosition = in.getFilePointer();
         int type = in.read();        // @See switch
         int letters = in.read();        // Letters in the Attribute name
 
@@ -1718,7 +1719,7 @@ public class NativeND2Reader extends FormatReader {
           case (10): // deprecated
             // Its like LEVEL but offset is pointing absolutely to the liteVariantStart
             numberOfItems = in.readInt();   // number of level atributes
-            off = in.readLong(); 
+            off = in.readLong();
             value = "LEVEL";
 
             // Iterate
@@ -1729,19 +1730,19 @@ public class NativeND2Reader extends FormatReader {
             break;
           case (11): // level
             numberOfItems = in.readInt(); // number of level attributes
-            value = "LEVEL";       
+            value = "LEVEL";
             off = in.readLong();         // offset to index
 
             // Wee need to know the current position
             // Add level - move bot (in)
-            
+
             if (0 < name.length())
             {
             LEVELS.add(name);
-            
+
             // Iterate
             iterateIn(in, off + elementStartPosition, liteVariantStart);
-            
+
             // Leave level - move top (out)
             LEVELS.remove(name);
             }
@@ -1758,27 +1759,28 @@ public class NativeND2Reader extends FormatReader {
         }
 
         if (type != 11 && type != 10) {    // if not level add global meta
-        	
-        	// NDChannels are in @see isChannelSetting. This will set them
-        	if (  isChannelSetting())
-        	{
-        		 
-        		// Channel name
-        		if (name.equalsIgnoreCase("sDescription")
-        			&& isLastLevelChannel())
-        		{
-        			assignValueOnChannel(getActualChannelName(), "name", value);
-        		}
-        		// Wavelength
-        		else if (name.equalsIgnoreCase("dWaveLength"))
-        		{
-        			if (isExcitationWaveLengthLevel())
-        			  assignValueOnChannel(getActualChannelName(), "ExX", value);
-        			
-        			if (isEmisionnWaveLengthLevel())				
-          			  assignValueOnChannel(getActualChannelName(), "EmX", value);
-        		} 
-        	} 
+
+          // NDChannels are in @see isChannelSetting. This will set them
+          if (  isChannelSetting())
+          {
+
+            // Channel name
+            if (name.equalsIgnoreCase("sDescription") && isLastLevelChannel())
+            {
+              assignValueOnChannel(getActualChannelName(), "name", value);
+            }
+            // Wavelength
+            else if (name.equalsIgnoreCase("dWaveLength"))
+            {
+              if (isExcitationWaveLengthLevel()) {
+                assignValueOnChannel(getActualChannelName(), "ExX", value);
+              }
+
+              if (isEmisionnWaveLengthLevel()) {
+                assignValueOnChannel(getActualChannelName(), "EmX", value);
+              }
+            }
+          }
           addGlobalMeta(name, value);
         }
       }
@@ -1787,78 +1789,78 @@ public class NativeND2Reader extends FormatReader {
       LOGGER.debug("", e);
     }
   }
-  
-  
-  
+
   private void assignValueOnChannel(String channelName, String memberName, Object value)
   {
-	  NDChannel actualChannel;	  
-	  // Channels are dynamically created
-	  actualChannel = channels.containsKey(channelName) ?  channels.get(channelName) : new NDChannel();
-	 	  
-	  if (null == value)
-		  value = "";
-	  
-	  // Java 1.6
-	  if (memberName.equals("name"))
-		  actualChannel.setName(value.toString());
-	  
-	  if (memberName.equals("ExX"))
-		  actualChannel.addExcitationWaveLength(new Double(value.toString()));
+    // Channels are dynamically created
+    NDChannel actualChannel =
+      channels.containsKey(channelName) ?  channels.get(channelName) : new NDChannel();
 
-	  if (memberName.equals("EmX"))
-		  actualChannel.addEmissionWaveLength(new Double(value.toString()));	
-	  
-	 
+    if (null == value) {
+      value = "";
+    }
 
-	  channels.put(channelName, actualChannel);
+    // Java 1.6
+    if (memberName.equals("name")) {
+      actualChannel.setName(value.toString());
+    }
+
+    if (memberName.equals("ExX")) {
+      actualChannel.addExcitationWaveLength(new Double(value.toString()));
+    }
+
+    if (memberName.equals("EmX")) {
+      actualChannel.addEmissionWaveLength(new Double(value.toString()));
+    }
+
+    channels.put(channelName, actualChannel);
   }
-  
+
   private String getActualChannelName()
   {
-	  
-	 for (String levelName : LEVELS)
-	 {
-		 if (isChannelName(levelName) )
-			 return levelName;
+   for (String levelName : LEVELS) {
+     if (isChannelName(levelName)) {
+       return levelName;
      }
-		   
-	 return unknownChannelName;
+   }
+
+   return unknownChannelName;
   }
-  
+
   private boolean isChannelName(String possibleName)
   {
-	  Pattern p = Pattern.compile(channelPatternName);
-	  
-	  return p.matcher(possibleName).matches();
+    Pattern p = Pattern.compile(channelPatternName);
+
+    return p.matcher(possibleName).matches();
   }
-  
+
   private boolean isChannelSetting()
   {
-	  return ( LEVELS.contains("SLxPictureMetadata") &&
-			   LEVELS.contains("sPicturePlanes") &&
-			   LEVELS.contains("sPlaneNew")
-			  );	   
+    return ( LEVELS.contains("SLxPictureMetadata") &&
+         LEVELS.contains("sPicturePlanes") &&
+         LEVELS.contains("sPlaneNew")
+        );
   }
-  
+
   private boolean isLastLevelChannel()
   {
-	 if (0 == LEVELS.size())
-		 return false;
-	 
-	 String lastLevelName = LEVELS.get(LEVELS.size()-1);
-	  
-	 return isChannelName(lastLevelName);
+    if (0 == LEVELS.size()) {
+      return false;
+    }
+
+    String lastLevelName = LEVELS.get(LEVELS.size()-1);
+
+    return isChannelName(lastLevelName);
   }
 
   private boolean isExcitationWaveLengthLevel()
   {
-	  return LEVELS.contains("m_ExcitationSpectrum");
+    return LEVELS.contains("m_ExcitationSpectrum");
   }
-  
+
   private boolean isEmisionnWaveLengthLevel()
   {
-	  return LEVELS.contains("m_EmissionSpectrum");
+    return LEVELS.contains("m_EmissionSpectrum");
   }
 
   private void populateMetadataStore(ND2Handler handler) throws FormatException
@@ -2034,21 +2036,19 @@ public class NativeND2Reader extends FormatReader {
     store.setDetectorType(getDetectorType("Other"), 0, 0);
 
     // Channels are already present @see IterateIn
-    if (0 < channels.size())
-    {
-    	 String nameBeginning = "a";
-    	 int channelIndex = 0;
-    	 String actualKey = nameBeginning + Integer.toString(channelIndex);
-    	 while (channels.containsKey(actualKey))
-    	{
-    		 Channel ch = channels.get(actualKey);
-    		 addGlobalMeta("Channel_" + Integer.toString(channelIndex), ch);
-    		 
-    		 channelIndex++;
-    		 actualKey = nameBeginning + Integer.toString(channelIndex);    		 
-    	}
+    if (0 < channels.size()) {
+      String nameBeginning = "a";
+      int channelIndex = 0;
+      String actualKey = nameBeginning + Integer.toString(channelIndex);
+      while (channels.containsKey(actualKey)) {
+        Channel ch = channels.get(actualKey);
+        addGlobalMeta("Channel_" + Integer.toString(channelIndex), ch);
+
+        channelIndex++;
+        actualKey = nameBeginning + Integer.toString(channelIndex);
+      }
     }
-    
+
     ArrayList<String> modality = handler.getModalities();
     ArrayList<String> binning = handler.getBinnings();
     ArrayList<Double> speed = handler.getSpeeds();

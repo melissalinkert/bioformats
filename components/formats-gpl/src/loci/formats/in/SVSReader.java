@@ -439,7 +439,7 @@ public class SVSReader extends BaseTiffReader {
   }
 
   protected Double getExposureTime() {
-    return exposureTime;
+    return exposureTime * exposureScale * 1000;
   }
 
   protected Timestamp getDatestamp() {

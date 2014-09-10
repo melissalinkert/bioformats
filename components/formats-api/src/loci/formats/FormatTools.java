@@ -217,44 +217,78 @@ public final class FormatTools {
 
   // -- Constants - domains --
 
-  /** Identifies the high content screening domain. */
-  public static final String HCS_DOMAIN = "High-Content Screening (HCS)";
+  /**
+   * Identifies the high content screening domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String HCS_DOMAIN = FormatDomain.HCS.getName();
 
-  /** Identifies the light microscopy domain. */
-  public static final String LM_DOMAIN = "Light Microscopy";
+  /**
+   * Identifies the light microscopy domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String LM_DOMAIN = FormatDomain.LM.getName();
 
-  /** Identifies the electron microscopy domain. */
-  public static final String EM_DOMAIN = "Electron Microscopy (EM)";
+  /**
+   * Identifies the electron microscopy domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String EM_DOMAIN = FormatDomain.EM.getName();
 
-  /** Identifies the scanning probe microscopy domain. */
-  public static final String SPM_DOMAIN = "Scanning Probe Microscopy (SPM)";
+  /**
+   * Identifies the scanning probe microscopy domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String SPM_DOMAIN = FormatDomain.SPM.getName();
 
-  /** Identifies the scanning electron microscopy domain. */
-  public static final String SEM_DOMAIN = "Scanning Electron Microscopy (SEM)";
+  /**
+   * Identifies the scanning electron microscopy domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String SEM_DOMAIN = FormatDomain.SEM.getName();
 
-  /** Identifies the fluorescence-lifetime domain. */
-  public static final String FLIM_DOMAIN = "Fluorescence-Lifetime Imaging";
+  /**
+   * Identifies the fluorescence-lifetime domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String FLIM_DOMAIN = FormatDomain.FLIM.getName();
 
-  /** Identifies the medical imaging domain. */
-  public static final String MEDICAL_DOMAIN = "Medical Imaging";
+  /**
+   * Identifies the medical imaging domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String MEDICAL_DOMAIN = FormatDomain.MEDICAL.getName();
 
-  /** Identifies the histology domain. */
-  public static final String HISTOLOGY_DOMAIN = "Histology";
+  /**
+   * Identifies the histology domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String HISTOLOGY_DOMAIN = FormatDomain.HISTOLOGY.getName();
 
-  /** Identifies the gel and blot imaging domain. */
-  public static final String GEL_DOMAIN = "Gel/Blot Imaging";
+  /**
+   * Identifies the gel and blot imaging domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String GEL_DOMAIN = FormatDomain.GEL.getName();
 
-  /** Identifies the astronomy domain. */
-  public static final String ASTRONOMY_DOMAIN = "Astronomy";
+  /**
+   * Identifies the astronomy domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String ASTRONOMY_DOMAIN = FormatDomain.ASTRONOMY.getName();
 
   /**
    * Identifies the graphics domain.
    * This includes formats used exclusively by analysis software.
+   * @deprecated use {@link FormatDomain} instead
    */
-  public static final String GRAPHICS_DOMAIN = "Graphics";
+  public static final String GRAPHICS_DOMAIN = FormatDomain.GRAPHICS.getName();
 
-  /** Identifies an unknown domain. */
-  public static final String UNKNOWN_DOMAIN = "Unknown";
+  /**
+   * Identifies an unknown domain.
+   * @deprecated use {@link FormatDomain} instead
+   */
+  public static final String UNKNOWN_DOMAIN = FormatDomain.UNKNOWN.getName();
 
   /** List of non-graphics domains. */
   public static final String[] NON_GRAPHICS_DOMAINS = new String[] {
@@ -278,12 +312,11 @@ public final class FormatTools {
     HISTOLOGY_DOMAIN, GEL_DOMAIN, ASTRONOMY_DOMAIN, UNKNOWN_DOMAIN
   };
 
-  /** List of all supported domains. */
-  public static final String[] ALL_DOMAINS = new String[] {
-    HCS_DOMAIN, LM_DOMAIN, EM_DOMAIN, SPM_DOMAIN, SEM_DOMAIN, FLIM_DOMAIN,
-    MEDICAL_DOMAIN, HISTOLOGY_DOMAIN, GEL_DOMAIN, ASTRONOMY_DOMAIN,
-    GRAPHICS_DOMAIN, UNKNOWN_DOMAIN
-  };
+  /**
+   * List of all supported domains.
+   * @deprecated use {@link FormatDomain#getAllDomainNames()} instead
+   */
+  public static final String[] ALL_DOMAINS = FormatDomain.getAllDomainNames();
 
   // -- Constants - web pages --
 

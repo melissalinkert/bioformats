@@ -177,7 +177,19 @@ public class AVIReader extends FormatReader {
   /* @see loci.formats.IFormatReader#get8BitLookupTable() */
   public byte[][] get8BitLookupTable() {
     FormatTools.assertId(currentId, true, 1);
-    return isRGB() ? null : lut;
+    boolean allEqual = true;
+    for (int i=0; i<lut[0].length; i++) {
+      for (int j=1; j<lut.length; j++) {
+        if (lut[j][i] != lut[0][i]) {
+          allEqual = false;
+          break;
+        }
+      }
+      if (!allEqual) {
+        break;
+      }
+    }
+    return isRGB() || allEqual ? null : lut;
   }
 
   /**

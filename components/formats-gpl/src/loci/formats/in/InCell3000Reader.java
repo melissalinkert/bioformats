@@ -31,6 +31,7 @@ import java.nio.ByteOrder;
 import loci.common.ByteArrayHandle;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -55,7 +56,7 @@ public class InCell3000Reader extends FormatReader {
   /** Constructs a new InCell 3000 reader. */
   public InCell3000Reader() {
     super("InCell 3000", "frm");
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

@@ -46,6 +46,7 @@ import loci.common.IniTable;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -153,7 +154,7 @@ public class LiFlimReader extends FormatReader {
   /** Constructs a new LI-FLIM reader. */
   public LiFlimReader() {
     super("LI-FLIM", "fli");
-    domains = new String[] {FormatTools.FLIM_DOMAIN};
+    domains.add(FormatDomain.FLIM);
   }
 
   // -- IFormatReader API methods --

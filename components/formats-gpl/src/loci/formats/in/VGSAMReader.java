@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -56,7 +57,7 @@ public class VGSAMReader extends FormatReader {
   /** Constructs a new VG SAM reader. */
   public VGSAMReader() {
     super("VG SAM", "dti");
-    domains = new String[] {FormatTools.SPM_DOMAIN};
+    domains.add(FormatDomain.SPM);
   }
 
   // -- IFormatReader API methods --

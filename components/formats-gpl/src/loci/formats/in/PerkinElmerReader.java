@@ -37,6 +37,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -102,7 +103,7 @@ public class PerkinElmerReader extends FormatReader {
   public PerkinElmerReader() {
     super("PerkinElmer", new String[] {
       "ano", "cfg", "csv", "htm", "rec", "tim", "zpo", "tif"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One .htm file, several other metadata files " +
       "(.tim, .ano, .csv, …) and either .tif files or .2, .3, .4, etc. files";

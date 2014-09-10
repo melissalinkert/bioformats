@@ -39,6 +39,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.ClassList;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -75,7 +76,7 @@ public class HitachiReader extends FormatReader {
   public HitachiReader() {
     super("Hitachi", "txt");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
     hasCompanionFiles = true;
     datasetDescription =
       "One .txt file plus one similarly-named .tif, .bmp, or .jpg file";

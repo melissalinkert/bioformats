@@ -35,6 +35,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -75,7 +76,7 @@ public class APLReader extends FormatReader {
   /** Constructs a new APL reader. */
   public APLReader() {
     super("Olympus APL", new String[] {"apl", "tnb", "mtb", "tif"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "One .apl file, one .mtb file, one .tnb file, and " +

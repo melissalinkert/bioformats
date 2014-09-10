@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -56,7 +57,7 @@ public class Ecat7Reader extends FormatReader {
   /** Constructs a new ECAT7 reader. */
   public Ecat7Reader() {
     super("ECAT7", "v");
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
     suffixNecessary = false;
   }
 

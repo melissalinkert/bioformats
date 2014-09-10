@@ -37,6 +37,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -68,8 +69,8 @@ public class FitsReader extends FormatReader {
   /** Constructs a new FitsReader. */
   public FitsReader() {
     super("Flexible Image Transport System", new String[] {"fits", "fts"});
-    domains =
-      new String[] {FormatTools.ASTRONOMY_DOMAIN, FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.ASTRONOMY);
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

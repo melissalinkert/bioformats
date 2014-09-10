@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -64,7 +65,7 @@ public class LEOReader extends BaseTiffReader {
   /** Constructs a new LEO reader. */
   public LEOReader() {
     super("LEO", new String[] {"sxm", "tif", "tiff"});
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     suffixSufficient = false;
   }
 

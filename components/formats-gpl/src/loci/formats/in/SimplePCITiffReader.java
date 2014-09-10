@@ -37,6 +37,7 @@ import loci.common.IniParser;
 import loci.common.IniTable;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.ImageTools;
@@ -82,7 +83,7 @@ public class SimplePCITiffReader extends BaseTiffReader {
   public SimplePCITiffReader() {
     super("SimplePCI TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

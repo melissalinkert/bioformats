@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -69,7 +70,7 @@ public class ImarisReader extends FormatReader {
   public ImarisReader() {
     super("Bitplane Imaris", "ims");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

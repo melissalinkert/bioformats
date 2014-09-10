@@ -33,6 +33,7 @@ import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -63,7 +64,7 @@ public class HISReader extends FormatReader {
   /** Constructs a new Hamamatsu .his reader. */
   public HISReader() {
     super("Hamamatsu HIS", "his");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

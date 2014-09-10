@@ -36,6 +36,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -110,7 +111,7 @@ public class InCellReader extends FormatReader {
     super("InCell 1000/2000",
       new String[] {"xdce", "xml", "tiff", "tif", "xlog"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     hasCompanionFiles = true;
     datasetDescription = "One .xdce file with at least one .tif/.tiff or " +
       ".im file";

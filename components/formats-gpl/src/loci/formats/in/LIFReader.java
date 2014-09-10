@@ -47,6 +47,7 @@ import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -152,7 +153,7 @@ public class LIFReader extends FormatReader {
   public LIFReader() {
     super("Leica Image File Format", "lif");
     suffixNecessary = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

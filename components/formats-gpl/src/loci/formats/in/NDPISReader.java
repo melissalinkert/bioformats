@@ -33,6 +33,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.ChannelSeparator;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -60,7 +61,7 @@ public class NDPISReader extends FormatReader {
   /** Constructs a new NDPIS reader. */
   public NDPISReader() {
     super("Hamamatsu NDPIS", "ndpis");
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     datasetDescription = "One .ndpis file and at least one .ndpi file";
   }
 

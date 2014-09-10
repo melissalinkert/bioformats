@@ -183,7 +183,7 @@ public abstract class FormatReader extends FormatHandler
   protected boolean group = true;
 
   /** List of domains in which this format is used. */
-  protected String[] domains = new String[0];
+  protected List<FormatDomain> domains = new ArrayList<FormatDomain>();
 
   /**
    * Current metadata store. Should never be accessed directly as the
@@ -1165,13 +1165,24 @@ public abstract class FormatReader extends FormatHandler
   public String[] getPossibleDomains(String id)
     throws FormatException, IOException
   {
-    return domains;
+    String[] names = new String[domains.size()];
+    for (int i=0; i<domains.size(); i++) {
+      names[i] = domains.get(i).getName();
+    }
+    return names;
   }
 
   /* @see IFormatReader#getDomains() */
   public String[] getDomains() {
     FormatTools.assertId(currentId, true, 1);
-    return domains;
+    // do not delegate to getPossibleDomains(String),
+    // as the readers expect to have the flexibility to override
+    // each method independently
+    String[] names = new String[domains.size()];
+    for (int i=0; i<domains.size(); i++) {
+      names[i] = domains.get(i).getName();
+    }
+    return names;
   }
 
   /* @see IFormatReader#getOptimalTileWidth() */

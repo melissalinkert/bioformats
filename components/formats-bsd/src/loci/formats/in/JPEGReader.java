@@ -42,6 +42,7 @@ import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.DelegateReader;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 
@@ -69,7 +70,7 @@ public class JPEGReader extends DelegateReader {
     legacyReader = new TileJPEGReader();
     nativeReaderInitialized = false;
     legacyReaderInitialized = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
   }
 

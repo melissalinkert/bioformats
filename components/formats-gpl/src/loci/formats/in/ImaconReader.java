@@ -32,6 +32,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -72,7 +73,7 @@ public class ImaconReader extends BaseTiffReader {
   /** Constructs a new Imacon reader. */
   public ImaconReader() {
     super("Imacon", new String[] {"fff"});
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

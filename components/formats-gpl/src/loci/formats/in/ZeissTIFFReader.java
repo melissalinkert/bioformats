@@ -117,6 +117,7 @@ import loci.common.DataTools;
 import loci.common.CaseInsensitiveLocation;
 import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.meta.MetadataStore;
@@ -154,7 +155,7 @@ public class ZeissTIFFReader extends BaseZeissReader {
 
   public ZeissTIFFReader() {
     super("Zeiss AxioVision TIFF", TIFF_SUFFIXES);
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
   }
 

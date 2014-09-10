@@ -43,6 +43,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -156,7 +157,7 @@ public class DicomReader extends FormatReader {
       "dic", "dcm", "dicom", "jp2", "j2ki", "j2kr", "raw", "ima"});
     suffixNecessary = false;
     suffixSufficient = false;
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
     datasetDescription = "One or more .dcm or .dicom files";
     hasCompanionFiles = true;
   }

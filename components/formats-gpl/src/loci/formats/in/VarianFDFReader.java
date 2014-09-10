@@ -32,6 +32,7 @@ import java.util.Vector;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -66,7 +67,7 @@ public class VarianFDFReader extends FormatReader {
   /** Constructs a new Varian FDF reader. */
   public VarianFDFReader() {
     super("Varian FDF", "fdf");
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
   }
 
   // -- IFormatReader API methods --

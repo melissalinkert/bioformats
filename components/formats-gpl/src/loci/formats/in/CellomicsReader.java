@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -89,7 +90,7 @@ public class CellomicsReader extends FormatReader {
   /** Constructs a new Cellomics reader. */
   public CellomicsReader() {
     super("Cellomics C01", new String[] {"c01", "dib"});
-    domains = new String[] {FormatTools.LM_DOMAIN, FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     datasetDescription = "One or more .c01 files";
   }
 
@@ -100,12 +101,6 @@ public class CellomicsReader extends FormatReader {
     final int blockLen = 4;
     if (!FormatTools.validStream(stream, blockLen, false)) return false;
     return stream.readInt() == C01_MAGIC_BYTES;
-  }
-
-  /* @see loci.formats.IFormatReader#getDomains() */
-  public String[] getDomains() {
-    FormatTools.assertId(currentId, true, 1);
-    return new String[] {FormatTools.HCS_DOMAIN};
   }
 
   /**

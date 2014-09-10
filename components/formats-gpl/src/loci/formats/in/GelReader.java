@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -84,7 +85,7 @@ public class GelReader extends BaseTiffReader {
   /** Constructs a new GEL reader. */
   public GelReader() {
     super("Amersham Biosciences GEL", new String[] {"gel"});
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
   }
 
   // -- IFormatReader API methods --

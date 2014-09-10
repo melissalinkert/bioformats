@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -60,7 +61,7 @@ public class TargaReader extends FormatReader {
   /** Constructs a new Targa reader. */
   public TargaReader() {
     super("Truevision Targa", "tga");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

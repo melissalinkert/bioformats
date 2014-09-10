@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -119,7 +120,7 @@ public class MinimalTiffReader extends FormatReader {
   /** Constructs a new MinimalTiffReader. */
   public MinimalTiffReader(String name, String[] suffixes) {
     super(name, suffixes);
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
   }
 

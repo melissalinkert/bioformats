@@ -38,6 +38,7 @@ import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -82,7 +83,7 @@ public class VolocityReader extends FormatReader {
   public VolocityReader() {
     super("Volocity Library",
       new String[] {"mvd2", "aisf", "aiix", "dat", "atsf"});
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
     hasCompanionFiles = true;
     datasetDescription = "One .mvd2 file plus a 'Data' directory";
   }

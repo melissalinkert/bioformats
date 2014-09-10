@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -49,6 +50,7 @@ import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -105,7 +107,7 @@ public class OMETiffReader extends FormatReader {
     super("OME-TIFF", new String[] {"ome.tif", "ome.tiff", "companion.ome"});
     suffixNecessary = false;
     suffixSufficient = false;
-    domains = FormatTools.NON_GRAPHICS_DOMAINS;
+    domains.addAll(EnumSet.allOf(FormatDomain.class));
     hasCompanionFiles = true;
     datasetDescription = "One or more .ome.tiff files";
   }

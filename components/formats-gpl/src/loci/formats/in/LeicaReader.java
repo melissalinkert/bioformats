@@ -40,6 +40,7 @@ import loci.common.RandomAccessInputStream;
 import loci.formats.AxisGuesser;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -160,7 +161,7 @@ public class LeicaReader extends FormatReader {
   /** Constructs a new Leica reader. */
   public LeicaReader() {
     super("Leica", new String[] {"lei", "tif", "tiff", "raw"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One .lei file with at least one .tif/.tiff file " +
       "and an optional .txt file";

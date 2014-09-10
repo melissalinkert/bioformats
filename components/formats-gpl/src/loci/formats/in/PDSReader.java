@@ -32,6 +32,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -66,7 +67,7 @@ public class PDSReader extends FormatReader {
   /** Constructs a new PDS reader. */
   public PDSReader() {
     super("Perkin Elmer Densitometer", new String[] {"hdr", "img"});
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     suffixSufficient = false;
     hasCompanionFiles = true;
     datasetDescription = "One .hdr file and a similarly-named .img file";

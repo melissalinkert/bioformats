@@ -31,6 +31,7 @@ import java.io.IOException;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -83,8 +84,8 @@ public class NiftiReader extends FormatReader {
   public NiftiReader() {
     super("NIfTI", new String[] {"nii", "img", "hdr"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN,
-      FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
+    domains.add(FormatDomain.UNKNOWN);
     hasCompanionFiles = true;
     datasetDescription = "A single .nii file or one .img file and a " +
       "similarly-named .hdr file";

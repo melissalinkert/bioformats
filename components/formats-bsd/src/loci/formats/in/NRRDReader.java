@@ -39,6 +39,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.ClassList;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -87,7 +88,7 @@ public class NRRDReader extends FormatReader {
   /** Constructs a new NRRD reader. */
   public NRRDReader() {
     super("NRRD", new String[] {"nrrd", "nhdr"});
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
     hasCompanionFiles = true;
     datasetDescription = "A single .nrrd file or one .nhdr file and one " +
       "other file containing the pixels";

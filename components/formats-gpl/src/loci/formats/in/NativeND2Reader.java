@@ -36,6 +36,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -124,7 +125,7 @@ public class NativeND2Reader extends FormatReader {
   public NativeND2Reader() {
     super("Nikon ND2", new String[] {"nd2", "jp2"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

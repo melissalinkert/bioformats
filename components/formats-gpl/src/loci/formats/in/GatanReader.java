@@ -31,6 +31,7 @@ import java.util.Vector;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -102,7 +103,7 @@ public class GatanReader extends FormatReader {
   /** Constructs a new Gatan reader. */
   public GatanReader() {
     super("Gatan Digital Micrograph", "dm3");
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     suffixNecessary = false;
   }
 

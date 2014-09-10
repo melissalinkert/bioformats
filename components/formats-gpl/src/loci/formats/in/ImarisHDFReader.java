@@ -35,6 +35,7 @@ import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -80,7 +81,7 @@ public class ImarisHDFReader extends FormatReader {
   public ImarisHDFReader() {
     super("Bitplane Imaris 5.5 (HDF)", "ims");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

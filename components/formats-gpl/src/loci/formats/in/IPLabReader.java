@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.Constants;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -61,7 +62,7 @@ public class IPLabReader extends FormatReader {
     super("IPLab", "ipl");
     suffixNecessary = false; // allow extensionless IPLab files
     suffixSufficient = false;
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

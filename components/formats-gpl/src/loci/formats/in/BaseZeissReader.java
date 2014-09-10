@@ -39,9 +39,10 @@ import java.lang.Math;
 
 import loci.common.DateTools;
 import loci.formats.CoreMetadata;
-import loci.formats.FormatTools;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
+import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.meta.DummyMetadata;
 import loci.formats.meta.MetadataStore;

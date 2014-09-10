@@ -32,6 +32,7 @@ import ome.xml.model.primitives.Timestamp;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -71,7 +72,7 @@ public class OpenlabRawReader extends FormatReader {
   public OpenlabRawReader() {
     super("Openlab RAW", "raw");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

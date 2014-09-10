@@ -34,6 +34,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -65,7 +66,7 @@ public class InveonReader extends FormatReader {
   /** Constructs a new Inveon reader. */
   public InveonReader() {
     super("Inveon", new String[] {"hdr"});
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
     suffixSufficient = false;
     hasCompanionFiles = true;
     datasetDescription = "One .hdr file plus one similarly-named file";

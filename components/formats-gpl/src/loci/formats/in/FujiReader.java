@@ -32,6 +32,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -65,7 +66,7 @@ public class FujiReader extends FormatReader {
   /** Constructs a new Fuji reader. */
   public FujiReader() {
     super("Fuji LAS 3000", new String[] {"img", "inf"});
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
     hasCompanionFiles = true;
   }
 

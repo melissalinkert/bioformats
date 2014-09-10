@@ -31,6 +31,7 @@ import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.common.services.ServiceException;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.codec.JPEGTileDecoder;
@@ -76,7 +77,7 @@ public class NDPIReader extends BaseTiffReader {
   /** Constructs a new NDPI reader. */
   public NDPIReader() {
     super("Hamamatsu NDPI", new String[] {"ndpi"});
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
   }
 
   // -- IFormatReader API methods --

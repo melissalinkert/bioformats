@@ -47,6 +47,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
 import loci.formats.MetadataTools;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.meta.MetadataStore;
@@ -79,7 +80,7 @@ public class LeicaSCNReader extends BaseTiffReader {
   /** Constructs a new LeicaSCN reader. */
   public LeicaSCNReader() {
     super("Leica SCN", new String[] {"scn"});
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     suffixNecessary = false;
     suffixSufficient = false;
   }

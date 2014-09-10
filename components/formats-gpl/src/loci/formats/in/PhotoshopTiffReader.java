@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import loci.common.ByteArrayHandle;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -76,7 +77,7 @@ public class PhotoshopTiffReader extends BaseTiffReader {
   public PhotoshopTiffReader() {
     super("Adobe Photoshop TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

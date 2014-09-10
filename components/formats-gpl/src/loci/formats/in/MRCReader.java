@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import loci.common.Constants;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -74,7 +75,8 @@ public class MRCReader extends FormatReader {
   /** Constructs a new MRC reader. */
   public MRCReader() {
     super("Medical Research Council", MRC_SUFFIXES);
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN, FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
+    domains.add(FormatDomain.LM);
     suffixSufficient = false;
   }
 

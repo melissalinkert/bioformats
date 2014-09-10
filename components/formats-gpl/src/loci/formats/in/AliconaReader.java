@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -63,7 +64,7 @@ public class AliconaReader extends FormatReader {
   /** Constructs a new Alicona reader. */
   public AliconaReader() {
     super("Alicona AL3D", "al3d");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

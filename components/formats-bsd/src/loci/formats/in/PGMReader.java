@@ -41,6 +41,7 @@ import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.common.RandomAccessOutputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -76,7 +77,7 @@ public class PGMReader extends FormatReader {
     super("Portable Any Map",
       new String[] {"pbm", "pgm", "ppm"});
 
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
   }
 

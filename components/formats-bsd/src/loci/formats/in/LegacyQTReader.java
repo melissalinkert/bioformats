@@ -44,6 +44,7 @@ import loci.common.Location;
 import loci.common.ReflectException;
 import loci.common.ReflectedUniverse;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -83,7 +84,7 @@ public class LegacyQTReader extends BIFormatReader {
   /** Constructs a new QT reader. */
   public LegacyQTReader() {
     super("QuickTime", "mov");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -59,7 +60,7 @@ public class FEIReader extends FormatReader {
   public FEIReader() {
     super("FEI/Philips", "img");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

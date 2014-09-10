@@ -43,6 +43,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -161,7 +162,7 @@ public class ZeissCZIReader extends FormatReader {
   /** Constructs a new Zeiss .czi reader. */
   public ZeissCZIReader() {
     super("Zeiss CZI", "czi");
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     suffixSufficient = true;
     suffixNecessary = false;
   }

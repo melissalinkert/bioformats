@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -62,7 +63,7 @@ public class QuesantReader extends FormatReader {
   /** Constructs a new Quesant reader. */
   public QuesantReader() {
     super("Quesant AFM", "afm");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

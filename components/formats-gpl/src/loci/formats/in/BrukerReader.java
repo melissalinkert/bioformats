@@ -38,6 +38,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -70,7 +71,7 @@ public class BrukerReader extends FormatReader {
   public BrukerReader() {
     super("Bruker", "");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
     hasCompanionFiles = true;
     datasetDescription = "One 'fid' and one 'acqp' plus several other " +
       "metadata files and a 'pdata' directory";

@@ -35,6 +35,7 @@ import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.ImageReader;
@@ -73,7 +74,7 @@ public class TrestleReader extends BaseTiffReader {
   /** Constructs a new Trestle reader. */
   public TrestleReader() {
     super("Trestle", new String[] {"tif"});
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     suffixSufficient = false;
     suffixNecessary = false;
     hasCompanionFiles = true;

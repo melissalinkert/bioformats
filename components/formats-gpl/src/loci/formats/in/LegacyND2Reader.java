@@ -28,6 +28,7 @@ package loci.formats.in;
 import java.io.IOException;
 
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -81,7 +82,7 @@ public class LegacyND2Reader extends FormatReader {
 
   public LegacyND2Reader() {
     super("Nikon ND2 (Legacy)", new String[] {"jp2", "nd2"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

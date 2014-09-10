@@ -48,6 +48,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -94,7 +95,7 @@ public class TillVisionReader extends FormatReader {
   /** Constructs a new TillVision reader. */
   public TillVisionReader() {
     super("TillVision", new String[] {"vws", "pst", "inf"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One .vws file and possibly one similarly-named " +
       "directory";

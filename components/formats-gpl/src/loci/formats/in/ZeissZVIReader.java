@@ -38,6 +38,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceFactory;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.codec.CodecOptions;
@@ -73,7 +74,7 @@ public class ZeissZVIReader extends BaseZeissReader {
   /** Constructs a new ZeissZVI reader. */
   public ZeissZVIReader() {
     super("Zeiss Vision Image (ZVI)", "zvi");
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

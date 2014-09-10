@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -122,7 +123,7 @@ public class FluoviewReader extends BaseTiffReader {
   public FluoviewReader() {
     super("Olympus Fluoview/ABD TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     datasetDescription =
       "One or more .tif/.tiff files, and an optional .txt file";
   }

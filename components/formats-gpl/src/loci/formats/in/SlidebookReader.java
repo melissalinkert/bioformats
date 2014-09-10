@@ -36,6 +36,7 @@ import loci.common.Constants;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -87,7 +88,7 @@ public class SlidebookReader extends FormatReader {
   /** Constructs a new Slidebook reader. */
   public SlidebookReader() {
     super("Olympus Slidebook", new String[] {"sld", "spl"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     suffixSufficient = false;
   }
 

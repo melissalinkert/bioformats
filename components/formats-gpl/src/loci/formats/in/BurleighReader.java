@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -55,7 +56,7 @@ public class BurleighReader extends FormatReader {
   /** Constructs a new Burleigh reader. */
   public BurleighReader() {
     super("Burleigh", "img");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
     suffixSufficient = false;
     suffixNecessary = false;
   }

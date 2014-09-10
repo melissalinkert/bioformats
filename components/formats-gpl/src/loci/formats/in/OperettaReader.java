@@ -35,6 +35,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -75,7 +76,7 @@ public class OperettaReader extends FormatReader {
   /** Constructs a new Operetta reader. */
   public OperettaReader() {
     super("PerkinElmer Operetta", new String[] {"tif", "tiff", "xml"});
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     suffixSufficient = false;
     datasetDescription =
       "Directory with XML file and one .tif/.tiff file per plane";

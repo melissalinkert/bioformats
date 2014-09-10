@@ -46,6 +46,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -91,7 +92,7 @@ public class MicromanagerReader extends FormatReader {
   /** Constructs a new Micromanager reader. */
   public MicromanagerReader() {
     super("Micro-Manager", new String[] {"tif", "tiff", "txt", "xml"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "A 'metadata.txt' file plus or or more .tif files";
   }

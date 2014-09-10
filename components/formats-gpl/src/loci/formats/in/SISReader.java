@@ -36,6 +36,7 @@ import loci.common.IniParser;
 import loci.common.IniTable;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -77,7 +78,7 @@ public class SISReader extends BaseTiffReader {
     super("Olympus SIS TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
     suffixNecessary = true;
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

@@ -41,6 +41,7 @@ import javax.imageio.ImageIO;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -72,14 +73,13 @@ public abstract class ImageIOReader extends BIFormatReader {
 
   /** Constructs a new ImageIOReader. */
   public ImageIOReader(String name, String suffix) {
-    super(name, suffix);
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    this(name, new String[] {suffix});
   }
 
   /** Constructs a new ImageIOReader. */
   public ImageIOReader(String name, String[] suffixes) {
     super(name, suffixes);
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

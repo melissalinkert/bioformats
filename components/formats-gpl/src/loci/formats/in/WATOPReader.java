@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -59,7 +60,7 @@ public class WATOPReader extends FormatReader {
   /** Constructs a new WA Technology reader. */
   public WATOPReader() {
     super("WA Technology TOP", "wat");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

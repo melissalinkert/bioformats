@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Vector;
 
 import loci.common.RandomAccessInputStream;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -71,7 +72,7 @@ public class NikonTiffReader extends BaseTiffReader {
   public NikonTiffReader() {
     super("Nikon TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

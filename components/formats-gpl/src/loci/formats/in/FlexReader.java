@@ -42,6 +42,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -148,7 +149,7 @@ public class FlexReader extends FormatReader {
   /** Constructs a new Flex reader. */
   public FlexReader() {
     super("Evotec Flex", SUFFIXES);
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     hasCompanionFiles = true;
     datasetDescription = "One directory containing one or more .flex files, " +
       "and an optional directory containing an .mea and .res file. The .mea " +

@@ -26,6 +26,7 @@
 package loci.formats.in;
 
 import loci.formats.DelegateReader;
+import loci.formats.FormatDomain;
 import loci.formats.FormatTools;
 
 /**
@@ -51,7 +52,7 @@ public class ND2Reader extends DelegateReader {
     legacyReader = new LegacyND2Reader();
     nativeReaderInitialized = false;
     legacyReaderInitialized = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -79,15 +80,14 @@ public class PQBinReader extends FormatReader {
    */
   public PQBinReader() {
     super("PicoQuant Bin", "bin");
-    domains = new String[]{FormatTools.FLIM_DOMAIN};
+    domains.add(FormatDomain.FLIM);
     suffixSufficient = false;
   }
 
   // -- IFormatReader API methods --
-  
+
   /* @see loci.formats.IFormatReader#isThisType(RandomAccessInputStream) */
   public boolean isThisType(RandomAccessInputStream stream) throws IOException {
-    
     long fileLength = stream.length();
     int bpp = FormatTools.getBytesPerPixel(FormatTools.UINT32);
     stream.order(true);

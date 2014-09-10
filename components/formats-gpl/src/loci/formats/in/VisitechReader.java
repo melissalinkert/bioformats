@@ -33,6 +33,7 @@ import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -69,7 +70,7 @@ public class VisitechReader extends FormatReader {
   public VisitechReader() {
     super("Visitech XYS", new String[] {"xys", "html"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One .html file plus one or more .xys files";
   }

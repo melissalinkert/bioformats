@@ -42,6 +42,7 @@ import javax.imageio.ImageIO;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -73,7 +74,7 @@ public class MNGReader extends BIFormatReader {
   /** Constructs a new MNG reader. */
   public MNGReader() {
     super("Multiple Network Graphics", "mng");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

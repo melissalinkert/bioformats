@@ -41,6 +41,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -109,7 +110,7 @@ public class MIASReader extends FormatReader {
   public MIASReader() {
     super("MIAS", new String[] {"tif", "tiff", "txt"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     hasCompanionFiles = true;
     datasetDescription = "One directory per plate containing one directory " +
       "per well, each with one or more .tif/.tiff files";

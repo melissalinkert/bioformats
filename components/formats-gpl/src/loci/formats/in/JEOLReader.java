@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -55,7 +56,7 @@ public class JEOLReader extends FormatReader {
   /** Constructs a new JEOL reader. */
   public JEOLReader() {
     super("JEOL", new String[] {"dat", "img", "par"});
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "A single .dat file or an .img file with a " +

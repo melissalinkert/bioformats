@@ -30,6 +30,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -61,7 +62,7 @@ public class VolocityClippingReader extends FormatReader {
   /** Constructs a new Volocity clipping reader. */
   public VolocityClippingReader() {
     super("Volocity Library Clipping", "acff");
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

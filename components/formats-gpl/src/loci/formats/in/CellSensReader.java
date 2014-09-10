@@ -35,6 +35,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -156,7 +157,7 @@ public class CellSensReader extends FormatReader {
   /** Constructs a new cellSens reader. */
   public CellSensReader() {
     super("CellSens VSI", new String[] {"vsi", "ets"});
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     suffixSufficient = true;
     datasetDescription = "One .vsi file and an optional directory with a " +
       "similar name that contains at least one subdirectory with .ets files";

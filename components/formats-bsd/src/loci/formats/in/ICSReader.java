@@ -46,6 +46,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -550,8 +551,9 @@ public class ICSReader extends FormatReader {
   /** Constructs a new ICSReader. */
   public ICSReader() {
     super("Image Cytometry Standard", new String[] {"ics", "ids"});
-    domains = new String[] {FormatTools.LM_DOMAIN, FormatTools.FLIM_DOMAIN,
-      FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.LM);
+    domains.add(FormatDomain.FLIM);
+    domains.add(FormatDomain.UNKNOWN);
     hasCompanionFiles = true;
     datasetDescription = "One .ics and possibly one .ids with a similar name";
   }

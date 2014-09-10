@@ -39,6 +39,7 @@ import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.ClassList;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -84,7 +85,7 @@ public class ScreenReader extends FormatReader {
   public ScreenReader() {
     super("Screen", "");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
 
     ClassList<IFormatReader> classes = ImageReader.getDefaultReaderClasses();
     Class<? extends IFormatReader>[] classArray = classes.getClasses();

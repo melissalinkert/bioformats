@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -60,7 +61,7 @@ public class SMCameraReader extends FormatReader {
   /** Constructs a new SM camera reader. */
   public SMCameraReader() {
     super("SM Camera", "");
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
     suffixSufficient = false;
     suffixNecessary = false;
   }

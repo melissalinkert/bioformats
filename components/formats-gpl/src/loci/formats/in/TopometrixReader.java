@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -57,7 +58,7 @@ public class TopometrixReader extends FormatReader {
   /** Constructs a new TopoMetrix reader. */
   public TopometrixReader() {
     super("TopoMetrix", new String[] {"tfr", "ffr", "zfr", "zfp", "2fl"});
-    domains = new String[] {FormatTools.SEM_DOMAIN};
+    domains.add(FormatDomain.SEM);
   }
 
   // -- IFormatReader API methods --

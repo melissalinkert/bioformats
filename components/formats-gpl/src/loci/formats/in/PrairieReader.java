@@ -41,6 +41,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -128,7 +129,7 @@ public class PrairieReader extends FormatReader {
   /** Constructs a new Prairie TIFF reader. */
   public PrairieReader() {
     super("Prairie TIFF", new String[] {"tif", "tiff", "cfg", "xml"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One .xml file, one .cfg file, and one or more " +
       ".tif/.tiff files";

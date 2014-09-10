@@ -33,6 +33,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -75,7 +76,7 @@ public class BioRadSCNReader extends FormatReader {
   /** Constructs a new Bio-Rad .scn reader. */
   public BioRadSCNReader() {
     super("Bio-Rad SCN", "scn");
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
     suffixSufficient = false;
   }
 

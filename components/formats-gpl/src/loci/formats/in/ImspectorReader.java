@@ -30,6 +30,7 @@ import java.util.ArrayList;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -76,7 +77,7 @@ public class ImspectorReader extends FormatReader {
   /** Constructs a new Imspector reader. */
   public ImspectorReader() {
     super("Lavision Imspector", "msr");
-    domains = new String[] {FormatTools.FLIM_DOMAIN};
+    domains.add(FormatDomain.FLIM);
     suffixSufficient = false;
   }
 

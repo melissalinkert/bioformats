@@ -37,6 +37,7 @@ import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -159,7 +160,7 @@ public class BioRadReader extends FormatReader {
   /** Constructs a new BioRadReader. */
   public BioRadReader() {
     super("Bio-Rad PIC", new String[] {"pic", "xml", "raw"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "One or more .pic files and an optional lse.xml file";
   }

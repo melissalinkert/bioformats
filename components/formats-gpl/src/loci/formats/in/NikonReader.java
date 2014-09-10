@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import loci.common.Constants;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.ImageTools;
@@ -119,7 +120,7 @@ public class NikonReader extends BaseTiffReader {
   public NikonReader() {
     super("Nikon NEF", new String[] {"nef", "tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

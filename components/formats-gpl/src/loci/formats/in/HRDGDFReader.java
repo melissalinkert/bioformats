@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -71,7 +72,7 @@ public class HRDGDFReader extends FormatReader {
   /** Constructs a new Gridded Data Format reader. */
   public HRDGDFReader() {
     super("NOAA-HRD Gridded Data Format", "");
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
     suffixSufficient = false;
     suffixNecessary = false;
   }

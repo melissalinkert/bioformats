@@ -39,6 +39,7 @@ import loci.common.Region;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -198,7 +199,7 @@ public class ZeissLSMReader extends FormatReader {
   /** Constructs a new Zeiss LSM reader. */
   public ZeissLSMReader() {
     super("Zeiss Laser-Scanning Microscopy", new String[] {"lsm", "mdb"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "One or more .lsm files; if multiple .lsm files " +

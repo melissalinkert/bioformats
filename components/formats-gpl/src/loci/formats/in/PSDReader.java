@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -68,7 +69,7 @@ public class PSDReader extends FormatReader {
   /** Constructs a new PSD reader. */
   public PSDReader() {
     super("Adobe Photoshop", "psd");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
   }
 

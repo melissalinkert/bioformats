@@ -31,6 +31,7 @@ import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -62,7 +63,7 @@ public class RHKReader extends FormatReader {
   /** Constructs a new RHK reader. */
   public RHKReader() {
     super("RHK Technologies", new String[] {"sm2", "sm3"});
-    domains = new String[] {FormatTools.SPM_DOMAIN};
+    domains.add(FormatDomain.SPM);
   }
 
   // -- IFormatReader API methods --

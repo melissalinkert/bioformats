@@ -36,6 +36,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -73,7 +74,7 @@ public class EPSReader extends FormatReader {
   /** Constructs a new EPS reader. */
   public EPSReader() {
     super("Encapsulated PostScript", new String[] {"eps", "epsi", "ps"});
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

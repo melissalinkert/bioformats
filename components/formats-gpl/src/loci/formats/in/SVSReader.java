@@ -38,6 +38,7 @@ import loci.common.Constants;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -86,7 +87,7 @@ public class SVSReader extends BaseTiffReader {
   /** Constructs a new SVS reader. */
   public SVSReader() {
     super("Aperio SVS", new String[] {"svs"});
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     suffixNecessary = true;
     noSubresolutions = true;
   }

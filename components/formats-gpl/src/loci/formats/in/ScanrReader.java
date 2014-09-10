@@ -41,6 +41,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -104,7 +105,7 @@ public class ScanrReader extends FormatReader {
   /** Constructs a new ScanR reader. */
   public ScanrReader() {
     super("Olympus ScanR", new String[] {"dat", "xml", "tif"});
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     suffixSufficient = false;
     hasCompanionFiles = true;
     datasetDescription = "One .xml file, one 'data' directory containing " +

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -66,7 +67,7 @@ public class IMODReader extends FormatReader {
   /** Constructs a new IMOD reader. */
   public IMODReader() {
     super("IMOD", "mod");
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

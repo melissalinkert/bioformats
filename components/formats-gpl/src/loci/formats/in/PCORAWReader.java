@@ -31,6 +31,7 @@ import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -57,7 +58,7 @@ public class PCORAWReader extends FormatReader {
   /** Constructs a new PCORAW reader. */
   public PCORAWReader() {
     super("PCO-RAW", new String[] {"pcoraw", "rec"});
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "A single .pcoraw file with a " +

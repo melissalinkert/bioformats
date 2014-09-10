@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -61,7 +62,7 @@ public class CanonRawReader extends FormatReader {
   /** Constructs a new Canon RAW reader. */
   public CanonRawReader() {
     super("Canon RAW", new String[] {"cr2", "crw", "jpg", "thm", "wav"});
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
     suffixSufficient = false;
   }

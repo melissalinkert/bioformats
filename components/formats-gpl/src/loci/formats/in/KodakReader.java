@@ -31,6 +31,7 @@ import loci.common.Constants;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -65,7 +66,7 @@ public class KodakReader extends FormatReader {
   /** Constructs a new Kodak reader. */
   public KodakReader() {
     super("Kodak Molecular Imaging", "bip");
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
   }
 
   // -- IFormatReader API methods --

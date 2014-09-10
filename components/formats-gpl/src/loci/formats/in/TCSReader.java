@@ -39,6 +39,7 @@ import loci.common.xml.XMLTools;
 import loci.formats.AxisGuesser;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -91,7 +92,7 @@ public class TCSReader extends FormatReader {
 
   public TCSReader() {
     super("Leica TCS TIFF", new String[] {"tif", "tiff", "xml"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
   }
 

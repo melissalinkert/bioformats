@@ -44,6 +44,7 @@ import loci.common.Location;
 import loci.common.ReflectException;
 import loci.common.ReflectedUniverse;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -82,7 +83,7 @@ public class TiffJAIReader extends BIFormatReader {
   /** Constructs a new TIFF reader that uses Java Image I/O. */
   public TiffJAIReader() {
     super("Tagged Image File Format", TiffReader.TIFF_SUFFIXES);
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

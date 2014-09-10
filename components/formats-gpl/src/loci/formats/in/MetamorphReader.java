@@ -44,6 +44,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -141,7 +142,7 @@ public class MetamorphReader extends BaseTiffReader {
   /** Constructs a new Metamorph reader. */
   public MetamorphReader() {
     super("Metamorph STK", new String[] {"stk", "nd", "tif", "tiff"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "One or more .stk or .tif/.tiff files plus an " +

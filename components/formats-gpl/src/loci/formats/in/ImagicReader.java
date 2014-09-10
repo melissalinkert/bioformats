@@ -31,6 +31,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -58,7 +59,7 @@ public class ImagicReader extends FormatReader {
   /** Constructs a new IMAGIC reader. */
   public ImagicReader() {
     super("IMAGIC", new String[] {"hed", "img"});
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     datasetDescription = "One .hed file plus one similarly-named .img file";
     suffixSufficient = false;
   }

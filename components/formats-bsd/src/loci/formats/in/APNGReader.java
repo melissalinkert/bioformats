@@ -40,6 +40,7 @@ import java.util.zip.InflaterInputStream;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -99,7 +100,7 @@ public class APNGReader extends FormatReader {
   /** Constructs a new APNGReader. */
   public APNGReader() {
     super("Animated PNG", "png");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
     suffixNecessary = false;
   }
 

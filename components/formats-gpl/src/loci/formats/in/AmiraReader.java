@@ -37,6 +37,7 @@ import loci.common.Constants;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -73,7 +74,7 @@ public class AmiraReader extends FormatReader {
 
   public AmiraReader() {
     super("Amira", new String[] {"am", "amiramesh", "grey", "hx", "labels"});
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
   }
 
   // -- IFormatReader API methods --

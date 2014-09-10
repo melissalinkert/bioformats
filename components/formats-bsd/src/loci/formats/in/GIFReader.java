@@ -38,6 +38,7 @@ import java.util.Vector;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -110,7 +111,7 @@ public class GIFReader extends FormatReader {
   /** Constructs a new GIF reader. */
   public GIFReader() {
     super("Graphics Interchange Format", "gif");
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

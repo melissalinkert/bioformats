@@ -44,6 +44,7 @@ import loci.common.IniTable;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -97,7 +98,7 @@ public class BDReader extends FormatReader {
   /** Constructs a new ScanR reader. */
   public BDReader() {
     super("BD Pathway", new String[] {"exp", "tif"});
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     hasCompanionFiles = true;
     suffixSufficient = false;
     suffixNecessary = false;

@@ -34,6 +34,7 @@ package loci.formats.in;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -45,6 +46,7 @@ import loci.common.services.ServiceFactory;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -90,7 +92,7 @@ public class OMEXMLReader extends FormatReader {
   /** Constructs a new OME-XML reader. */
   public OMEXMLReader() {
     super("OME-XML", "ome");
-    domains = FormatTools.NON_GRAPHICS_DOMAINS;
+    domains.addAll(EnumSet.allOf(FormatDomain.class));
     suffixNecessary = false;
   }
 

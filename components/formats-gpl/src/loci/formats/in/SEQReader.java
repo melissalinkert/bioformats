@@ -29,6 +29,7 @@ import java.io.IOException;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.tiff.IFD;
@@ -63,7 +64,7 @@ public class SEQReader extends BaseTiffReader {
   /** Constructs a new Image-Pro SEQ reader. */
   public SEQReader() {
     super("Image-Pro Sequence", "seq");
-    domains = new String[] {FormatTools.UNKNOWN_DOMAIN};
+    domains.add(FormatDomain.UNKNOWN);
     suffixSufficient = false;
   }
 

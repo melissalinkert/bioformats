@@ -35,6 +35,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -75,7 +76,7 @@ public class L2DReader extends FormatReader {
   /** Construct a new L2D reader. */
   public L2DReader() {
     super("Li-Cor L2D", new String[] {"l2d", "scn", "tif"});
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
     hasCompanionFiles = true;
     suffixSufficient = false;
     datasetDescription = "One .l2d file with one or more directories " +

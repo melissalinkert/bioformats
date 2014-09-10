@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.RandomAccessInputStream;
 import loci.formats.FormatException;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -58,7 +59,7 @@ public class LIMReader extends FormatReader {
   /** Constructs a new LIM reader. */
   public LIMReader() {
     super("Laboratory Imaging", "lim");
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

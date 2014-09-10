@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -68,7 +69,7 @@ public class AnalyzeReader extends FormatReader {
   /** Constructs a new Analyze reader. */
   public AnalyzeReader() {
     super("Analyze 7.5", new String[] {"img", "hdr"});
-    domains = new String[] {FormatTools.MEDICAL_DOMAIN};
+    domains.add(FormatDomain.MEDICAL);
     hasCompanionFiles = true;
     datasetDescription = "One .img file and one similarly-named .hdr file";
   }

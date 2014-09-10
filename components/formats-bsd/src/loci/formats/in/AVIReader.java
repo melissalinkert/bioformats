@@ -38,6 +38,7 @@ import java.util.Vector;
 import loci.common.Constants;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -159,7 +160,7 @@ public class AVIReader extends FormatReader {
   public AVIReader() {
     super("Audio Video Interleave", "avi");
     suffixNecessary = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

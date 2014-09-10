@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -61,7 +62,7 @@ public class SpiderReader extends FormatReader {
   /** Constructs a new SPIDER reader. */
   public SpiderReader() {
     super("SPIDER", "spi");
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     suffixSufficient = true;
     suffixNecessary = false;
   }

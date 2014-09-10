@@ -38,6 +38,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
 import loci.formats.FilePattern;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -80,7 +81,8 @@ public class MetamorphTiffReader extends BaseTiffReader {
   public MetamorphTiffReader() {
     super("Metamorph TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN, FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.LM);
+    domains.add(FormatDomain.HCS);
     datasetDescription = "One or more .tif/.tiff files";
   }
 
@@ -98,10 +100,13 @@ public class MetamorphTiffReader extends BaseTiffReader {
   /* @see loci.formats.IFormatReader#getDomains() */
   public String[] getDomains() {
     FormatTools.assertId(currentId, true, 1);
-    String[] domain = new String[1];
-    domain[0] =
-      files.length == 1 ? FormatTools.LM_DOMAIN : FormatTools.HCS_DOMAIN;
-    return domain;
+    if (files.length == 1) {
+      domains.remove(FormatDomain.HCS);
+    }
+    else {
+      domains.remove(FormatDomain.LM);
+    }
+    return super.getDomains();
   }
 
   /* @see loci.formats.IFormatReader#getSeriesUsedFiles(boolean) */

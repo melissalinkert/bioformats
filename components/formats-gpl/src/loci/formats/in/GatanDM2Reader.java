@@ -33,6 +33,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -66,7 +67,7 @@ public class GatanDM2Reader extends FormatReader {
   /** Constructs a new Gatan .dm2 reader. */
   public GatanDM2Reader() {
     super("Gatan DM2", "dm2");
-    domains = new String[] {FormatTools.SPM_DOMAIN};
+    domains.add(FormatDomain.SPM);
     suffixNecessary = false;
   }
 

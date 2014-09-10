@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -76,7 +77,7 @@ public class JPXReader extends FormatReader {
   public JPXReader() {
     super("JPX", "jpx");
     suffixSufficient = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

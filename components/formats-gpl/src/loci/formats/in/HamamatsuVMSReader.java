@@ -40,6 +40,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.services.ServiceException;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -85,7 +86,7 @@ public class HamamatsuVMSReader extends FormatReader {
   /** Constructs a new Hamamatsu VMS reader. */
   public HamamatsuVMSReader() {
     super("Hamamatsu VMS", "vms");
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     datasetDescription = "One .vms file plus several .jpg files";
   }
 

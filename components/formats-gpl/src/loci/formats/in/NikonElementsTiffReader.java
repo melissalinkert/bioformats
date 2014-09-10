@@ -32,6 +32,7 @@ import java.util.Hashtable;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -67,7 +68,7 @@ public class NikonElementsTiffReader extends BaseTiffReader {
   public NikonElementsTiffReader() {
     super("Nikon Elements TIFF", new String[] {"tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
   }
 
   // -- IFormatReader API methods --

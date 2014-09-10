@@ -45,6 +45,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -158,7 +159,7 @@ public class FV1000Reader extends FormatReader {
   /** Constructs a new FV1000 reader. */
   public FV1000Reader() {
     super("Olympus FV1000", new String[] {"oib", "oif", "pty", "lut"});
-    domains = new String[] {FormatTools.LM_DOMAIN};
+    domains.add(FormatDomain.LM);
     hasCompanionFiles = true;
     datasetDescription = "Single .oib file or one .oif file and a " +
       "similarly-named directory containing .tif/.tiff files";

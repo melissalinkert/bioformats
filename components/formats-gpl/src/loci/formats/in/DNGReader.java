@@ -36,6 +36,7 @@ import loci.common.Constants;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.ImageTools;
@@ -91,7 +92,7 @@ public class DNGReader extends BaseTiffReader {
     super("DNG",
       new String[] {"cr2", "crw", "jpg", "thm", "wav", "tif", "tiff"});
     suffixSufficient = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

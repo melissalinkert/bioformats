@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -65,7 +66,7 @@ public class BioRadGelReader extends FormatReader {
   /** Constructs a new Bio-Rad gel reader. */
   public BioRadGelReader() {
     super("Bio-Rad GEL", "1sc");
-    domains = new String[] {FormatTools.GEL_DOMAIN};
+    domains.add(FormatDomain.GEL);
     suffixNecessary = false;
   }
 

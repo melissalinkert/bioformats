@@ -31,6 +31,7 @@ import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -63,7 +64,7 @@ public class SBIGReader extends FormatReader {
   /** Constructs a new SBIG reader. */
   public SBIGReader() {
     super("SBIG", "");
-    domains = new String[] {FormatTools.ASTRONOMY_DOMAIN};
+    domains.add(FormatDomain.ASTRONOMY);
     suffixSufficient = false;
     suffixNecessary = false;
   }

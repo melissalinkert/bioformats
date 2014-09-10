@@ -37,6 +37,7 @@ import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.ChannelSeparator;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -73,7 +74,7 @@ public class AFIReader extends FormatReader {
   /** Constructs a new AFI reader. */
   public AFIReader() {
     super("Aperio AFI", "afi");
-    domains = new String[] {FormatTools.HISTOLOGY_DOMAIN};
+    domains.add(FormatDomain.HISTOLOGY);
     hasCompanionFiles = true;
     datasetDescription = "One .afi file and several similarly-named .svs files";
   }

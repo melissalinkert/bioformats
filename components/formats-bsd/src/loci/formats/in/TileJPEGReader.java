@@ -39,6 +39,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.common.services.ServiceException;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -70,7 +71,7 @@ public class TileJPEGReader extends FormatReader {
 
   public TileJPEGReader() {
     super("Tile JPEG", new String[] {"jpg", "jpeg"});
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
   // -- IFormatReader API methods --

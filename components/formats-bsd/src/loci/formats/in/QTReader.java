@@ -33,6 +33,7 @@
 package loci.formats.in;
 
 import loci.formats.DelegateReader;
+import loci.formats.FormatDomain;
 import loci.formats.FormatTools;
 
 /**
@@ -58,7 +59,7 @@ public class QTReader extends DelegateReader {
     legacyReader = new LegacyQTReader();
     nativeReaderInitialized = false;
     legacyReaderInitialized = false;
-    domains = new String[] {FormatTools.GRAPHICS_DOMAIN};
+    domains.add(FormatDomain.GRAPHICS);
   }
 
 }

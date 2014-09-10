@@ -39,6 +39,7 @@ import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -94,7 +95,7 @@ public class CellWorxReader extends FormatReader {
   /** Constructs a new CellWorx reader. */
   public CellWorxReader() {
     super("CellWorx", new String[] {"pnl", "htd", "log"});
-    domains = new String[] {FormatTools.HCS_DOMAIN};
+    domains.add(FormatDomain.HCS);
     hasCompanionFiles = true;
     datasetDescription = "One .htd file plus one or more .pnl or " +
       ".tif files and optionally one or more .log files";

@@ -32,6 +32,7 @@ import java.nio.ByteOrder;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -87,7 +88,7 @@ public class SDTReader extends FormatReader {
   /** Constructs a new SDT reader. */
   public SDTReader() {
     super("SPCImage Data", "sdt");
-    domains = new String[] {FormatTools.FLIM_DOMAIN};
+    domains.add(FormatDomain.FLIM);
   }
 
   // -- SDTReader API methods --

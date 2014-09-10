@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.FormatDomain;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.meta.MetadataStore;
@@ -61,7 +62,7 @@ public class PyramidTiffReader extends BaseTiffReader {
   /** Constructs a new pyramid TIFF reader. */
   public PyramidTiffReader() {
     super("Pyramid TIFF", new String[] {"tif", "tiff"});
-    domains = new String[] {FormatTools.EM_DOMAIN};
+    domains.add(FormatDomain.EM);
     suffixSufficient = false;
     suffixNecessary = false;
     equalStrips = true;

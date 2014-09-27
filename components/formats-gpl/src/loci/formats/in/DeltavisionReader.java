@@ -114,6 +114,7 @@ public class DeltavisionReader extends FormatReader {
   private String deconvolutionLogFile;
 
   private boolean truncatedFileFlag = false;
+  private boolean isOMX = false;
 
   // -- Constructor --
 
@@ -208,6 +209,7 @@ public class DeltavisionReader extends FormatReader {
       backwardsStage = false;
       xTiles = 0;
       yTiles = 0;
+      isOMX = false;
     }
   }
 
@@ -611,7 +613,7 @@ public class DeltavisionReader extends FormatReader {
     // --- compute some secondary values ---
 
     String imageType =
-      type < IMAGE_TYPES.length ? IMAGE_TYPES[type] : "unknown";
+      type < IMAGE_TYPES.length ? IMAGE_TYPES[type] : type + " (unknown)";
 
     String imageDesc = title[0];
     if (imageDesc != null && imageDesc.length() == 0) imageDesc = null;
@@ -729,8 +731,14 @@ public class DeltavisionReader extends FormatReader {
 
         // plane timing
         store.setPlaneDeltaT(new Double(hdr.timeStampSeconds), series, i);
-        store.setPlaneExposureTime(
-          new Double(extHdrFields[0][coords[1]][0].expTime), series, i);
+
+        float expTime = extHdrFields[0][coords[1]][0].expTime;
+        // OMX files store the exposure time in ms, not seconds
+        if (isOMX) {
+          expTime /= 1000;
+        }
+
+        store.setPlaneExposureTime(new Double(expTime), series, i);
 
         // stage position
         if (!logFound || getSeriesCount() > 1) {

@@ -2086,6 +2086,22 @@ public class FormatReaderTest {
     result(testName, success, msg);
   }
 
+  @Test(groups = {"all",  "automated"})
+  public void testMemoFileUsage() throws FormatException, IOException {
+    String testName = "testMemoFileUsage";
+    if (!initFile()) result(testName, false, "initFile");
+    Memoizer memo = new Memoizer(0);
+    memo.setId(reader.getCurrentFile());
+    memo.close();
+    assert memo.isSavedToMemo();
+    memo.setId(reader.getCurrentFile());
+    assert memo.isLoadedFromMemo();
+    memo.openBytes(0, 0, 0, 1, 1);
+    memo.close();
+    memo.getMemoFile(reader.getCurrentFile()).delete();
+    result(testName, true);
+  }
+
   @Test(groups = {"config"})
   public void writeConfigFile() {
     setupReader();

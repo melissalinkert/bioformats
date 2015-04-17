@@ -96,7 +96,7 @@ public class NDPIReader extends BaseTiffReader {
         stream = new RandomAccessInputStream(name);
         parser = new TiffParser(stream);
         parser.setDoCaching(false);
-        parser.setUse64BitOffsets(stream.length() >= Math.pow(2, 32));
+        parser.setUse64BitOffsets(true);
         if (!parser.isValidHeader()) {
           return false;
         }
@@ -276,7 +276,7 @@ public class NDPIReader extends BaseTiffReader {
   @Override
   protected void initFile(String id) throws FormatException, IOException {
     RandomAccessInputStream s = new RandomAccessInputStream(id);
-    use64Bit = s.length() >= Math.pow(2, 32);
+    use64Bit = true;
     s.close();
     super.initFile(id);
   }

@@ -913,7 +913,11 @@ public class ZeissCZIReader extends FormatReader {
           String color = channels.get(c).color;
           if (color != null) {
             color = color.replaceAll("#", "");
-            color = color.substring(2, color.length());
+            // an alpha value may or may not be stored
+            // if present, it needs to be removed
+            if (color.length() == 8) {
+              color = color.substring(2, color.length());
+            }
             try {
               store.setChannelColor(
                 new Color((Integer.parseInt(color, 16) << 8) | 0xff), i, c);

@@ -119,6 +119,10 @@ public class DNGReader extends BaseTiffReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
+    if (getPixelType() == FormatTools.UINT8) {
+      return super.openBytes(no, buf, x, y, w, h);
+    }
+
     IFD ifd = ifds.get(no);
     int[] bps = ifd.getBitsPerSample();
     int dataSize = bps[0];
@@ -268,7 +272,9 @@ public class DNGReader extends BaseTiffReader {
     m.sizeZ = 1;
     m.sizeC = isRGB() ? samples : 1;
     m.sizeT = ifds.size();
-    m.pixelType = FormatTools.UINT16;
+    if (whiteBalance != null) {
+      m.pixelType = FormatTools.UINT16;
+    }
     m.indexed = false;
 
     // now look for the EXIF IFD pointer
@@ -321,7 +327,7 @@ public class DNGReader extends BaseTiffReader {
                       whiteBalance[i] = wb[i].doubleValue();
                     }
                   }
-                  else {
+                  else if (!(note.get(nextTag) instanceof int[])) {
                     // use a default white balance table
                     whiteBalance = new double[3];
                     whiteBalance[0] = 2.391381;

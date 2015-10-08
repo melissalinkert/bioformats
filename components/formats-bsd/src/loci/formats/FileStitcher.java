@@ -630,6 +630,19 @@ public class FileStitcher extends ReaderWrapper {
     return group;
   }
 
+  /* @see IFormatReader#setMetadataOptions(MetadataOptions) */
+  @Override
+  public void setMetadataOptions(MetadataOptions options) {
+    super.setMetadataOptions(options);
+    if (externals != null) {
+      for (ExternalSeries s : externals) {
+        for (DimensionSwapper r : s.getReaders()) {
+          r.setMetadataOptions(options);
+        }
+      }
+    }
+  }
+
   /* @see IFormatReader#setNormalized(boolean) */
   @Override
   public void setNormalized(boolean normalize) {
@@ -1267,6 +1280,7 @@ public class FileStitcher extends ReaderWrapper {
         else readers[i] = new DimensionSwapper();
         readers[i].setGroupFiles(false);
         readers[i].setId(files[i]);
+        readers[i].setMetadataOptions(getMetadataOptions());
       }
 
       ag = new AxisGuesser(this.pattern, readers[0].getDimensionOrder(),

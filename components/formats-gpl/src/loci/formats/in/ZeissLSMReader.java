@@ -178,7 +178,7 @@ public class ZeissLSMReader extends FormatReader {
   private List<String> imageNames;
   private String binning;
   private List<Double> xCoordinates, yCoordinates, zCoordinates;
-  private int dimensionM, dimensionP;
+  private int dimensionM, dimensionP, dimensionR;
   private Map<String, Integer> seriesCounts;
   private String userName;
   private String[][] channelNames;
@@ -270,6 +270,7 @@ public class ZeissLSMReader extends FormatReader {
       zCoordinates = null;
       dimensionM = 0;
       dimensionP = 0;
+      dimensionR = 0;
       seriesCounts = null;
       originX = originY = originZ = 0d;
       userName = null;
@@ -579,7 +580,20 @@ public class ZeissLSMReader extends FormatReader {
 
     for (int i=0; i<getSeriesCount(); i++) {
       CoreMetadata ms = core.get(i);
-      ms.imageCount = ms.sizeZ * ms.sizeC * ms.sizeT;
+      if (dimensionR > 0) {
+        ms.sizeZ *= dimensionR;
+
+        ms.moduloZ.type = FormatTools.ROTATION;
+        ms.moduloZ.step = ms.sizeZ;
+        ms.moduloZ.end = ms.sizeZ * (dimensionR - 1);
+      }
+      int diff = ms.imageCount / (ms.sizeZ * ms.sizeC * ms.sizeT);
+      if (diff * ms.sizeZ * ms.sizeC * ms.sizeT == ms.imageCount) {
+        ms.sizeT *= diff;
+      }
+      else {
+        ms.imageCount = ms.sizeZ * ms.sizeC * ms.sizeT;
+      }
     }
 
     MetadataTools.populatePixels(store, this, true);
@@ -843,7 +857,7 @@ public class ZeissLSMReader extends FormatReader {
         ms.dimensionOrder = "XYZCT";
         break;
       default:
-        addSeriesMeta("ScanType", "x-y-z scan");
+        addSeriesMeta("ScanType", "x-y-z scan (" + scanType + ")");
         ms.dimensionOrder = "XYZCT";
     }
 
@@ -2089,9 +2103,12 @@ public class ZeissLSMReader extends FormatReader {
     h.put(0x50000003, "Power");
     h.put(0x90000002, "Power");
     h.put(0x70000003, "Detector Gain");
+    h.put(0x70000004, "Camera baseline offset");
     h.put(0x70000005, "Amplifier Gain");
+    h.put(0x70000006, "Camera EMCCD Gain");
     h.put(0x70000007, "Amplifier Offset");
     h.put(0x70000009, "Pinhole Diameter");
+    h.put(0x7000000a, "Number of SIM Rotations");
     h.put(0x7000000c, "Detector Name");
     h.put(0x7000000d, "Amplifier Name");
     h.put(0x7000000e, "Pinhole Name");
@@ -2278,6 +2295,9 @@ public class ZeissLSMReader extends FormatReader {
           }
           else if (METADATA_KEYS.get(key).equals("User")) {
             userName = blockData.get(key).toString();
+          }
+          else if (METADATA_KEYS.get(key).equals("Number of SIM Rotations")) {
+            dimensionR = (int) Double.parseDouble(blockData.get(key).toString());
           }
         }
       }

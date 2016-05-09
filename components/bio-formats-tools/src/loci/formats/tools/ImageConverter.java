@@ -187,6 +187,9 @@ public final class ImageConverter {
           }
           catch (NumberFormatException e) { }
         }
+        else if (args[i].equals("-version")) {
+          printVersion = true;
+        }
         else if (!args[i].equals(NO_UPGRADE_CHECK)) {
           LOGGER.error("Found unknown command flag: {}; exiting.", args[i]);
           return false;

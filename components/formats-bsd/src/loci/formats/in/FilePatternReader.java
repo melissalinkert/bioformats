@@ -66,7 +66,6 @@ public class FilePatternReader extends FormatReader {
   private String pattern;
   private ClassList<IFormatReader> newClasses;
   private String[] files;
-  private int[][][] fileIndexes;
 
   // -- Constructor --
 
@@ -130,11 +129,8 @@ public class FilePatternReader extends FormatReader {
   public byte[] openBytes(int no, byte[] buf, int x, int y, int w, int h)
     throws FormatException, IOException
   {
-    int fileIndex = fileIndexes[getSeries()][no][0];
-    int planeIndex = fileIndexes[getSeries()][no][1];
-    helper.setId(files[fileIndex]);
     helper.setSeries(getSeries());
-    return helper.openBytes(planeIndex, buf, x, y, w, h);
+    return helper.openBytes(no, buf, x, y, w, h);
   }
 
   @Override
@@ -155,7 +151,6 @@ public class FilePatternReader extends FormatReader {
     if (!fileOnly) {
       pattern = null;
       files = null;
-      fileIndexes = null;
     }
   }
 
@@ -338,15 +333,6 @@ public class FilePatternReader extends FormatReader {
     }
 
     files = stitcher.getUsedFiles();
-    fileIndexes = new int[getSeriesCount()][][];
-    for (int s=0; s<getSeriesCount(); s++) {
-      setSeries(s);
-      fileIndexes[s] = new int[core.get(s).imageCount][];
-      for (int p=0; p<fileIndexes[s].length; p++) {
-        fileIndexes[s][p] = stitcher.computeIndices(p);
-      }
-    }
-    setSeries(0);
   }
 
 }

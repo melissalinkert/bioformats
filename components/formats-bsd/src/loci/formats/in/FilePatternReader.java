@@ -263,12 +263,7 @@ public class FilePatternReader extends FormatReader {
   /* @see loci.formats.IFormatReader#reopenFile() */
   @Override
   public void reopenFile() throws IOException {
-    if (files != null) {
-      IFormatReader r = new ImageReader(newClasses);
-      helper = Memoizer.wrap(getMetadataOptions(), r);
-      stitcher = null;
-    }
-    else if (helper == null) {
+    if (helper == null) {
       stitcher = new FileStitcher(new ImageReader(newClasses));
       IFormatReader r = new ImageReader(newClasses);
       helper = Memoizer.wrap(getMetadataOptions(), r);

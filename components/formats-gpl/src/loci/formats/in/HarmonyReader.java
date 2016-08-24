@@ -77,6 +77,7 @@ public class HarmonyReader extends FormatReader {
   private Plane[][] planes;
   private MinimalTiffReader reader;
   private ArrayList<String> metadataFiles = new ArrayList<String>();
+  private String plateID;
 
   // -- Constructor --
 
@@ -88,6 +89,14 @@ public class HarmonyReader extends FormatReader {
     hasCompanionFiles = true;
     datasetDescription =
       "Directory with XML file and one .tif/.tiff file per plane";
+  }
+
+  // -- IHCSReader API methods --
+
+  /* @see loci.formats.IFormatReader#getPlateIdentifier() */
+  public String getPlateIdentifier() throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    return plateID;
   }
 
   // -- IFormatReader API methods --
@@ -204,6 +213,7 @@ public class HarmonyReader extends FormatReader {
       reader = null;
       planes = null;
       metadataFiles.clear();
+      plateID = null;
     }
   }
 
@@ -398,6 +408,8 @@ public class HarmonyReader extends FormatReader {
       addGlobalMeta(key, xmlMetadata.get(key));
     }
 
+    plateID = handler.getPlateIdentifier();
+
     // populate the MetadataStore
 
     LOGGER.info("Populating OME metadata");
@@ -453,7 +465,7 @@ public class HarmonyReader extends FormatReader {
     if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
       store.setPlateName(handler.getPlateName(), 0);
       store.setPlateDescription(handler.getPlateDescription(), 0);
-      store.setPlateExternalIdentifier(handler.getPlateIdentifier(), 0);
+      store.setPlateExternalIdentifier(plateID, 0);
 
       String experimenterID = MetadataTools.createLSID("Experimenter", 0);
       store.setExperimenterID(experimenterID, 0);

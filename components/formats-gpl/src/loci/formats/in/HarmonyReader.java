@@ -40,6 +40,7 @@ import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
+import loci.formats.IHCSReader;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
 import loci.formats.tiff.IFD;
@@ -64,7 +65,7 @@ import org.xml.sax.Attributes;
  *
  * @author Melissa Linkert melissa at glencoesoftware.com
  */
-public class HarmonyReader extends FormatReader {
+public class HarmonyReader extends FormatReader implements IHCSReader {
 
   // -- Constants --
 

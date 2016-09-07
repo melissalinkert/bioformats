@@ -720,6 +720,10 @@ public class ZeissCZIReader extends FormatReader {
       seriesCount *= mosaics;
     }
 
+    if (scanDim > getSizeZ() && scanDim > getSizeT()) {
+      ms0.sizeZ *= scanDim;
+    }
+
     ms0.imageCount = getSizeZ() * (isRGB() ? 1 : getSizeC()) * getSizeT();
 
     LOGGER.trace("Size Z = {}", getSizeZ());

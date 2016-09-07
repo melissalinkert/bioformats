@@ -581,6 +581,11 @@ public class ZeissCZIReader extends FormatReader {
       readSegments(pixels.get(key));
     }
 
+    if (planes.size() == 0) {
+      // none of the files in the fileset contain a pixel block
+      throw new FormatException("Pixel data not found; file may be corrupt");
+    }
+
     calculateDimensions();
 
     if (getSizeC() == 0) {

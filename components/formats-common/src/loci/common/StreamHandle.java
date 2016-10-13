@@ -156,8 +156,10 @@ public abstract class StreamHandle implements IRandomAccess {
     fp = pos;
 
     if (diff < 0) {
+      // resetStream sets the fp to 0
       resetStream();
-      diff = fp;
+      diff = pos;
+      fp = pos;
     }
     int skipped = stream.skipBytes((int) diff);
     while (skipped < diff) {
@@ -165,6 +167,7 @@ public abstract class StreamHandle implements IRandomAccess {
       if (n == 0) break;
       skipped += n;
     }
+    markManager();
   }
 
   /* @see IRandomAccess.write(ByteBuffer) */

@@ -52,10 +52,6 @@ import ome.xml.model.primitives.PositiveFloat;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
-import ome.units.quantity.Length;
-import ome.units.quantity.Time;
-import ome.units.UNITS;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.w3c.dom.Attr;
@@ -82,11 +78,12 @@ public class ColumbusReader extends FormatReader {
   // -- Fields --
 
   private ArrayList<String> metadataFiles = new ArrayList<String>();
-  private ArrayList<Plane> planes = new ArrayList<Plane>();
+  private ArrayList<HarmonyColumbusPlane> planes = new ArrayList<HarmonyColumbusPlane>();
   private MinimalTiffReader reader;
 
   private int nFields = 0;
   private String acquisitionDate;
+  private String plateID;
 
   // -- Constructor --
 
@@ -153,10 +150,10 @@ public class ColumbusReader extends FormatReader {
     }
 
     if (!noPixels) {
-      for (Plane p : planes) {
-        if (p.series == getSeries() && !files.contains(p.file)) {
-          if (new Location(p.file).exists()) {
-            files.add(p.file);
+      for (HarmonyColumbusPlane p : planes) {
+        if (p.series == getSeries() && !files.contains(p.filename)) {
+          if (new Location(p.filename).exists()) {
+            files.add(p.filename);
           }
         }
       }
@@ -177,6 +174,7 @@ public class ColumbusReader extends FormatReader {
       planes.clear();
       nFields = 0;
       acquisitionDate = null;
+      plateID = null;
     }
   }
 
@@ -189,18 +187,18 @@ public class ColumbusReader extends FormatReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     int[] zct = getZCTCoords(no);
-    Plane p = null;
-    for (Plane plane : planes) {
-      if (plane.series == getSeries() && plane.timepoint == zct[2] &&
-        plane.channel == zct[1])
+    HarmonyColumbusPlane p = null;
+    for (HarmonyColumbusPlane plane : planes) {
+      if (plane.series == getSeries() && plane.t == zct[2] &&
+        plane.c == zct[1])
       {
         p = plane;
         break;
       }
     }
 
-    if (p != null && new Location(p.file).exists()) {
-      reader.setId(p.file);
+    if (p != null && new Location(p.filename).exists()) {
+      reader.setId(p.filename);
       reader.openBytes(p.fileIndex, buf, x, y, w, h);
     }
     else {
@@ -277,37 +275,12 @@ public class ColumbusReader extends FormatReader {
 
     // process plane list to determine plate size
 
-    Comparator<Plane> planeComp = new Comparator<Plane>() {
-      public int compare(Plane p1, Plane p2) {
-        if (p1.row != p2.row) {
-          return p1.row - p2.row;
-        }
-
-        if (p1.col != p2.col) {
-          return p1.col - p2.col;
-        }
-
-        if (p1.field != p2.field) {
-          return p1.field - p2.field;
-        }
-
-        if (p1.timepoint != p2.timepoint) {
-          return p1.timepoint - p2.timepoint;
-        }
-
-        if (p1.channel != p2.channel) {
-          return p1.channel - p2.channel;
-        }
-
-        return 0;
-      }
-    };
-    Plane[] tmpPlanes = planes.toArray(new Plane[planes.size()]);
-    Arrays.sort(tmpPlanes, planeComp);
+    HarmonyColumbusPlane[] tmpPlanes = planes.toArray(new HarmonyColumbusPlane[planes.size()]);
+    Arrays.sort(tmpPlanes);
     planes.clear();
 
     reader = new MinimalTiffReader();
-    reader.setId(tmpPlanes[0].file);
+    reader.setId(tmpPlanes[0].filename);
     core = reader.getCoreMetadataList();
 
     CoreMetadata m = core.get(0);
@@ -318,7 +291,7 @@ public class ColumbusReader extends FormatReader {
     ArrayList<Integer> uniqueSamples = new ArrayList<Integer>();
     ArrayList<Integer> uniqueRows = new ArrayList<Integer>();
     ArrayList<Integer> uniqueCols = new ArrayList<Integer>();
-    for (Plane p : tmpPlanes) {
+    for (HarmonyColumbusPlane p : tmpPlanes) {
       planes.add(p);
 
       int sampleIndex = p.row * handler.getPlateColumns() + p.col;
@@ -337,11 +310,11 @@ public class ColumbusReader extends FormatReader {
       if (p.field >= nFields) {
         nFields = p.field + 1;
       }
-      if (p.channel >= getSizeC()) {
-        m.sizeC = p.channel + 1;
+      if (p.c >= getSizeC()) {
+        m.sizeC = p.c + 1;
       }
-      if (p.timepoint >= getSizeT()) {
-        m.sizeT = p.timepoint + 1;
+      if (p.t >= getSizeT()) {
+        m.sizeT = p.t + 1;
       }
 
     }
@@ -387,14 +360,14 @@ public class ColumbusReader extends FormatReader {
         store.setWellColumn(new NonNegativeInteger(col), 0, nextWell);
 
         for (int field=0; field<nFields; field++) {
-          Plane p = lookupPlane(row, col, field, 0, 0);
+          HarmonyColumbusPlane p = lookupPlane(row, col, field, 0, 0);
           String wellSampleID = MetadataTools.createLSID("WellSample", 0, nextWell, field);
           store.setWellSampleID(wellSampleID, 0, nextWell, field);
           store.setWellSampleIndex(new NonNegativeInteger(wellSample), 0, nextWell, field);
 
           if (p != null) {
-            store.setWellSamplePositionX(new Length(p.positionX, UNITS.REFERENCEFRAME), 0, nextWell, field);
-            store.setWellSamplePositionY(new Length(p.positionY, UNITS.REFERENCEFRAME), 0, nextWell, field);
+            store.setWellSamplePositionX(p.positionX, 0, nextWell, field);
+            store.setWellSamplePositionY(p.positionY, 0, nextWell, field);
           }
 
           String imageID = MetadataTools.createLSID("Image", wellSample);
@@ -407,30 +380,27 @@ public class ColumbusReader extends FormatReader {
           if (p != null) {
             p.series = wellSample;
 
-            store.setPixelsPhysicalSizeX(FormatTools.getPhysicalSizeX(p.sizeX), p.series);
-            store.setPixelsPhysicalSizeY(FormatTools.getPhysicalSizeY(p.sizeY), p.series);
+            store.setPixelsPhysicalSizeX(p.resolutionX, p.series);
+            store.setPixelsPhysicalSizeY(p.resolutionY, p.series);
 
             for (int c=0; c<getSizeC(); c++) {
               p = lookupPlane(row, col, field, 0, c);
               if (p != null) {
                 p.series = wellSample;
-                store.setChannelName(p.channelName, p.series, p.channel);
-                if ((int) p.emWavelength > 0) {
-                  store.setChannelEmissionWavelength(
-                    FormatTools.getEmissionWavelength(p.emWavelength), p.series, p.channel);
+                store.setChannelName(p.channelName, p.series, p.c);
+                if (p.emWavelength != null) {
+                  store.setChannelEmissionWavelength(p.emWavelength, p.series, p.c);
                 }
-                if ((int) p.exWavelength > 0) {
-                  store.setChannelExcitationWavelength(
-                    FormatTools.getExcitationWavelength(p.exWavelength), p.series, p.channel);
+                if (p.exWavelength != null) {
+                  store.setChannelExcitationWavelength(p.exWavelength, p.series, p.c);
                 }
-                store.setChannelColor(p.channelColor, p.series, p.channel);
               }
 
               for (int t=0; t<getSizeT(); t++) {
                 p = lookupPlane(row, col, field, t, c);
                 if (p != null) {
                   p.series = wellSample;
-                  store.setPlaneDeltaT(new Time(p.deltaT - timestampSeconds, UNITS.S), p.series, getIndex(0, c, t));
+                  store.setPlaneDeltaT(p.deltaT, p.series, getIndex(0, c, t));
                 }
               }
             }
@@ -472,7 +442,20 @@ public class ColumbusReader extends FormatReader {
       LOGGER.debug("Plate nodes not found");
       return;
     }
-    NodeList timestamps = ((Element) plates.item(0)).getElementsByTagName("MeasurementStartTime");
+
+    Element firstPlate = (Element) plates.item(0);
+    NodeList children = firstPlate.getChildNodes();
+    for (int q=0; q<children.getLength(); q++) {
+      Node child = children.item(q);
+      String name = child.getNodeName();
+      String value = child.getTextContent();
+      /* debug */ System.out.println(name + " = " + value);
+      if ("PlateID".equals(name)) {
+        plateID = value;
+      }
+    }
+
+    NodeList timestamps = firstPlate.getElementsByTagName("MeasurementStartTime");
     if (externalTime <= 0) {
       acquisitionDate = ((Element) timestamps.item(0)).getTextContent();
     }
@@ -491,16 +474,18 @@ public class ColumbusReader extends FormatReader {
     LOGGER.debug("Found {} image definitions", images.getLength());
     for (int i=0; i<images.getLength(); i++) {
       Element image = (Element) images.item(i);
-      Plane p = new Plane();
+      HarmonyColumbusPlane p = new HarmonyColumbusPlane();
 
-      NodeList children = image.getChildNodes();
+      children = image.getChildNodes();
       for (int q=0; q<children.getLength(); q++) {
         Node child = children.item(q);
         String name = child.getNodeName();
         String value = child.getTextContent();
         NamedNodeMap attrs = child.getAttributes();
+        Node unitNode = attrs.getNamedItem("Unit");
+        String unit = unitNode == null ? null : unitNode.getNodeValue();
         if (name.equals("URL")) {
-          p.file = new Location(parent, value).getAbsolutePath();
+          p.filename = new Location(parent, value).getAbsolutePath();
 
           String buffer = attrs.getNamedItem("BufferNo").getNodeValue();
           p.fileIndex = Integer.parseInt(buffer);
@@ -515,60 +500,43 @@ public class ColumbusReader extends FormatReader {
           p.field = Integer.parseInt(value) - 1;
         }
         else if (name.equals("TimepointID")) {
-          p.timepoint = Integer.parseInt(value) - 1;
-          if (p.timepoint == 0) {
-            p.timepoint = externalTime;
+          p.t = Integer.parseInt(value) - 1;
+          if (p.t == 0) {
+            p.t = externalTime;
           }
         }
         else if (name.equals("ChannelID")) {
-          p.channel = Integer.parseInt(value) - 1;
+          p.c = Integer.parseInt(value) - 1;
         }
         else if (name.equals("ChannelName")) {
           p.channelName = value;
         }
-        else if (name.equals("ChannelColor")) {
-          Long color = new Long(value);
-          int blue = (int) ((color >> 24) & 0xff);
-          int green = (int) ((color >> 16) & 0xff);
-          int red = (int) ((color >> 8) & 0xff);
-          int alpha = (int) (color & 0xff);
-
-          // not setting this yet, and deferring to the
-          // emission wavelength to set the color
-          // neither BGRA nor ARGB seems to make sense for all channels
-          //p.channelColor = new Color(red, green, blue, alpha);
-        }
         else if (name.equals("MeasurementTimeOffset")) {
-          p.deltaT = new Double(value);
+          p.setDeltaT(value, unit);
         }
         else if (name.equals("AbsTime")) {
-          p.deltaT = new Timestamp(value).asInstant().getMillis() / 1000d;
+          p.acqTime = value;
         }
         else if (name.equals("MainEmissionWavelength")) {
-          p.emWavelength = new Double(value);
+          p.setEmWavelength(value, unit);
         }
         else if (name.equals("MainExcitationWavelength")) {
-          p.exWavelength = new Double(value);
+          p.setExWavelength(value, unit);
         }
         else if (name.equals("ImageResolutionX")) {
-          String unit = attrs.getNamedItem("Unit").getNodeValue();
-          p.sizeX = correctUnits(new Double(value), unit);
+          p.setResolutionX(value, unit);
         }
         else if (name.equals("ImageResolutionY")) {
-          String unit = attrs.getNamedItem("Unit").getNodeValue();
-          p.sizeY = correctUnits(new Double(value), unit);
+          p.setResolutionY(value, unit);
         }
         else if (name.equals("PositionX")) {
-          String unit = attrs.getNamedItem("Unit").getNodeValue();
-          p.positionX = correctUnits(new Double(value), unit);
+          p.setPositionX(value, unit);
         }
         else if (name.equals("PositionY")) {
-          String unit = attrs.getNamedItem("Unit").getNodeValue();
-          p.positionY = correctUnits(new Double(value), unit);
+          p.setPositionY(value, unit);
         }
         else if (name.equals("PositionZ")) {
-          String unit = attrs.getNamedItem("Unit").getNodeValue();
-          p.positionZ = correctUnits(new Double(value), unit);
+          p.setPositionZ(value, unit);
         }
       }
 
@@ -577,27 +545,10 @@ public class ColumbusReader extends FormatReader {
 
   }
 
-  private Double correctUnits(Double v, String unit) {
-    if (unit == null) {
-      return v;
-    }
-
-    if (unit.equals("m")) {
-      return v * 1000000;
-    }
-    else if (unit.equals("cm")) {
-      return v * 10000;
-    }
-    else if (unit.equals("nm")) {
-      return v /= 1000;
-    }
-    return v;
-  }
-
-  private Plane lookupPlane(int row, int col, int field, int t, int c) {
-    for (Plane p : planes) {
+  private HarmonyColumbusPlane lookupPlane(int row, int col, int field, int t, int c) {
+    for (HarmonyColumbusPlane p : planes) {
       if (p.row == row && p.col == col && p.field == field &&
-        p.timepoint == t && p.channel == c)
+        p.t == t && p.c == c)
       {
         return p;
       }
@@ -710,27 +661,6 @@ public class ColumbusReader extends FormatReader {
       currentName = null;
     }
 
-  }
-
-  class Plane {
-    public String file;
-    public int fileIndex;
-    public int row;
-    public int col;
-    public int field;
-    public int timepoint;
-    public int channel;
-    public double deltaT;
-    public double emWavelength;
-    public double exWavelength;
-    public String channelName;
-    public Color channelColor;
-    public double sizeX;
-    public double sizeY;
-    public double positionX;
-    public double positionY;
-    public double positionZ;
-    public int series;
   }
 
 }

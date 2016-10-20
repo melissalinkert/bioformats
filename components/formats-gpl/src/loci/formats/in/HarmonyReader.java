@@ -46,13 +46,9 @@ import loci.formats.meta.MetadataStore;
 import loci.formats.tiff.IFD;
 import loci.formats.tiff.TiffParser;
 
-import ome.units.UNITS;
 import ome.units.quantity.Length;
-import ome.units.quantity.Time;
 import ome.units.unit.Unit;
 import ome.xml.model.enums.AcquisitionMode;
-import ome.xml.model.enums.EnumerationException;
-import ome.xml.model.enums.UnitsLength;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveFloat;
 import ome.xml.model.primitives.PositiveInteger;
@@ -75,7 +71,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
 
   // -- Fields --
 
-  private Plane[][] planes;
+  private HarmonyColumbusPlane[][] planes;
   private MinimalTiffReader reader;
   private ArrayList<String> metadataFiles = new ArrayList<String>();
   private String plateID;
@@ -178,8 +174,8 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     ArrayList<String> files = new ArrayList<String>();
     files.addAll(metadataFiles);
     if (!noPixels) {
-      for (Plane[] well : planes) {
-        for (Plane p : well) {
+      for (HarmonyColumbusPlane[] well : planes) {
+        for (HarmonyColumbusPlane p : well) {
           files.add(p.filename);
         }
       }
@@ -195,7 +191,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     ArrayList<String> files = new ArrayList<String>();
     files.addAll(metadataFiles);
     if (!noPixels && getSeries() < planes.length) {
-      for (Plane p : planes[getSeries()]) {
+      for (HarmonyColumbusPlane p : planes[getSeries()]) {
         files.add(p.filename);
       }
     }
@@ -228,7 +224,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
     if (getSeries() < planes.length && no < planes[getSeries()].length) {
-      Plane p = planes[getSeries()][no];
+      HarmonyColumbusPlane p = planes[getSeries()][no];
 
       if (new Location(p.filename).exists()) {
         if (reader == null) {
@@ -315,7 +311,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     // sort the list of images by well and field indices
 
     LOGGER.info("Assembling plate dimensions");
-    ArrayList<Plane> planeList = handler.getPlanes();
+    ArrayList<HarmonyColumbusPlane> planeList = handler.getPlanes();
 
     HashSet<Integer> uniqueRows = new HashSet<Integer>();
     HashSet<Integer> uniqueCols = new HashSet<Integer>();
@@ -324,7 +320,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     HashSet<Integer> uniqueTs = new HashSet<Integer>();
     HashSet<Integer> uniqueCs = new HashSet<Integer>();
 
-    for (Plane p : planeList) {
+    for (HarmonyColumbusPlane p : planeList) {
       uniqueRows.add(p.row);
       uniqueCols.add(p.col);
       uniqueFields.add(p.field);
@@ -350,7 +346,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     int seriesCount = rows.length * cols.length * fields.length;
     core.clear();
 
-    planes = new Plane[seriesCount][zs.length * cs.length * ts.length];
+    planes = new HarmonyColumbusPlane[seriesCount][zs.length * cs.length * ts.length];
 
     int nextSeries = 0;
     for (int row=0; row<rows.length; row++) {
@@ -360,7 +356,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
           for (int t=0; t<ts.length; t++) {
             for (int z=0; z<zs.length; z++) {
               for (int c=0; c<cs.length; c++) {
-                for (Plane p : planeList) {
+                for (HarmonyColumbusPlane p : planeList) {
                   if (p.row == rows[row] && p.col == cols[col] &&
                     p.field == fields[field] && p.t == ts[t] && p.z == zs[z] &&
                     p.c == cs[c])
@@ -526,7 +522,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     // -- Fields --
 
     private String currentName;
-    private Plane activePlane;
+    private HarmonyColumbusPlane activePlane;
     private String currentUnit;
 
     private String displayName;
@@ -535,7 +531,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
     private String plateName;
     private String plateDescription;
     private int plateRows, plateCols;
-    private ArrayList<Plane> planes = new ArrayList<Plane>();
+    private ArrayList<HarmonyColumbusPlane> planes = new ArrayList<HarmonyColumbusPlane>();
 
     private StringBuffer currentValue = new StringBuffer();
 
@@ -550,7 +546,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
       return metadata;
     }
 
-    public ArrayList<Plane> getPlanes() {
+    public ArrayList<HarmonyColumbusPlane> getPlanes() {
       return planes;
     }
 
@@ -600,7 +596,7 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
       currentValue.setLength(0);
 
       if (qName.equals("Image") && attributes.getValue("id") == null) {
-        activePlane = new Plane();
+        activePlane = new HarmonyColumbusPlane();
       }
 
       currentUnit = attributes.getValue("Unit");
@@ -703,46 +699,22 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
           activePlane.channelName = value;
         }
         else if ("ImageResolutionX".equals(currentName)) {
-          activePlane.resolutionX =
-            FormatTools.getPhysicalSizeX(Double.parseDouble(value), currentUnit);
+          activePlane.setResolutionX(value, currentUnit);
         }
         else if ("ImageResolutionY".equals(currentName)) {
-          activePlane.resolutionY =
-            FormatTools.getPhysicalSizeY(Double.parseDouble(value), currentUnit);
+          activePlane.setResolutionY(value, currentUnit);
         }
         else if ("PositionX".equals(currentName)) {
-          final double x = Double.parseDouble(value);
-          try {
-            UnitsLength ul = UnitsLength.fromString(currentUnit);
-            activePlane.positionX = UnitsLength.create(x, ul);
-          }
-          catch (EnumerationException e) {
-            LOGGER.debug("Could not parse unit '{}'", currentUnit);
-          }
+          activePlane.setPositionX(value, currentUnit);
         }
         else if ("PositionY".equals(currentName)) {
-          final double y = Double.parseDouble(value);
-          try {
-            UnitsLength ul = UnitsLength.fromString(currentUnit);
-            activePlane.positionY = UnitsLength.create(y, ul);
-          }
-          catch (EnumerationException e) {
-            LOGGER.debug("Could not parse unit '{}'", currentUnit);
-          }
+          activePlane.setPositionY(value, currentUnit);
         }
         else if ("PositionZ".equals(currentName)) {
-          final double z = Double.parseDouble(value);
-          try {
-            UnitsLength ul = UnitsLength.fromString(currentUnit);
-            activePlane.positionZ = UnitsLength.create(z, ul);
-          }
-          catch (EnumerationException e) {
-            LOGGER.debug("Could not parse unit '{}'", currentUnit);
-          }
+          activePlane.setPositionZ(value, currentUnit);
         }
         else if ("MeasurementTimeOffset".equals(currentName)) {
-          final double t = Double.parseDouble(value);
-          activePlane.deltaT = FormatTools.getTime(t, currentUnit);
+          activePlane.setDeltaT(value, currentUnit);
         }
         else if ("ObjectiveMagnification".equals(currentName)) {
           activePlane.magnification = Double.parseDouble(value);
@@ -751,16 +723,10 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
           activePlane.lensNA = Double.parseDouble(value);
         }
         else if ("MainEmissionWavelength".equals(currentName)) {
-          final double wave = Double.parseDouble(value);
-          if (wave > 0) {
-            activePlane.emWavelength = FormatTools.getWavelength(wave, currentUnit);
-          }
+          activePlane.setEmWavelength(value, currentUnit);
         }
         else if ("MainExcitationWavelength".equals(currentName)) {
-          final double wave = Double.parseDouble(value);
-          if (wave > 0) {
-            activePlane.exWavelength = FormatTools.getWavelength(wave, currentUnit);
-          }
+          activePlane.setExWavelength(value, currentUnit);
         }
         else if ("AcquisitionType".equals(currentName)) {
           activePlane.acqType = value;
@@ -783,33 +749,6 @@ public class HarmonyReader extends FormatReader implements IHCSReader {
       currentUnit = null;
     }
 
-  }
-
-  class Plane {
-    public String filename;
-    public int row;
-    public int col;
-    public int field;
-    public int image = -1;
-    public int x;
-    public int y;
-    public int z;
-    public int t;
-    public int c;
-    public String channelName;
-    public Length resolutionX;
-    public Length resolutionY;
-    public Length positionX;
-    public Length positionY;
-    public Length positionZ;
-    public Time deltaT;
-    public Length emWavelength;
-    public Length exWavelength;
-    public double magnification;
-    public double lensNA;
-    public String acqType;
-    public String channelType;
-    public String acqTime;
   }
 
   @Override

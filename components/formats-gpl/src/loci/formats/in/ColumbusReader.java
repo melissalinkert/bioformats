@@ -43,6 +43,7 @@ import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
+import loci.formats.IHCSReader;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
 
@@ -68,7 +69,7 @@ import org.w3c.dom.NodeList;
  *
  * @author Melissa Linkert melissa at glencoesoftware.com
  */
-public class ColumbusReader extends FormatReader {
+public class ColumbusReader extends FormatReader implements IHCSReader {
 
   // -- Constants --
 
@@ -94,6 +95,14 @@ public class ColumbusReader extends FormatReader {
     suffixSufficient = false;
     datasetDescription =
       "Directory with XML file and one .tif/.tiff file per plane";
+  }
+
+  // -- IHCSReader API methods --
+
+  /* @see loci.formats.IFormatReader#getPlateIdentifier() */
+  public String getPlateIdentifier() throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    return plateID;
   }
 
   // -- IFormatReader API methods --
@@ -338,6 +347,7 @@ public class ColumbusReader extends FormatReader {
     store.setScreenName(handler.getScreenName(), 0);
     store.setPlateID(MetadataTools.createLSID("Plate", 0), 0);
     store.setPlateName(handler.getPlateName(), 0);
+    store.setPlateExternalIdentifier(plateID, 0);
     store.setPlateRows(new PositiveInteger(handler.getPlateRows()), 0);
     store.setPlateColumns(new PositiveInteger(handler.getPlateColumns()), 0);
 

@@ -459,7 +459,6 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       Node child = children.item(q);
       String name = child.getNodeName();
       String value = child.getTextContent();
-      /* debug */ System.out.println(name + " = " + value);
       if ("PlateID".equals(name)) {
         plateID = value;
       }

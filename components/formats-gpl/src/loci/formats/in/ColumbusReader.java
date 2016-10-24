@@ -237,21 +237,6 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     MeasurementHandler handler = new MeasurementHandler();
     XMLTools.parseXML(xmlData, handler);
 
-    String[] parentDirectories = parent.list(true);
-    Arrays.sort(parentDirectories);
-    ArrayList<String> timepointDirs = new ArrayList<String>();
-    for (String file : parentDirectories) {
-      Location absFile = new Location(parent, file);
-      if (absFile.isDirectory()) {
-        timepointDirs.add(absFile.getAbsolutePath());
-        for (String f : absFile.list(true)) {
-          if (!checkSuffix(f, "tif")) {
-            metadataFiles.add(file + File.separator + f);
-          }
-        }
-      }
-    }
-
     for (int i=0; i<metadataFiles.size(); i++) {
       String metadataFile = metadataFiles.get(i);
       int end = metadataFile.indexOf(File.separator);
@@ -267,11 +252,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     }
 
     for (String path : imageIndexPaths) {
-      int timepoint = timepointDirs.indexOf(path);
-      if (timepointDirs.size() == 0) {
-        timepoint = 0;
-      }
-      parseImageXML(path, timepoint);
+      parseImageXML(path);
     }
 
     // process plane list to determine plate size
@@ -351,7 +332,6 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
     int nextWell = -1;
     Timestamp date = new Timestamp(acquisitionDate);
-    long timestampSeconds = date.asInstant().getMillis() / 1000;
 
     for (Integer row : uniqueRows) {
       for (Integer col : uniqueCols) {
@@ -430,8 +410,8 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
   // -- Helper methods --
 
-  private void parseImageXML(String filename, int externalTime) throws FormatException, IOException {
-    LOGGER.info("Parsing image data from {} with timepoint {}", filename, externalTime);
+  private void parseImageXML(String filename) throws FormatException, IOException {
+    LOGGER.info("Parsing image data from {}", filename);
     String xml = DataTools.readFile(filename);
     Location parent = new Location(filename).getParentFile();
 
@@ -443,12 +423,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
     ArrayList<HarmonyColumbusPlane> planeList = imageHandler.getPlanes();
     for (HarmonyColumbusPlane p : planeList) {
-      if (p.t == 0) {
-        p.t = externalTime;
-      }
-      else {
-        p.t--;
-      }
+      p.t--;
       planes.add(p);
     }
   }
@@ -538,7 +513,6 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
         }
       }
       currentValue = new StringBuffer();
-
     }
 
     public void endElement(String uri, String localName, String qName) {

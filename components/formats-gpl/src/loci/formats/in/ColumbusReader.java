@@ -69,6 +69,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
   private ArrayList<String> metadataFiles = new ArrayList<String>();
   private ArrayList<String> imageIndexPaths = new ArrayList<String>();
+  private ArrayList<String> annotationPaths = new ArrayList<String>();
   private ArrayList<HarmonyColumbusPlane> planes = new ArrayList<HarmonyColumbusPlane>();
   private HarmonyColumbusHandler imageHandler;
   private MinimalTiffReader reader;
@@ -177,6 +178,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       plateID = null;
       imageHandler = null;
       imageIndexPaths.clear();
+      annotationPaths.clear();
     }
   }
 
@@ -312,7 +314,10 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
     store.setScreenID(MetadataTools.createLSID("Screen", 0), 0);
     store.setScreenName(handler.getScreenName(), 0);
-    store.setPlateID(MetadataTools.createLSID("Plate", 0), 0);
+    String plate = MetadataTools.createLSID("Plate", 0);
+    store.setPlateID(plate, 0);
+    store.setScreenPlateRef(plate, 0, 0);
+
     store.setPlateName(imageHandler.getPlateName(), 0);
     store.setPlateDescription(imageHandler.getPlateDescription(), 0);
     store.setPlateExternalIdentifier(plateID, 0);
@@ -540,6 +545,11 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
         if (type != null && type.equals("IMAGEINDEX") && value.endsWith(".xml")) {
           String path = new Location(currentId).getAbsoluteFile().getParent() + File.separator + value;
           imageIndexPaths.add(new Location(path).getAbsolutePath());
+        }
+        else if (type != null && type.equals("ANNOTATION")) {
+          String path = new Location(currentId).getAbsoluteFile().getParent() + File.separator + value;
+          annotationPaths.add(new Location(path).getAbsolutePath());
+          addGlobalMetaList("Annotation file", value);
         }
       }
       else if (currentName.equals("PlateRows")) {

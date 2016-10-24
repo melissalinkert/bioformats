@@ -25,13 +25,11 @@
 
 package loci.formats.in;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
-import javax.xml.parsers.ParserConfigurationException;
+import java.util.HashSet;
 
 import loci.common.Constants;
 import loci.common.DataTools;
@@ -47,22 +45,13 @@ import loci.formats.IHCSReader;
 import loci.formats.MetadataTools;
 import loci.formats.meta.MetadataStore;
 
+import ome.xml.model.enums.AcquisitionMode;
 import ome.xml.model.primitives.Color;
 import ome.xml.model.primitives.NonNegativeInteger;
-import ome.xml.model.primitives.PositiveFloat;
 import ome.xml.model.primitives.PositiveInteger;
 import ome.xml.model.primitives.Timestamp;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-
 
 /**
  * ColumbusReader is the file format reader for screens exported from PerkinElmer Columbus.
@@ -79,7 +68,9 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
   // -- Fields --
 
   private ArrayList<String> metadataFiles = new ArrayList<String>();
+  private ArrayList<String> imageIndexPaths = new ArrayList<String>();
   private ArrayList<HarmonyColumbusPlane> planes = new ArrayList<HarmonyColumbusPlane>();
+  private HarmonyColumbusHandler imageHandler;
   private MinimalTiffReader reader;
 
   private int nFields = 0;
@@ -184,6 +175,8 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       nFields = 0;
       acquisitionDate = null;
       plateID = null;
+      imageHandler = null;
+      imageIndexPaths.clear();
     }
   }
 
@@ -199,7 +192,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     HarmonyColumbusPlane p = null;
     for (HarmonyColumbusPlane plane : planes) {
       if (plane.series == getSeries() && plane.t == zct[2] &&
-        plane.c == zct[1])
+        plane.c - 1 == zct[1])
       {
         p = plane;
         break;
@@ -253,9 +246,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
         timepointDirs.add(absFile.getAbsolutePath());
         for (String f : absFile.list(true)) {
           if (!checkSuffix(f, "tif")) {
-            if (!metadataFiles.contains(file + File.separator + f)) {
-              metadataFiles.add(file + File.separator + f);
-            }
+            metadataFiles.add(file + File.separator + f);
           }
         }
       }
@@ -273,13 +264,14 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       }
       String path = f.getAbsolutePath();
       metadataFiles.set(i, path);
-      if (checkSuffix(path, "columbusidx.xml")) {
-        int timepoint = timepointDirs.indexOf(timepointPath);
-        if (timepointDirs.size() == 0) {
-          timepoint = 0;
-        }
-        parseImageXML(path, timepoint);
+    }
+
+    for (String path : imageIndexPaths) {
+      int timepoint = timepointDirs.indexOf(path);
+      if (timepointDirs.size() == 0) {
+        timepoint = 0;
       }
+      parseImageXML(path, timepoint);
     }
 
     // process plane list to determine plate size
@@ -294,41 +286,31 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
     CoreMetadata m = core.get(0);
 
-    m.sizeC = 0;
-    m.sizeT = 0;
+    HashSet<Integer> uniqueSamples = new HashSet<Integer>();
+    HashSet<Integer> uniqueRows = new HashSet<Integer>();
+    HashSet<Integer> uniqueCols = new HashSet<Integer>();
+    HashSet<Integer> uniqueZs = new HashSet<Integer>();
+    HashSet<Integer> uniqueCs = new HashSet<Integer>();
+    HashSet<Integer> uniqueTs = new HashSet<Integer>();
+    HashSet<Integer> uniqueFields = new HashSet<Integer>();
 
-    ArrayList<Integer> uniqueSamples = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueRows = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueCols = new ArrayList<Integer>();
     for (HarmonyColumbusPlane p : tmpPlanes) {
       planes.add(p);
 
-      int sampleIndex = p.row * handler.getPlateColumns() + p.col;
-      if (!uniqueSamples.contains(sampleIndex)) {
-        uniqueSamples.add(sampleIndex);
-      }
-      if (!uniqueRows.contains(p.row)) {
-        uniqueRows.add(p.row);
-      }
-      if (!uniqueCols.contains(p.col)) {
-        uniqueCols.add(p.col);
-      }
-
-      // missing wells are allowed, but the field/channel/timepoint
-      // counts are assumed to be non-sparse
-      if (p.field >= nFields) {
-        nFields = p.field + 1;
-      }
-      if (p.c >= getSizeC()) {
-        m.sizeC = p.c + 1;
-      }
-      if (p.t >= getSizeT()) {
-        m.sizeT = p.t + 1;
-      }
-
+      int sampleIndex = p.row * imageHandler.getPlateColumns() + p.col;
+      uniqueSamples.add(sampleIndex);
+      uniqueFields.add(p.field);
+      uniqueRows.add(p.row);
+      uniqueCols.add(p.col);
+      uniqueZs.add(p.z);
+      uniqueCs.add(p.c);
+      uniqueTs.add(p.t);
     }
 
-    m.sizeZ = 1;
+    nFields = uniqueFields.size();
+    m.sizeZ = uniqueZs.size();
+    m.sizeC = uniqueCs.size();
+    m.sizeT = uniqueTs.size();
     m.imageCount = getSizeZ() * getSizeC() * getSizeT();
     m.dimensionOrder = "XYCTZ";
     m.rgb = false;
@@ -343,15 +325,28 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     MetadataStore store = makeFilterMetadata();
     MetadataTools.populatePixels(store, this, true);
 
+    String experimenterID = MetadataTools.createLSID("Experimenter", 0);
+    store.setExperimenterID(experimenterID, 0);
+    store.setExperimenterLastName(imageHandler.getExperimenterName(), 0);
+
     store.setScreenID(MetadataTools.createLSID("Screen", 0), 0);
     store.setScreenName(handler.getScreenName(), 0);
     store.setPlateID(MetadataTools.createLSID("Plate", 0), 0);
-    store.setPlateName(handler.getPlateName(), 0);
+    store.setPlateName(imageHandler.getPlateName(), 0);
+    store.setPlateDescription(imageHandler.getPlateDescription(), 0);
     store.setPlateExternalIdentifier(plateID, 0);
-    store.setPlateRows(new PositiveInteger(handler.getPlateRows()), 0);
-    store.setPlateColumns(new PositiveInteger(handler.getPlateColumns()), 0);
+    store.setPlateRows(new PositiveInteger(imageHandler.getPlateRows()), 0);
+    store.setPlateColumns(new PositiveInteger(imageHandler.getPlateColumns()), 0);
 
-    String imagePrefix = handler.getPlateName() + " Well ";
+    String plateAcqID = MetadataTools.createLSID("PlateAcquisition", 0, 0);
+    store.setPlateAcquisitionID(plateAcqID, 0, 0);
+    store.setPlateAcquisitionMaximumFieldCount(FormatTools.getMaxFieldCount(nFields), 0, 0);
+    String startTime = imageHandler.getMeasurementTime();
+    if (startTime != null) {
+      store.setPlateAcquisitionStartTime(new Timestamp(startTime), 0, 0);
+    }
+
+    String imagePrefix = imageHandler.getPlateName() + " Well ";
     int wellSample = 0;
 
     int nextWell = -1;
@@ -360,7 +355,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
 
     for (Integer row : uniqueRows) {
       for (Integer col : uniqueCols) {
-        if (!uniqueSamples.contains(row * handler.getPlateColumns() + col)) {
+        if (!uniqueSamples.contains(row * imageHandler.getPlateColumns() + col)) {
           continue;
         }
 
@@ -378,10 +373,12 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
           if (p != null) {
             store.setWellSamplePositionX(p.positionX, 0, nextWell, field);
             store.setWellSamplePositionY(p.positionY, 0, nextWell, field);
+            store.setPlateAcquisitionWellSampleRef(wellSampleID, 0, 0, wellSample);
           }
 
           String imageID = MetadataTools.createLSID("Image", wellSample);
           store.setImageID(imageID, wellSample);
+          store.setImageExperimenterRef(experimenterID, wellSample);
           store.setWellSampleImageRef(imageID, 0, nextWell, field);
 
           store.setImageName(
@@ -397,12 +394,18 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
               p = lookupPlane(row, col, field, 0, c);
               if (p != null) {
                 p.series = wellSample;
-                store.setChannelName(p.channelName, p.series, p.c);
+                store.setChannelName(p.channelName, p.series, c);
+                if (p.acqType != null) {
+                  store.setChannelAcquisitionMode(getAcquisitionMode(p.acqType), p.series, c);
+                }
+                if (p.channelType != null) {
+                  store.setChannelContrastMethod(getContrastMethod(p.channelType), p.series, c);
+                }
                 if (p.emWavelength != null) {
-                  store.setChannelEmissionWavelength(p.emWavelength, p.series, p.c);
+                  store.setChannelEmissionWavelength(p.emWavelength, p.series, c);
                 }
                 if (p.exWavelength != null) {
-                  store.setChannelExcitationWavelength(p.exWavelength, p.series, p.c);
+                  store.setChannelExcitationWavelength(p.exWavelength, p.series, c);
                 }
               }
 
@@ -410,7 +413,11 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
                 p = lookupPlane(row, col, field, t, c);
                 if (p != null) {
                   p.series = wellSample;
-                  store.setPlaneDeltaT(p.deltaT, p.series, getIndex(0, c, t));
+                  int index = getIndex(0, c, t);
+                  store.setPlaneDeltaT(p.deltaT, p.series, index);
+                  store.setPlanePositionX(p.positionX, p.series, index);
+                  store.setPlanePositionY(p.positionY, p.series, index);
+                  store.setPlanePositionZ(p.positionZ, p.series, index);
                 }
               }
             }
@@ -428,136 +435,28 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     String xml = DataTools.readFile(filename);
     Location parent = new Location(filename).getParentFile();
 
-    Element root = null;
-    try {
-      ByteArrayInputStream s =
-        new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
-      root = XMLTools.parseDOM(s).getDocumentElement();
-      s.close();
-    }
-    catch (ParserConfigurationException e) {
-      throw new FormatException(e);
-    }
-    catch (SAXException e) {
-      throw new FormatException(e);
-    }
+    imageHandler = new HarmonyColumbusHandler(filename);
+    XMLTools.parseXML(xml, imageHandler);
 
-    NodeList plates = root.getElementsByTagName("Plates");
-    if (plates == null) {
-      LOGGER.debug("Plates node not found");
-      return;
-    }
-    plates = ((Element) plates.item(0)).getElementsByTagName("Plate");
-    if (plates == null) {
-      LOGGER.debug("Plate nodes not found");
-      return;
-    }
+    plateID = imageHandler.getPlateIdentifier();
+    acquisitionDate = imageHandler.getMeasurementTime();
 
-    Element firstPlate = (Element) plates.item(0);
-    NodeList children = firstPlate.getChildNodes();
-    for (int q=0; q<children.getLength(); q++) {
-      Node child = children.item(q);
-      String name = child.getNodeName();
-      String value = child.getTextContent();
-      if ("PlateID".equals(name)) {
-        plateID = value;
+    ArrayList<HarmonyColumbusPlane> planeList = imageHandler.getPlanes();
+    for (HarmonyColumbusPlane p : planeList) {
+      if (p.t == 0) {
+        p.t = externalTime;
       }
-    }
-
-    NodeList timestamps = firstPlate.getElementsByTagName("MeasurementStartTime");
-    if (externalTime <= 0) {
-      acquisitionDate = ((Element) timestamps.item(0)).getTextContent();
-    }
-
-    NodeList images = root.getElementsByTagName("Images");
-    if (images == null) {
-      LOGGER.debug("Images node not found");
-      return;
-    }
-    images = ((Element) images.item(0)).getElementsByTagName("Image");
-    if (images == null) {
-      LOGGER.debug("Image nodes not found");
-      return;
-    }
-
-    LOGGER.debug("Found {} image definitions", images.getLength());
-    for (int i=0; i<images.getLength(); i++) {
-      Element image = (Element) images.item(i);
-      HarmonyColumbusPlane p = new HarmonyColumbusPlane();
-
-      children = image.getChildNodes();
-      for (int q=0; q<children.getLength(); q++) {
-        Node child = children.item(q);
-        String name = child.getNodeName();
-        String value = child.getTextContent();
-        NamedNodeMap attrs = child.getAttributes();
-        Node unitNode = attrs.getNamedItem("Unit");
-        String unit = unitNode == null ? null : unitNode.getNodeValue();
-        if (name.equals("URL")) {
-          p.filename = new Location(parent, value).getAbsolutePath();
-
-          String buffer = attrs.getNamedItem("BufferNo").getNodeValue();
-          p.fileIndex = Integer.parseInt(buffer);
-        }
-        else if (name.equals("Row")) {
-          p.row = Integer.parseInt(value) - 1;
-        }
-        else if (name.equals("Col")) {
-          p.col = Integer.parseInt(value) - 1;
-        }
-        else if (name.equals("FieldID")) {
-          p.field = Integer.parseInt(value) - 1;
-        }
-        else if (name.equals("TimepointID")) {
-          p.t = Integer.parseInt(value) - 1;
-          if (p.t == 0) {
-            p.t = externalTime;
-          }
-        }
-        else if (name.equals("ChannelID")) {
-          p.c = Integer.parseInt(value) - 1;
-        }
-        else if (name.equals("ChannelName")) {
-          p.channelName = value;
-        }
-        else if (name.equals("MeasurementTimeOffset")) {
-          p.setDeltaT(value, unit);
-        }
-        else if (name.equals("AbsTime")) {
-          p.acqTime = value;
-        }
-        else if (name.equals("MainEmissionWavelength")) {
-          p.setEmWavelength(value, unit);
-        }
-        else if (name.equals("MainExcitationWavelength")) {
-          p.setExWavelength(value, unit);
-        }
-        else if (name.equals("ImageResolutionX")) {
-          p.setResolutionX(value, unit);
-        }
-        else if (name.equals("ImageResolutionY")) {
-          p.setResolutionY(value, unit);
-        }
-        else if (name.equals("PositionX")) {
-          p.setPositionX(value, unit);
-        }
-        else if (name.equals("PositionY")) {
-          p.setPositionY(value, unit);
-        }
-        else if (name.equals("PositionZ")) {
-          p.setPositionZ(value, unit);
-        }
+      else {
+        p.t--;
       }
-
       planes.add(p);
     }
-
   }
 
   private HarmonyColumbusPlane lookupPlane(int row, int col, int field, int t, int c) {
     for (HarmonyColumbusPlane p : planes) {
-      if (p.row == row && p.col == col && p.field == field &&
-        p.t == t && p.c == c)
+      if (p.row == row && p.col == col && p.field - 1 == field &&
+        p.t == t && p.c - 1 == c)
       {
         return p;
       }
@@ -582,6 +481,7 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
     private String measurementName;
     private Integer plateRows;
     private Integer plateColumns;
+    private String type;
 
     private StringBuffer currentValue;
 
@@ -633,8 +533,12 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
         if (currentName.equals("Measurement") && name.equals("MeasurementID")) {
           measurementID = value;
         }
+        else if (name.equals("Class")) {
+          type = value;
+        }
       }
       currentValue = new StringBuffer();
+
     }
 
     public void endElement(String uri, String localName, String qName) {
@@ -659,6 +563,10 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       }
       else if (currentName.equals("Reference")) {
         metadataFiles.add(value);
+        if (type != null && type.equals("IMAGEINDEX") && value.endsWith(".xml")) {
+          String path = new Location(currentId).getAbsoluteFile().getParent() + File.separator + value;
+          imageIndexPaths.add(new Location(path).getAbsolutePath());
+        }
       }
       else if (currentName.equals("PlateRows")) {
         plateRows = new Integer(value);
@@ -670,6 +578,23 @@ public class ColumbusReader extends FormatReader implements IHCSReader {
       currentName = null;
     }
 
+  }
+
+  @Override
+  protected AcquisitionMode getAcquisitionMode(String mode) throws FormatException {
+    if (mode == null) {
+      return null;
+    }
+    if (mode.equalsIgnoreCase("nipkowconfocal")) {
+      return AcquisitionMode.SPINNINGDISKCONFOCAL;
+    }
+    else if (mode.equalsIgnoreCase("confocal")) {
+      return AcquisitionMode.LASERSCANNINGCONFOCALMICROSCOPY;
+    }
+    else if (mode.equalsIgnoreCase("nonconfocal")) {
+      return AcquisitionMode.WIDEFIELD;
+    }
+    return super.getAcquisitionMode(mode);
   }
 
 }

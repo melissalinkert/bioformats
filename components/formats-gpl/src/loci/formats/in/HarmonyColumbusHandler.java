@@ -60,6 +60,8 @@ public class HarmonyColumbusHandler extends BaseHandler {
   private HashMap<String, String> metadata = new HashMap<String, String>();
   private HashMap<String, Integer> keyCounter = new HashMap<String, Integer>();
 
+  private Attributes currentAttributes;
+
   public HarmonyColumbusHandler(String currentId) {
     super();
     this.currentId = currentId;
@@ -125,11 +127,22 @@ public class HarmonyColumbusHandler extends BaseHandler {
     }
 
     currentUnit = attributes.getValue("Unit");
+    currentAttributes = attributes;
   }
 
   @Override
   public void endElement(String uri, String localName, String qName) {
     String value = currentValue.toString();
+    if (value.trim().length() == 0) {
+      if (qName.equals("Image") && activePlane != null) {
+        planes.add(activePlane);
+      }
+      if (!qName.equals(ROOT_ELEMENT)) {
+        elementNames.remove(elementNames.size() - 1);
+      }
+      currentUnit = null;
+      return;
+    }
 
     int elementCount = elementNames.size();
     String currentName = null;
@@ -194,6 +207,10 @@ public class HarmonyColumbusHandler extends BaseHandler {
           Location parent =
             new Location(currentId).getAbsoluteFile().getParentFile();
           activePlane.filename = new Location(parent, value).getAbsolutePath();
+        }
+        String buffer = currentAttributes.getValue("BufferNo");
+        if (buffer != null) {
+          activePlane.fileIndex = Integer.parseInt(buffer);
         }
       }
       else if ("Row".equals(currentName)) {

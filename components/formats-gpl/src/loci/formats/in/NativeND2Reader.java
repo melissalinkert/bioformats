@@ -359,6 +359,14 @@ public class NativeND2Reader extends FormatReader {
     channelColors = new HashMap<String, Integer>();
 
     if (in.read() == -38 && in.read() == -50) {
+      initModernND2File(useChunkMap);
+    } else {
+      initLegacyJP2ND2File();
+    }
+  }
+
+  private void initModernND2File(boolean useChunkMap) throws FormatException, IOException {
+    if (true) { // this is obvious nonsense, but it keeps the line's git history more sane
       // newer version of ND2 - doesn't use JPEG2000
       LOGGER.info("Searching for blocks");
 
@@ -1550,9 +1558,12 @@ public class NativeND2Reader extends FormatReader {
       }
 
       populateMetadataStore(handler);
-      return;
     }
-    else in.seek(0);
+  }
+
+
+  private void initLegacyJP2ND2File() throws FormatException, IOException {
+    in.seek(0);
 
     // older version of ND2 - uses JPEG 2000 compression
 

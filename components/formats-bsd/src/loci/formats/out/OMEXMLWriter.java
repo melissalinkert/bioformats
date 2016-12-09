@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -33,7 +33,8 @@
 package loci.formats.out;
 
 import java.io.IOException;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import loci.common.Constants;
 import loci.common.services.DependencyException;
@@ -60,7 +61,6 @@ import loci.formats.services.OMEXMLServiceImpl;
 import ome.xml.meta.OMEXMLMetadataRoot;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * OMEXMLWriter is the file format writer for OME-XML files.
@@ -69,7 +69,7 @@ public class OMEXMLWriter extends FormatWriter {
 
   // -- Fields --
 
-  private Vector<String> xmlFragments;
+  private List<String> xmlFragments;
   private String currentFragment;
   private OMEXMLService service;
 
@@ -114,7 +114,7 @@ public class OMEXMLWriter extends FormatWriter {
       throw new FormatException(se);
     }
 
-    xmlFragments = new Vector<String>();
+    xmlFragments = new ArrayList<String>();
     currentFragment = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
     XMLTools.parseXML(xml, new OMEHandler());
 
@@ -126,6 +126,15 @@ public class OMEXMLWriter extends FormatWriter {
   public void close() throws IOException {
     if (out != null) {
       out.writeBytes(xmlFragments.get(xmlFragments.size() - 1));
+    }
+    if (getMetadataOptions().isValidate()) {
+      try {
+        MetadataRetrieve r = getMetadataRetrieve();
+        String omexml = service.getOMEXML(r);
+        service.validateOMEXML(omexml);
+      } catch (ServiceException | NullPointerException e) {
+        LOGGER.warn("OMEXMLService unable to create OME-XML metadata object.", e);
+      }
     }
     super.close();
     xmlFragments = null;
@@ -159,7 +168,13 @@ public class OMEXMLWriter extends FormatWriter {
     int sizeX = retrieve.getPixelsSizeX(series).getValue().intValue();
     int sizeY = retrieve.getPixelsSizeY(series).getValue().intValue();
     int planeSize = sizeX * sizeY * bytes;
-    boolean bigEndian = retrieve.getPixelsBinDataBigEndian(series, 0);
+    boolean bigEndian = false;
+    if (retrieve.getPixelsBigEndian(series) != null) {
+      bigEndian = retrieve.getPixelsBigEndian(series).booleanValue();
+    }
+    else if (retrieve.getPixelsBinDataCount(series) == 0) {
+      bigEndian = retrieve.getPixelsBinDataBigEndian(series, 0).booleanValue();
+    }
 
     String namespace =
       "xmlns=\"http://www.openmicroscopy.org/Schemas/OME/" +
@@ -170,7 +185,7 @@ public class OMEXMLWriter extends FormatWriter {
         interleaved);
       byte[] encodedPix = compress(b);
 
-      StringBuffer plane = new StringBuffer("\n<BinData ");
+      final StringBuilder plane = new StringBuilder("\n<BinData ");
       plane.append(namespace);
       plane.append(" Length=\"");
       plane.append(planeSize);
@@ -221,8 +236,14 @@ public class OMEXMLWriter extends FormatWriter {
     options.channels = 1;
     options.interleaved = false;
     options.signed = FormatTools.isSigned(pixelType);
-    options.littleEndian =
-      !r.getPixelsBinDataBigEndian(series, 0).booleanValue();
+    boolean littleEndian = false;
+    if (r.getPixelsBigEndian(series) != null) {
+      littleEndian = !r.getPixelsBigEndian(series).booleanValue();
+    }
+    else if (r.getPixelsBinDataCount(series) == 0) {
+      littleEndian = !r.getPixelsBinDataBigEndian(series, 0).booleanValue();
+    }
+    options.littleEndian =littleEndian;
     options.bitsPerSample = bytes * 8;
 
     if (compression.equals("J2K")) {
@@ -249,7 +270,7 @@ public class OMEXMLWriter extends FormatWriter {
     public void startElement(String uri, String localName, String qName,
       Attributes attributes)
     {
-      StringBuffer toAppend = new StringBuffer("\n<");
+      final StringBuilder toAppend = new StringBuilder("\n<");
       toAppend.append(XMLTools.escapeXML(qName));
       for (int i=0; i<attributes.getLength(); i++) {
         toAppend.append(" ");

@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -81,13 +81,13 @@ public class NiftiReader extends FormatReader {
 
   /** Constructs a new NIfTI reader. */
   public NiftiReader() {
-    super("NIfTI", new String[] {"nii", "img", "hdr"});
+    super("NIfTI", new String[] {"nii", "img", "hdr", "nii.gz"});
     suffixSufficient = false;
     domains = new String[] {FormatTools.MEDICAL_DOMAIN,
       FormatTools.UNKNOWN_DOMAIN};
     hasCompanionFiles = true;
-    datasetDescription = "A single .nii file or one .img file and a " +
-      "similarly-named .hdr file";
+    datasetDescription = "A single .nii file or a single .nii.gz file or one" +
+      " .img file and a similarly-named .hdr file";
   }
 
   // -- IFormatReader API methods --
@@ -147,7 +147,8 @@ public class NiftiReader extends FormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
-    int planeSize = FormatTools.getPlaneSize(this);
+    pixelFile.seek(0);
+    long planeSize = FormatTools.getPlaneSize(this);
     pixelFile.seek(pixelOffset + no * planeSize);
     readPlane(pixelFile, x, y, w, h, buf);
 
@@ -225,9 +226,11 @@ public class NiftiReader extends FormatReader {
       pixelsFilename = id.substring(0, id.lastIndexOf(".")) + ".img";
       pixelFile = new RandomAccessInputStream(pixelsFilename);
     }
-    else if (id.endsWith(".nii")) {
+    else if (checkSuffix(id, "nii")) {
       pixelsFilename = id;
       pixelFile = in;
+    } else {
+      throw new FormatException("File does not have one of the required NIfTI extensions (.img, .hdr, .nii, .nii.gz)");
     }
 
     in.order(little);
@@ -290,7 +293,7 @@ public class NiftiReader extends FormatReader {
       if (sizeZ != null) {
         store.setPixelsPhysicalSizeZ(sizeZ, 0);
       }
-      store.setPixelsTimeIncrement(new Time(new Double(deltaT), UNITS.S), 0);
+      store.setPixelsTimeIncrement(new Time(new Double(deltaT), UNITS.SECOND), 0);
     }
   }
 

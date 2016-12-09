@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -136,7 +136,7 @@ public class BioRadSCNReader extends FormatReader {
     while (in.getFilePointer() < in.length() && line != null) {
       line = line.trim();
       if (line.startsWith("Content-Type")) {
-        currentType = line.substring(line.indexOf(" ") + 1);
+        currentType = line.substring(line.indexOf(' ') + 1);
 
         int boundary = currentType.indexOf("boundary");
         if (boundary > 0) {
@@ -144,15 +144,15 @@ public class BioRadSCNReader extends FormatReader {
             currentType.substring(boundary + 10, currentType.length() - 1);
         }
 
-        if (currentType.indexOf(";") > 0) {
-          currentType = currentType.substring(0, currentType.indexOf(";"));
+        if (currentType.indexOf(';') > 0) {
+          currentType = currentType.substring(0, currentType.indexOf(';'));
         }
       }
       else if (line.equals("--" + currentBoundary)) {
         currentLength = 0;
       }
       else if (line.startsWith("Content-Length")) {
-        currentLength = Integer.parseInt(line.substring(line.indexOf(" ") + 1));
+        currentLength = Integer.parseInt(line.substring(line.indexOf(' ') + 1));
       }
       else if (line.length() == 0) {
         if (currentType.equals("application/octet-stream")) {
@@ -211,14 +211,14 @@ public class BioRadSCNReader extends FormatReader {
     }
 
     if (exposureTime != null) {
-      store.setPlaneExposureTime(new Time(exposureTime, UNITS.S), 0, 0);
+      store.setPlaneExposureTime(new Time(exposureTime, UNITS.SECOND), 0, 0);
     }
 
     if (physicalSizeX != null) {
-      store.setPixelsPhysicalSizeX(FormatTools.createLength(physicalSizeX, UNITS.MICROM), 0);
+      store.setPixelsPhysicalSizeX(FormatTools.createLength(physicalSizeX, UNITS.MICROMETER), 0);
     }
     if (physicalSizeY != null) {
-      store.setPixelsPhysicalSizeY(FormatTools.createLength(physicalSizeY, UNITS.MICROM), 0);
+      store.setPixelsPhysicalSizeY(FormatTools.createLength(physicalSizeY, UNITS.MICROMETER), 0);
     }
   }
 

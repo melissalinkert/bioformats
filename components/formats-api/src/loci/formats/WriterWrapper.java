@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -35,9 +35,12 @@ package loci.formats;
 import java.awt.image.ColorModel;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
 
 import loci.common.Region;
 import loci.formats.codec.CodecOptions;
+import loci.formats.in.MetadataLevel;
+import loci.formats.in.MetadataOptions;
 import loci.formats.meta.MetadataRetrieve;
 
 /**
@@ -137,11 +140,41 @@ public abstract class WriterWrapper implements IFormatWriter {
     ColorModel cm = getColorModel();
     int rate = getFramesPerSecond();
     String compress = getCompression();
+    int tileSizeX = getTileSizeX();
+    int tileSizeY = getTileSizeY();
     wrapperCopy.setInterleaved(interleaved);
     wrapperCopy.setColorModel(cm);
     wrapperCopy.setFramesPerSecond(rate);
     wrapperCopy.setCompression(compress);
+    wrapperCopy.setTileSizeX(tileSizeX);
+    wrapperCopy.setTileSizeY(tileSizeY);
     return wrapperCopy;
+  }
+
+  // -- IMetadataConfigurable API methods --
+
+  /* (non-Javadoc)
+   * @see loci.formats.IMetadataConfigurable#getSupportedMetadataLevels()
+   */
+  @Override
+  public Set<MetadataLevel> getSupportedMetadataLevels() {
+    return writer.getSupportedMetadataLevels();
+  }
+
+  /* (non-Javadoc)
+   * @see loci.formats.IMetadataConfigurable#getMetadataOptions()
+   */
+  @Override
+  public MetadataOptions getMetadataOptions() {
+    return writer.getMetadataOptions();
+  }
+
+  /* (non-Javadoc)
+   * @see loci.formats.IMetadataConfigurable#setMetadataOptions(loci.formats.in.MetadataOptions)
+   */
+  @Override
+  public void setMetadataOptions(MetadataOptions options) {
+    writer.setMetadataOptions(options);
   }
 
   // -- IFormatWriter API methods --
@@ -291,6 +324,30 @@ public abstract class WriterWrapper implements IFormatWriter {
   @Override
   public void setWriteSequentially(boolean sequential) {
     writer.setWriteSequentially(sequential);
+  }
+  
+  /* @see IFormatWriter#getTileSizeX() */
+  @Override
+  public int getTileSizeX() throws FormatException {
+    return writer.getTileSizeX();
+  }
+
+  /* @see IFormatWriter#setTileSizeX(int) */
+  @Override
+  public int setTileSizeX(int tileSize) throws FormatException {
+    return writer.setTileSizeX(tileSize);
+  }
+
+  /* @see IFormatWriter#getTileSizeY() */
+  @Override
+  public int getTileSizeY() throws FormatException {
+    return writer.getTileSizeY();
+  }
+
+  /* @see IFormatWriter#setTileSizeY(int) */
+  @Override
+  public int setTileSizeY(int tileSize) throws FormatException {
+    return writer.setTileSizeY(tileSize);
   }
 
   // -- IFormatHandler API methods --

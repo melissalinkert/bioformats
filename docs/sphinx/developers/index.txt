@@ -35,8 +35,10 @@ Using Bio-Formats as a Java library
     :maxdepth: 1
 
     java-library
+    units
     export
     export2
+    logging
     conversion
     matlab-dev
     python-dev
@@ -45,19 +47,8 @@ Using Bio-Formats as a Java library
 Using Bio-Formats as a native C++ library
 =========================================
 
-.. toctree::
-    :maxdepth: 1
-    :titlesonly:
-
-    cpp/overview
-    cpp/conversion
-    cpp/tutorial
-    cpp/bf-env
-    cpp/schema
-    cpp/commands/bf-test
-    cpp/commands/bf-test-info
-    cpp/commands/bf-test-view
-    cpp/maintenance
+.. note:: See the `OME-Files C++ downloads page <http://downloads.openmicroscopy.org/latest/ome-files-cpp/>`_
+    for more information.
 
 Contributing to Bio-Formats
 ===========================
@@ -65,12 +56,12 @@ Contributing to Bio-Formats
 .. toctree::
     :maxdepth: 1
 
+    code-formatting
     commit-testing
     generating-test-images
     reader-guide
     format-documentation
     service
-    xsd-fu
     useful-scripts
 
 See `open Trac tickets for Bio-Formats <https://trac.openmicroscopy.org/ome/report/44>`_

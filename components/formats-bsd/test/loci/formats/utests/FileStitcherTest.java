@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -43,18 +43,27 @@ import loci.common.Location;
 import loci.formats.FormatTools;
 import loci.formats.FileStitcher;
 import loci.formats.FormatException;
+import loci.formats.IFormatReader;
 import loci.formats.in.FakeReader;
+import loci.formats.in.MetadataLevel;
+import loci.formats.in.MetadataOptions;
+import loci.formats.in.DynamicMetadataOptions;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertEqualsNoOrder;
+import static org.testng.Assert.assertNotNull;
 import static loci.formats.FilePatternBlock.BLOCK_START;
 import static loci.formats.FilePatternBlock.BLOCK_END;
 
 
 public class FileStitcherTest {
+
+  public static final String KEY = "test.option";
+  public static final String VALUE = "foo";
 
   // expected core metadata for the final stitched image
   private static final int PIXEL_TYPE = FormatTools.UINT8;
@@ -100,14 +109,6 @@ public class FileStitcherTest {
     return ret;
   }
 
-  private static int[] readSpecialPixels(byte[] plane) {
-    int[] idx = new int[5];  // S, no., Z, C, T
-    for (int i = 0; i < idx.length; i++) {
-      idx[i] = plane[i * FakeReader.BOX_SIZE] & 0xFF;
-    }
-    return idx;
-  }
-
   private static List<Integer> range(Integer len) {
     List<Integer> ret = new ArrayList<Integer>();
     for (int i = 0; i < len; i++) {
@@ -130,6 +131,7 @@ public class FileStitcherTest {
     assertEquals(fs.getPixelType(), PIXEL_TYPE);
     assertEqualsNoOrder(mkBasenames(fs.getUsedFiles()), filenames);
     checkPlanes(fs, dims);
+    fs.close();
   }
 
   // FakeReader encodes 5 integers at the start of each image plane: s idx,
@@ -150,7 +152,7 @@ public class FileStitcherTest {
     }
     int[] specialPixels;
     for (int i = 0; i < fs.getImageCount(); i++) {
-      specialPixels = readSpecialPixels(fs.openBytes(i));
+      specialPixels = FakeReader.readSpecialPixels(fs.openBytes(i));
       for (int k = 0; k < 5; k++) {
         idxSets.get(k).add(specialPixels[k]);
       }
@@ -173,6 +175,15 @@ public class FileStitcherTest {
       {new Integer[] {1, SIZE_T, 1}},
       {new Integer[] {1, 1, SIZE_C}},
       {new Integer[] {1, 1, 1}}
+    };
+  }
+
+  @DataProvider(name = "levels")
+  public Object[][] createLevels() {
+    return new Object[][] {
+      {MetadataLevel.MINIMUM},
+      {MetadataLevel.NO_OVERLAYS},
+      {MetadataLevel.ALL}
     };
   }
 
@@ -199,6 +210,44 @@ public class FileStitcherTest {
     String pattern = String.format(TEMPLATE, blocks.toString(), ptString,
                                    SIZE_X, SIZE_Y, dims[0], dims[1], dims[2]);
     check(pattern, filenames.toArray(new String[filenames.size()]), dims);
+  }
+
+  @Test
+  public void testUnderlyingReaders() throws IOException, FormatException {
+    FakeReader reader = new FakeReader();
+    FileStitcher fs = new FileStitcher(reader);
+    assertNotNull(fs.getUnderlyingReaders());
+    fs.setId("test_z<0-2>.fake");
+    assertNotNull(fs.getUnderlyingReaders());
+  }
+
+  @Test
+  public void testOptionsExplicit() throws IOException, FormatException {
+    DynamicMetadataOptions opt = new DynamicMetadataOptions();
+    opt.set(KEY, VALUE);
+    FileStitcher fs = new FileStitcher();
+    fs.setMetadataOptions(opt);
+    fs.setId("test_z<0-2>.fake");
+    for (IFormatReader r: fs.getUnderlyingReaders()) {
+      MetadataOptions rOpt = r.getMetadataOptions();
+      assertTrue(rOpt instanceof DynamicMetadataOptions);
+      String v = ((DynamicMetadataOptions) rOpt).get(KEY);
+      assertNotNull(v);
+      assertEquals(v, VALUE);
+    }
+    fs.close();
+  }
+
+  @Test(dataProvider = "levels")
+  public void testOptionsImplicit(MetadataLevel level)
+      throws IOException, FormatException {
+    FileStitcher fs = new FileStitcher();
+    fs.getMetadataOptions().setMetadataLevel(level);
+    fs.setId("test_z<0-2>.fake");
+    for (IFormatReader r: fs.getUnderlyingReaders()) {
+      assertEquals(r.getMetadataOptions().getMetadataLevel(), level);
+    }
+    fs.close();
   }
 
 }

@@ -3,7 +3,7 @@
  * OME Bio-Formats package for reading and converting biological file formats.
 
  * %%
- * Copyright (C) 2015 Open Microscopy Environment:
+ * Copyright (C) 2015 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -171,7 +171,7 @@ public class SPCReader extends FormatReader {
 
   /** Constructs a new SPC reader. */
   public SPCReader() {
-    super("SPCImage Data", new String[] {"spc", "set"});
+    super("SPC FIFO Data", new String[] {"spc", "set"});
     domains = new String[] {FormatTools.FLIM_DOMAIN};
     suffixSufficient = true;
     hasCompanionFiles = true;
@@ -773,9 +773,9 @@ public class SPCReader extends FormatReader {
     
     int tagOffset = setup.indexOf(tag);
     String taggedString = setup.substring(tagOffset, tagOffset + 30);
-    tagOffset = taggedString.indexOf(",");
+    tagOffset = taggedString.indexOf(',');
     String tagType = taggedString.substring(tagOffset + 1, tagOffset + 2);
-    String valueTxt = taggedString.substring(tagOffset + 3, taggedString.indexOf("]"));
+    String valueTxt = taggedString.substring(tagOffset + 3, taggedString.indexOf(']'));
     double value = 0.0;
     if (tagType.matches("I")) {
       value = Integer.parseInt(valueTxt);

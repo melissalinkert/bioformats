@@ -4,7 +4,7 @@
  * Bio-Formats Importer, Bio-Formats Exporter, Bio-Formats Macro Extensions,
  * Data Browser and Stack Slicer.
  * %%
- * Copyright (C) 2006 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2006 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -211,8 +211,7 @@ public class FilePatternDialog extends ImporterDialog {
       }
     }
     else if (useRanges) {
-      String pattern =
-        originalID.substring(0, originalID.lastIndexOf(File.separator) + 1);
+      String pattern = "";
       for (int i=0; i<counts.length; i++) {
         BigInteger first = new BigInteger(firsts[i]);
         BigInteger fileCount = new BigInteger(counts[i]);
@@ -220,24 +219,26 @@ public class FilePatternDialog extends ImporterDialog {
 
         FilePatternBlock block = new FilePatternBlock(fp.getBlock(i));
 
-        fileCount = fileCount.subtract(BigInteger.ONE).multiply(increment);
+        // Last image of each axis is defined as
+        // (number of images - 1) * axis increment + axis first image
+        fileCount = fileCount.subtract(BigInteger.ONE).multiply(increment).add(first);
 
         pattern += fp.getPrefix(i);
-        pattern += "<";
+        pattern += '<';
         int firstPadding = paddingZeros[i] - first.toString().length() + 1;
         for (int zero=0; zero<firstPadding; zero++) {
-          pattern += "0";
+          pattern += '0';
         }
         pattern += first;
-        pattern += "-";
+        pattern += '-';
         int lastPadding = paddingZeros[i] - fileCount.toString().length() + 1;
         for (int zero=0; zero<lastPadding; zero++) {
-          pattern += "0";
+          pattern += '0';
         }
         pattern += fileCount;
-        pattern += ":";
+        pattern += ':';
         pattern += increment;
-        pattern += ">";
+        pattern += '>';
       }
       id = pattern + fp.getSuffix();
     }

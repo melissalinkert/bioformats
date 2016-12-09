@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -148,9 +148,9 @@ public class OxfordInstrumentsReader extends FormatReader {
       for (int i=0; i<nMetadataStrings; i++) {
         int length = in.readInt();
         String s = in.readString(length);
-        if (s.indexOf(":") != -1) {
-          String key = s.substring(0, s.indexOf(":")).trim();
-          String value = s.substring(s.indexOf(":") + 1).trim();
+        if (s.indexOf(':') != -1) {
+          String key = s.substring(0, s.indexOf(':')).trim();
+          String value = s.substring(s.indexOf(':') + 1).trim();
           if (!value.equals("-")) {
             addGlobalMeta(key, value);
           }
@@ -190,7 +190,7 @@ public class OxfordInstrumentsReader extends FormatReader {
   // -- Helper methods --
 
   private String readDate() throws IOException {
-    StringBuffer dateTime = new StringBuffer();
+    final StringBuilder dateTime = new StringBuilder();
     dateTime.append(String.valueOf(in.readInt())); // year
     dateTime.append("-");
     int month = in.readInt();

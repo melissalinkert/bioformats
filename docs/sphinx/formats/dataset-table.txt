@@ -1,6 +1,6 @@
 .. Please don't even think about editing this file directly.
 .. It is generated using the 'gen-structure-table' Ant
-.. target in components/bio-formats, which uses
+.. target in components/autogen, which uses
 .. loci.formats.tools.MakeDatasetStructureTable, so please
 .. update that instead.
 
@@ -267,7 +267,7 @@ to open/import a dataset in a particular format.
      - .mnc
      - Single file
    * - Medical Research Council
-     - .mrc, .st, .ali, .map, .rec
+     - .mrc, .st, .ali, .map, .rec, .mrcs
      - Single file
    * - Metamorph STK
      - .stk, .nd, .tif, .tiff
@@ -277,7 +277,7 @@ to open/import a dataset in a particular format.
      - One or more .tif/.tiff files
    * - Micro-Manager
      - .tif, .tiff, .txt, .xml
-     - A 'metadata.txt' file plus or or more .tif files
+     - A file ending in 'metadata.txt' plus one or more .tif files
    * - Minolta MRW
      - .mrw
      - Single file
@@ -288,8 +288,8 @@ to open/import a dataset in a particular format.
      - .mng
      - Single file
    * - NIfTI
-     - .nii, .img, .hdr
-     - A single .nii file or one .img file and a similarly-named .hdr file
+     - .nii, .img, .hdr, .nii.gz
+     - A single .nii file or a single .nii.gz file or one .img file and a similarly-named .hdr file
    * - NOAA-HRD Gridded Data Format
      - (no extension)
      - Single file
@@ -312,7 +312,7 @@ to open/import a dataset in a particular format.
      - .obf, .msr
      - OBF file
    * - OME-TIFF
-     - .ome.tif, .ome.tiff, .companion.ome
+     - .ome.tiff, .ome.tif, .ome.tf2, .ome.tf8, .ome.btf, .companion.ome
      - One or more .ome.tiff files
    * - OME-XML
      - .ome, .ome.xml
@@ -377,6 +377,9 @@ to open/import a dataset in a particular format.
    * - Prairie TIFF
      - .tif, .tiff, .cfg, .env, .xml
      - One .xml file, one .cfg file, and one or more .tif/.tiff files
+   * - Princeton Instruments SPE
+     - .spe
+     - Single file
    * - Pyramid TIFF
      - .tif, .tiff
      - Single file
@@ -395,6 +398,9 @@ to open/import a dataset in a particular format.
    * - SM Camera
      - (no extension)
      - Single file
+   * - SPC FIFO Data
+     - .spc, .set
+     - One .spc file and similarly named .set file
    * - SPCImage Data
      - .sdt
      - Single file
@@ -409,9 +415,6 @@ to open/import a dataset in a particular format.
      - Single file
    * - Simulated data
      - .fake
-     - Single file
-   * - SlideBook 6 SLD (native)
-     - .sld
      - Single file
    * - Slidebook TIFF
      - .tif, .tiff

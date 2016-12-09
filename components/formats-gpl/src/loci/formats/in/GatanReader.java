@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -45,6 +45,7 @@ import ome.units.quantity.ElectricPotential;
 import ome.units.quantity.Length;
 import ome.units.quantity.Time;
 import ome.units.UNITS;
+import ome.units.unit.Unit;
 
 /**
  * GatanReader is the file format reader for Gatan files.
@@ -252,10 +253,8 @@ public class GatanReader extends FormatReader {
         Double y = pixelSizes.get(index + 1);
         String xUnits = index < units.size() ? units.get(index) : "";
         String yUnits = index + 1 < units.size() ? units.get(index + 1) : "";
-        x = correctForUnits(x, xUnits);
-        y = correctForUnits(y, yUnits);
-        Length sizeX = FormatTools.getPhysicalSizeX(x);
-        Length sizeY = FormatTools.getPhysicalSizeY(y);
+        Length sizeX = FormatTools.getPhysicalSizeX(x, convertUnits(xUnits));
+        Length sizeY = FormatTools.getPhysicalSizeY(y, convertUnits(yUnits));
         if (sizeX != null) {
           store.setPixelsPhysicalSizeX(sizeX, 0);
         }
@@ -266,9 +265,7 @@ public class GatanReader extends FormatReader {
         if (index < pixelSizes.size() - 2) {
           Double z = pixelSizes.get(index + 2);
           String zUnits = index + 2 < units.size() ? units.get(index + 2) : "";
-          z = correctForUnits(z, zUnits);
-          Length sizeZ = FormatTools.getPhysicalSizeZ(z);
-
+          Length sizeZ = FormatTools.getPhysicalSizeZ(z, convertUnits(zUnits));
           if (sizeZ != null) {
             store.setPixelsPhysicalSizeZ(sizeZ, 0);
           }
@@ -289,7 +286,7 @@ public class GatanReader extends FormatReader {
       store.setDetectorID(detector, 0, 0);
 
       store.setDetectorSettingsID(detector, 0, 0);
-      store.setDetectorSettingsVoltage(new ElectricPotential(voltage, UNITS.V),
+      store.setDetectorSettingsVoltage(new ElectricPotential(voltage, UNITS.VOLT),
               0, 0);
 
       if (info == null) info = "";
@@ -297,8 +294,8 @@ public class GatanReader extends FormatReader {
       for (String token : scopeInfo) {
         token = token.trim();
         if (token.startsWith("Mode")) {
-          token = token.substring(token.indexOf(" ")).trim();
-          String mode = token.substring(0, token.indexOf(" ")).trim();
+          token = token.substring(token.indexOf(' ')).trim();
+          String mode = token.substring(0, token.indexOf(' ')).trim();
           if (mode.equals("TEM")) mode = "Other";
           store.setChannelAcquisitionMode(getAcquisitionMode(mode), 0, 0);
         }
@@ -307,7 +304,7 @@ public class GatanReader extends FormatReader {
       store.setPlanePositionX(posX, 0, 0);
       store.setPlanePositionY(posY, 0, 0);
       store.setPlanePositionZ(posZ, 0, 0);
-      store.setPlaneExposureTime(new Time(sampleTime, UNITS.S), 0, 0);
+      store.setPlaneExposureTime(new Time(sampleTime, UNITS.SECOND), 0, 0);
     }
   }
 
@@ -398,7 +395,7 @@ public class GatanReader extends FormatReader {
             skipPadding();
             skipPadding();
             int numFields = in.readInt();
-            StringBuffer s = new StringBuffer();
+            final StringBuilder s = new StringBuilder();
             in.skipBytes(4);
             skipPadding();
             long baseFP = in.getFilePointer() + 4;
@@ -471,7 +468,7 @@ public class GatanReader extends FormatReader {
         skipPadding();
         skipPadding();
         int num = in.readInt();
-        LOGGER.debug("{}{}: group({}) {", new Object[] {indent, i, num});
+        LOGGER.debug("{}{}: group({}) {} {", new Object[] {indent, i, num, labelString});
         parseTags(num, labelString, indent + "  ");
         LOGGER.debug("{}}", indent);
       }
@@ -483,12 +480,12 @@ public class GatanReader extends FormatReader {
       if (value != null) {
         addGlobalMeta(labelString, value);
 
-        if (labelString.equals("Scale")) {
-          if (value.indexOf(",") == -1) {
+        if (labelString.equals("Scale") && !parent.equals("Calibration")) {
+          if (value.indexOf(',') == -1) {
             pixelSizes.add(f.parse(value).doubleValue());
           }
         }
-        else if (labelString.equals("Units")) {
+        else if (labelString.equals("Units") && !parent.equals("Calibration")) {
           // make sure that we don't add more units than sizes
           if (pixelSizes.size() == units.size() + 1) {
             units.add(value);
@@ -616,17 +613,16 @@ public class GatanReader extends FormatReader {
     }
   }
 
-  private Double correctForUnits(Double value, String units) {
-    Double newValue = value;
+  private Unit<Length> convertUnits(String units) {
     Collator c = Collator.getInstance(Locale.ENGLISH);
     if (units != null) {
       if (c.compare("nm", units) == 0) {
-        newValue /= 1000;
+        return UNITS.NANOMETER;
       } else if (c.compare("um", units) != 0 && c.compare("µm", units) != 0) {
         LOGGER.warn("Not adjusting for unknown units: {}", units);
       }
     }
-    return newValue;
+    return UNITS.MICROMETER;
   }
 
 }

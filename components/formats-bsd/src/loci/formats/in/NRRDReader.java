@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -119,7 +119,7 @@ public class NRRDReader extends FormatReader {
       return true;
     }
 
-    if (name.indexOf(".") >= 0) {
+    if (name.indexOf('.') >= 0) {
       name = name.substring(0, name.lastIndexOf("."));
     }
 
@@ -256,12 +256,12 @@ public class NRRDReader extends FormatReader {
     while (line != null && line.length() > 0) {
       if (!line.startsWith("#") && !line.startsWith("NRRD")) {
         // parse key/value pair
-        key = line.substring(0, line.indexOf(":")).trim();
-        v = line.substring(line.indexOf(":") + 1).trim();
+        key = line.substring(0, line.indexOf(':')).trim();
+        v = line.substring(line.indexOf(':') + 1).trim();
         addGlobalMeta(key, v);
 
         if (key.equals("type")) {
-          if (v.indexOf("char") != -1 || v.indexOf("8") != -1) {
+          if (v.indexOf("char") != -1 || v.indexOf('8') != -1) {
             m.pixelType = FormatTools.UINT8;
           }
           else if (v.indexOf("short") != -1 || v.indexOf("16") != -1) {

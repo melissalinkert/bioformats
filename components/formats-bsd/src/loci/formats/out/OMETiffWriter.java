@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -113,6 +113,9 @@ public class OMETiffWriter extends TiffWriter {
               files.add(f);
 
               String xml = getOMEXML(f);
+              if (getMetadataOptions().isValidate()) {
+                service.validateOMEXML(xml);
+              }
 
               // write OME-XML to the first IFD's comment
               saveComment(f, xml);
@@ -265,8 +268,8 @@ public class OMETiffWriter extends TiffWriter {
     }
 
     // insert warning comment
-    String prefix = xml.substring(0, xml.indexOf(">") + 1);
-    String suffix = xml.substring(xml.indexOf(">") + 1);
+    String prefix = xml.substring(0, xml.indexOf('>') + 1);
+    String suffix = xml.substring(xml.indexOf('>') + 1);
     return prefix + WARNING_COMMENT + suffix;
   }
 

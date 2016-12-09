@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -49,7 +49,7 @@ public class MakeDatasetStructureTable {
   private void printHeader() {
     out.println(".. Please don't even think about editing this file directly.");
     out.println(".. It is generated using the 'gen-structure-table' Ant");
-    out.println(".. target in components/bio-formats, which uses");
+    out.println(".. target in components/autogen, which uses");
     out.println(".. loci.formats.tools.MakeDatasetStructureTable, so please");
     out.println(".. update that instead.");
     out.println();

@@ -167,7 +167,7 @@ To access physical voxel and stack sizes of the data:
   :end-before: read-ome-metadata-end
 
 For more information about the methods to retrieve the metadata, see the
-:javadoc:`MetadataRetrieve <loci/formats/meta/MetadataRetrieve.html>` Javadoc
+:xml_javadoc:`MetadataRetrieve <ome/xml/meta/MetadataRetrieve.html>` Javadoc
 page.
 
 To convert the OME metadata into a string, use the ``dumpXML()`` method:
@@ -175,6 +175,19 @@ To convert the OME metadata into a string, use the ``dumpXML()`` method:
 ::
 
 	omeXML = char(omeMeta.dumpXML());
+
+Changing the logging level
+--------------------------
+
+By default, ``bfopen`` uses ``bfInitLogging`` to initialize the logging system
+at the `WARN` level. To change the root logging level, use the
+:javadoc:`DebugTools <loci/common/DebugTools.html>` methods as described in
+the :doc:`logging` section.
+
+.. literalinclude:: examples/bftest.m
+  :language: matlab
+  :start-after: logging-start
+  :end-before: logging-end
 
 Reading from an image file
 --------------------------
@@ -253,7 +266,7 @@ metadata and pass this object directly to ``bfsave``:
   :end-before: bfsave-metadata-end
 
 For more information about the methods to store the metadata, see the
-:javadoc:`MetadataStore <loci/formats/meta/MetadataStore.html>` Javadoc page.
+:xml_javadoc:`MetadataStore <ome/xml/meta/MetadataStore.html>` Javadoc page.
 
 .. _reader_performance:
 

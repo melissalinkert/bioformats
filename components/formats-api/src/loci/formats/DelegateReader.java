@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -192,7 +192,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#get8BitLookupTable() */
   @Override
   public byte[][] get8BitLookupTable() throws FormatException, IOException {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.get8BitLookupTable();
     }
     return nativeReader.get8BitLookupTable();
@@ -201,7 +201,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#get16BitLookupTable() */
   @Override
   public short[][] get16BitLookupTable() throws FormatException, IOException {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.get16BitLookupTable();
     }
     return nativeReader.get16BitLookupTable();
@@ -210,7 +210,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#getSeriesUsedFiles(boolean) */
   @Override
   public String[] getSeriesUsedFiles(boolean noPixels) {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.getSeriesUsedFiles(noPixels);
     }
     return nativeReader.getSeriesUsedFiles(noPixels);
@@ -221,7 +221,7 @@ public abstract class DelegateReader extends FormatReader {
   public byte[] openBytes(int no, byte[] buf, int x, int y, int w, int h)
     throws FormatException, IOException
   {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.openBytes(no, buf, x, y, w, h);
     }
     return nativeReader.openBytes(no, buf, x, y, w, h);
@@ -241,7 +241,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#getOptimalTileWidth() */
   @Override
   public int getOptimalTileWidth() {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.getOptimalTileWidth();
     }
     return nativeReader.getOptimalTileWidth();
@@ -250,7 +250,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#getOptimalTileHeight() */
   @Override
   public int getOptimalTileHeight() {
-    if (useLegacy || (legacyReaderInitialized && !nativeReaderInitialized)) {
+    if (callLegacyReader()) {
       return legacyReader.getOptimalTileHeight();
     }
     return nativeReader.getOptimalTileHeight();
@@ -259,7 +259,7 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatReader#reopenFile() */
   @Override
   public void reopenFile() throws IOException {
-    if (useLegacy) {
+    if (callLegacyReader()) {
       legacyReader.reopenFile();
     }
     else {
@@ -272,16 +272,17 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatHandler#setId(String) */
   @Override
   public void setId(String id) throws FormatException, IOException {
-    super.setId(id);
-    if (useLegacy) {
+    if (useLegacy && !nativeReaderInitialized && !legacyReaderInitialized) {
       try {
         legacyReader.setId(id);
         legacyReaderInitialized = true;
+        currentId = legacyReader.getCurrentFile();
       }
       catch (FormatException e) {
         LOGGER.debug("", e);
         nativeReader.setId(id);
         nativeReaderInitialized = true;
+        currentId = nativeReader.getCurrentFile();
       }
     }
     else {
@@ -289,6 +290,7 @@ public abstract class DelegateReader extends FormatReader {
       try {
         nativeReader.setId(id);
         nativeReaderInitialized = true;
+        currentId = nativeReader.getCurrentFile();
       }
       catch (FormatException e) { exc = e; }
       catch (IOException e) { exc = e; }
@@ -297,6 +299,7 @@ public abstract class DelegateReader extends FormatReader {
         LOGGER.info("", exc);
         legacyReader.setId(id);
         legacyReaderInitialized = true;
+        currentId = legacyReader.getCurrentFile();
       }
       if (legacyReaderInitialized) {
         nativeReaderInitialized = false;
@@ -312,6 +315,10 @@ public abstract class DelegateReader extends FormatReader {
       metadata = legacyReader.getGlobalMetadata();
       metadataStore = legacyReader.getMetadataStore();
     }
+  }
+
+  private boolean callLegacyReader() {
+    return legacyReaderInitialized && (useLegacy || !nativeReaderInitialized);
   }
 
 }

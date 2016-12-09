@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -371,10 +371,11 @@ public class NativeND2Reader extends FormatReader {
       ArrayList<Boolean> validDimensions = new ArrayList<Boolean>();
 
       ByteArrayHandle xml = new ByteArrayHandle();
-      StringBuffer name = new StringBuffer();
+      final StringBuilder name = new StringBuilder();
 
       int extraZDataCount = 0;
       boolean foundMetadata = false;
+      boolean foundAttributes = false;
       boolean useLastText = false;
       int blockCount = 0;
 
@@ -492,13 +493,14 @@ public class NativeND2Reader extends FormatReader {
         }
 
         if (blockType.startsWith("ImageDataSeq")) {
-          if (foundMetadata) {
+          if (foundMetadata && foundAttributes) {
             imageOffsets.clear();
             imageNames.clear();
             imageLengths.clear();
             customDataOffsets.clear();
             customDataLengths.clear();
             foundMetadata = false;
+            foundAttributes = false;
             extraZDataCount = 0;
             useLastText = true;
           }
@@ -510,7 +512,7 @@ public class NativeND2Reader extends FormatReader {
             b = (char) in.readByte();
           }
           imageNames.add(name.toString());
-          name = name.delete(0, name.length());
+          name.setLength(0);
         }
         else if (blockType.startsWith("ImageText")) {
           foundMetadata = true;
@@ -531,7 +533,7 @@ public class NativeND2Reader extends FormatReader {
           blockType.startsWith("CustomDataVa"))
         {
           if (blockType.equals("ImageAttribu")) {
-            foundMetadata = true;
+            foundAttributes = true;
             in.skipBytes(6);
             long endFP = in.getFilePointer() + len - 18;
             while (in.read() == 0);
@@ -572,7 +574,7 @@ public class NativeND2Reader extends FormatReader {
                 xmlString =
                   xmlString.substring(0, xmlString.lastIndexOf(">") + 1);
                 if (xmlString.startsWith("<?xml")) {
-                  xmlString = xmlString.substring(xmlString.indexOf(">") + 1);
+                  xmlString = xmlString.substring(xmlString.indexOf('>') + 1);
                 }
                 if (!xmlString.endsWith("</variant>")) {
                   xmlString += "</variant>";
@@ -677,6 +679,10 @@ public class NativeND2Reader extends FormatReader {
             isLossless = isLossless && canBeLossless;
           }
           else {
+            if (blockType.startsWith("ImageMetadat")) {
+              foundMetadata = true;
+            }
+
             int length = len - 12;
             byte[] b = new byte[length];
             in.read(b);
@@ -1109,15 +1115,15 @@ public class NativeND2Reader extends FormatReader {
         fieldIndex--;
       }
 
-      if (getSizeC() > 1 && getDimensionOrder().indexOf("C") == -1) {
+      if (getSizeC() > 1 && getDimensionOrder().indexOf('C') == -1) {
         core.get(0).dimensionOrder = "C" + getDimensionOrder();
         fieldIndex++;
       }
 
       core.get(0).dimensionOrder = "XY" + getDimensionOrder();
-      if (getDimensionOrder().indexOf("Z") == -1) core.get(0).dimensionOrder += "Z";
-      if (getDimensionOrder().indexOf("C") == -1) core.get(0).dimensionOrder += "C";
-      if (getDimensionOrder().indexOf("T") == -1) core.get(0).dimensionOrder += "T";
+      if (getDimensionOrder().indexOf('Z') == -1) core.get(0).dimensionOrder += 'Z';
+      if (getDimensionOrder().indexOf('C') == -1) core.get(0).dimensionOrder += 'C';
+      if (getDimensionOrder().indexOf('T') == -1) core.get(0).dimensionOrder += 'T';
 
       if (getSizeZ() == 0) {
         core.get(0).sizeZ = 1;
@@ -1471,7 +1477,7 @@ public class NativeND2Reader extends FormatReader {
     if (off > 0 && off < in.length() - 5 && (in.length() - off - 5) > 14) {
       in.seek(off + 4);
 
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       // stored XML doesn't have a root node - add one, so that we can parse
       // using SAX
 
@@ -1489,7 +1495,7 @@ public class NativeND2Reader extends FormatReader {
         }
         s = in.readString(blockLength);
         s = s.replaceAll("<!--.+?>", ""); // remove comments
-        int openBracket = s.indexOf("<");
+        int openBracket = s.indexOf('<');
         if (openBracket == -1) continue;
         int closedBracket = s.lastIndexOf(">") + 1;
         if (closedBracket < openBracket) continue;
@@ -1575,9 +1581,9 @@ public class NativeND2Reader extends FormatReader {
       fieldIndex++;
     }
 
-    if (getDimensionOrder().indexOf("Z") == -1) core.get(0).dimensionOrder += "Z";
-    if (getDimensionOrder().indexOf("C") == -1) core.get(0).dimensionOrder += "C";
-    if (getDimensionOrder().indexOf("T") == -1) core.get(0).dimensionOrder += "T";
+    if (getDimensionOrder().indexOf('Z') == -1) core.get(0).dimensionOrder += 'Z';
+    if (getDimensionOrder().indexOf('C') == -1) core.get(0).dimensionOrder += 'C';
+    if (getDimensionOrder().indexOf('T') == -1) core.get(0).dimensionOrder += 'T';
     core.get(0).dimensionOrder = "XY" + getDimensionOrder();
 
     if (getImageCount() == 0) {
@@ -1893,7 +1899,7 @@ public class NativeND2Reader extends FormatReader {
           }
           if (stampIndex < tsT.size()) {
             double stamp = tsT.get(stampIndex).doubleValue();
-            store.setPlaneDeltaT(new Time(stamp, UNITS.S), i, n);
+            store.setPlaneDeltaT(new Time(stamp, UNITS.SECOND), i, n);
           }
 
           int index = i * getSizeC() + coords[1];
@@ -1901,7 +1907,7 @@ public class NativeND2Reader extends FormatReader {
             index = coords[1];
           }
           if (exposureTime != null && index < exposureTime.size() && exposureTime.get(index) != null) {
-            store.setPlaneExposureTime(new Time(exposureTime.get(index), UNITS.S), i, n);
+            store.setPlaneExposureTime(new Time(exposureTime.get(index), UNITS.SECOND), i, n);
           }
         }
       }
@@ -1980,7 +1986,7 @@ public class NativeND2Reader extends FormatReader {
 
         Double pinholeSize = handler.getPinholeSize();
         if (pinholeSize != null) {
-          store.setChannelPinholeSize(new Length(pinholeSize, UNITS.MICROM), i, c);
+          store.setChannelPinholeSize(new Length(pinholeSize, UNITS.MICROMETER), i, c);
         }
         if (index < channelNames.size()) {
           String channelName = channelNames.get(index);
@@ -2020,7 +2026,7 @@ public class NativeND2Reader extends FormatReader {
         }
         if (index < speed.size()) {
           store.setDetectorSettingsReadOutRate(
-                  new Frequency(speed.get(index), UNITS.HZ), i, c);
+                  new Frequency(speed.get(index), UNITS.HERTZ), i, c);
         }
         store.setDetectorSettingsID(detectorID, i, c);
       }
@@ -2030,7 +2036,7 @@ public class NativeND2Reader extends FormatReader {
       if (i * getSizeC() < temperature.size()) {
         Double temp = temperature.get(i * getSizeC());
         store.setImagingEnvironmentTemperature(
-                new Temperature(temp, UNITS.DEGREEC), i);
+                new Temperature(temp, UNITS.CELSIUS), i);
       }
     }
 
@@ -2038,7 +2044,7 @@ public class NativeND2Reader extends FormatReader {
     Double voltage = handler.getVoltage();
     if (voltage != null) {
       store.setDetectorSettingsVoltage(
-              new ElectricPotential(voltage, UNITS.V), 0, 0);
+              new ElectricPotential(voltage, UNITS.VOLT), 0, 0);
     }
 
     // populate Objective
@@ -2131,7 +2137,7 @@ public class NativeND2Reader extends FormatReader {
     try {
       ND2Handler handler = new ND2Handler(core, offsetCount);
       String xmlString = XMLTools.sanitizeXML(textString);
-      int start = xmlString.indexOf("<");
+      int start = xmlString.indexOf('<');
       int end = xmlString.lastIndexOf(">");
       if (start >= 0 && end >= 0 && end >= start) {
         xmlString = xmlString.substring(start, end + 1);
@@ -2158,7 +2164,7 @@ public class NativeND2Reader extends FormatReader {
       String[] lines = textString.split("\n");
       ND2Handler handler = new ND2Handler(core, offsetCount);
       for (String line : lines) {
-        int separator = line.indexOf(":");
+        int separator = line.indexOf(':');
         if (separator >= 0) {
           String key = line.substring(0, separator).trim();
           String value = line.substring(separator + 1).trim();
@@ -2187,7 +2193,7 @@ public class NativeND2Reader extends FormatReader {
       lines = textString.split(" ");
       for (int i=0; i<lines.length; i++) {
         String key = lines[i++];
-        while (!key.endsWith(":") && key.indexOf("_") < 0 && i < lines.length) {
+        while (!key.endsWith(":") && key.indexOf('_') < 0 && i < lines.length) {
           key += " " + lines[i++];
           if (i >= lines.length) {
             break;
@@ -2220,12 +2226,7 @@ public class NativeND2Reader extends FormatReader {
             key = key.substring(0, 8);
           }
           if (trueSizeZ == null) {
-            try {
-              trueSizeZ = Double.parseDouble(DataTools.sanitizeDouble(value));
-            }
-            catch (NumberFormatException nfe) {
-              LOGGER.trace("Could not parse step", nfe);
-            }
+            trueSizeZ = DataTools.parseDouble(value);
           }
         }
         else if (key.equals("Name")) {
@@ -2235,22 +2236,16 @@ public class NativeND2Reader extends FormatReader {
           if (value.endsWith("Active")) {
             int first = key.lastIndexOf(":") + 1;
             int last = key.lastIndexOf(";");
-            try {
-              textEmissionWavelengths.add(
-                new Double(key.substring(first, last)) + 20);
+            if (last-first < 0){
+                last = first + key.substring(first).indexOf(' ');
             }
-            catch (NumberFormatException nfe) {
-              LOGGER.trace("Could not parse emission wavelength", nfe);
-            }
+            Double wavelength = DataTools.parseDouble(key.substring(
+              first, last).trim()) + 20;
+            if (wavelength != null) textEmissionWavelengths.add(wavelength);
           }
         }
         else if (key.equals("Refractive Index")) {
-          try {
-            refractiveIndex = Double.parseDouble(DataTools.sanitizeDouble(value));
-          }
-          catch (NumberFormatException nfe) {
-            LOGGER.trace("Could not parse refractive index", nfe);
-          }
+          refractiveIndex = DataTools.parseDouble(value);
         }
 
         if (metadata.containsKey(key)) {

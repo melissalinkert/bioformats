@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -56,7 +56,6 @@ import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.Modulo;
 import loci.formats.meta.IMetadata;
-import loci.formats.meta.MetadataConverter;
 import loci.formats.meta.MetadataRetrieve;
 import loci.formats.meta.MetadataStore;
 import loci.formats.meta.ModuloAnnotation;
@@ -65,6 +64,8 @@ import loci.formats.ome.OMEXMLMetadata;
 import loci.formats.ome.OMEXMLMetadataImpl;
 
 import ome.units.quantity.Length;
+
+import ome.xml.meta.MetadataConverter;
 import ome.xml.meta.OMEXMLMetadataRoot;
 import ome.xml.model.BinData;
 import ome.xml.model.Channel;
@@ -97,7 +98,7 @@ public class OMEXMLServiceImpl extends AbstractService implements OMEXMLService
 {
 
   /** Latest OME-XML version namespace. */
-  public static final String LATEST_VERSION = "2016-DEV0";
+  public static final String LATEST_VERSION = "2016-06";
 
   public static final String NO_OME_XML_MSG =
     "ome-xml.jar is required to read OME-TIFF files.  " +
@@ -131,7 +132,7 @@ public class OMEXMLServiceImpl extends AbstractService implements OMEXMLService
   private static final String XSLT_201306 =
     XSLT_PATH + "2013-06-to-2015-01.xsl";
   private static final String XSLT_201501 =
-    XSLT_PATH + "2015-01-to-2016-DEV0.xsl";
+    XSLT_PATH + "2015-01-to-2016-06.xsl";
 
   // -- Cached stylesheets --
 
@@ -318,7 +319,7 @@ public class OMEXMLServiceImpl extends AbstractService implements OMEXMLService
       else transformed = xml;
       LOGGER.debug("XML updated to at least 2015-01");
 
-      if (version.compareTo("2016-DEV0") < 0) {
+      if (version.compareTo("2016-06") < 0) {
         transformed = verifyOMENamespace(transformed);
         LOGGER.debug("Running UPDATE_201501 stylesheet.");
         if (update201501 == null) {
@@ -328,7 +329,7 @@ public class OMEXMLServiceImpl extends AbstractService implements OMEXMLService
         transformed = XMLTools.transformXML(transformed, update201501);
       }
       else transformed = xml;
-      LOGGER.debug("XML updated to at least 2016-DEV0");
+      LOGGER.debug("XML updated to at least 2016-06");
 
       // fix namespaces
       transformed = transformed.replaceAll("<ns.*?:", "<");

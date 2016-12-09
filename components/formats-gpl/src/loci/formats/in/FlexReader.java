@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -708,11 +708,11 @@ public class FlexReader extends FormatReader {
           if (plane - image + c < planeExposureTime.size()) {
             if (planeExposureTime.get(plane - image + c) != null) {
               store.setPlaneExposureTime(
-                new Time(planeExposureTime.get(plane - image + c), UNITS.S), i, image);
+                new Time(planeExposureTime.get(plane - image + c), UNITS.SECOND), i, image);
             }
           }
           if (plane < planeDeltaT.size() && planeDeltaT.get(plane) != null) {
-            store.setPlaneDeltaT(new Time(planeDeltaT.get(plane), UNITS.S), i, image);
+            store.setPlaneDeltaT(new Time(planeDeltaT.get(plane), UNITS.SECOND), i, image);
           }
         }
       }
@@ -1432,7 +1432,7 @@ public class FlexReader extends FormatReader {
 
     private String filterSet;
 
-    private StringBuffer charData = new StringBuffer();
+    private final StringBuilder charData = new StringBuilder();
 
     public FlexHandler(List<String> names, List<String> factors,
       MetadataStore store, boolean populateCore, int well, int thisField)
@@ -1454,7 +1454,7 @@ public class FlexReader extends FormatReader {
     @Override
     public void endElement(String uri, String localName, String qName) {
       String value = charData.toString();
-      charData = new StringBuffer();
+      charData.setLength(0);
 
       if (qName.equals("XSize") && "Plate".equals(parentQName)) {
         wellRows = Integer.parseInt(value);
@@ -1957,7 +1957,7 @@ public class FlexReader extends FormatReader {
    * If other paths were mapped to 'alias', they will be overwritten.
    */
   public static void mapServer(String alias, String[] realNames) {
-    StringBuffer msg = new StringBuffer("mapServer(");
+    final StringBuilder msg = new StringBuilder("mapServer(");
     msg.append(alias);
     if (realNames != null) {
       msg.append(", [");
@@ -2011,7 +2011,7 @@ public class FlexReader extends FormatReader {
     String[] lines = DataTools.readFile(configFile).split("[\r\n]");
     for (String line : lines) {
       LOGGER.trace(line);
-      int eq = line.indexOf("=");
+      int eq = line.indexOf('=');
       if (eq == -1 || line.startsWith("#")) continue;
       String alias = line.substring(0, eq).trim();
       String[] servers = line.substring(eq + 1).trim().split(";");

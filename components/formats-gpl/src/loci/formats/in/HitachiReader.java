@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -98,7 +98,7 @@ public class HitachiReader extends FormatReader {
     }
 
     String base = name;
-    if (base.indexOf(".") >= 0) {
+    if (base.indexOf('.') >= 0) {
       base = base.substring(0, base.lastIndexOf("."));
     }
 
@@ -183,7 +183,7 @@ public class HitachiReader extends FormatReader {
   protected void initFile(String id) throws FormatException, IOException {
     if (!checkSuffix(id, "txt")) {
       String base = id;
-      if (base.indexOf(".") >= 0) {
+      if (base.indexOf('.') >= 0) {
         base = base.substring(0, base.lastIndexOf("."));
       }
 
@@ -293,7 +293,7 @@ public class HitachiReader extends FormatReader {
     }
 
     if (workingDistance != null) {
-      int end = workingDistance.indexOf(" ");
+      int end = workingDistance.indexOf(' ');
       if (end < 0) end = workingDistance.length();
 
       workingDistance = workingDistance.substring(0, end);
@@ -301,7 +301,7 @@ public class HitachiReader extends FormatReader {
       String objective = MetadataTools.createLSID("Objective", 0, 0);
       store.setObjectiveID(objective, 0, 0);
       store.setObjectiveSettingsID(objective, 0);
-      store.setObjectiveWorkingDistance(new Length(new Double(workingDistance), UNITS.MICROM), 0, 0);
+      store.setObjectiveWorkingDistance(new Length(new Double(workingDistance), UNITS.MICROMETER), 0, 0);
     }
   }
 }

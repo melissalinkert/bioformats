@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -349,9 +349,9 @@ public class AnalyzeReader extends FormatReader {
     if (getMetadataOptions().getMetadataLevel() != MetadataLevel.MINIMUM) {
       store.setImageDescription(description, 0);
 
-      Length sizeX = FormatTools.getPhysicalSizeX(voxelWidth, UNITS.MM);
-      Length sizeY = FormatTools.getPhysicalSizeY(voxelHeight, UNITS.MM);
-      Length sizeZ = FormatTools.getPhysicalSizeZ(sliceThickness, UNITS.MM);
+      Length sizeX = FormatTools.getPhysicalSizeX(voxelWidth, UNITS.MILLIMETER);
+      Length sizeY = FormatTools.getPhysicalSizeY(voxelHeight, UNITS.MILLIMETER);
+      Length sizeZ = FormatTools.getPhysicalSizeZ(sliceThickness, UNITS.MILLIMETER);
 
       if (sizeX != null) {
         store.setPixelsPhysicalSizeX(sizeX, 0);
@@ -362,7 +362,7 @@ public class AnalyzeReader extends FormatReader {
       if (sizeZ != null) {
         store.setPixelsPhysicalSizeZ(sizeZ, 0);
       }
-      store.setPixelsTimeIncrement(new Time(deltaT, UNITS.MS), 0);
+      store.setPixelsTimeIncrement(new Time(deltaT, UNITS.MILLISECOND), 0);
     }
   }
 

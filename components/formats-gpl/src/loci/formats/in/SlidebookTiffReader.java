@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -226,11 +226,11 @@ public class SlidebookTiffReader extends BaseTiffReader {
         if (c < channelNames.size()) {
           String name = channelNames.get(c);
           if (name != null) {
-            if (name.indexOf(":") > 0) {
-              name = name.substring(name.indexOf(":") + 1);
+            if (name.indexOf(':') > 0) {
+              name = name.substring(name.indexOf(':') + 1);
             }
-            if (name.indexOf(";") > 0) {
-              name = name.substring(0, name.indexOf(";"));
+            if (name.indexOf(';') > 0) {
+              name = name.substring(0, name.indexOf(';'));
             }
 
             store.setChannelName(name.trim(), 0, c);

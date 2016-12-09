@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -47,9 +47,6 @@ import java.util.Vector;
 import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
-import loci.formats.in.DefaultMetadataOptions;
-import loci.formats.in.MetadataLevel;
-import loci.formats.in.MetadataOptions;
 import loci.formats.meta.MetadataStore;
 
 import org.slf4j.Logger;
@@ -838,6 +835,9 @@ public class FileStitcher extends ReaderWrapper {
   /* @see IFormatReader#getUnderlyingReaders() */
   @Override
   public IFormatReader[] getUnderlyingReaders() {
+    if (null == externals) {
+      return super.getUnderlyingReaders();
+    }
     List<IFormatReader> list = new ArrayList<IFormatReader>();
     for (ExternalSeries s : externals) {
       for (DimensionSwapper r : s.getReaders()) {
@@ -1221,7 +1221,7 @@ public class FileStitcher extends ReaderWrapper {
       String newOrder = ((DimensionSwapper) reader).getInputOrder();
       if ((externals[external].getFiles().length > 1 || !r.isOrderCertain()) &&
         (r.getRGBChannelCount() == 1 ||
-        newOrder.indexOf("C") == r.getDimensionOrder().indexOf("C")))
+        newOrder.indexOf('C') == r.getDimensionOrder().indexOf('C')))
       {
         r.swapDimensions(newOrder);
       }
@@ -1259,6 +1259,7 @@ public class FileStitcher extends ReaderWrapper {
           readers[i] = new DimensionSwapper(new ImageReader(classList));
         }
         else readers[i] = new DimensionSwapper();
+        readers[i].setMetadataOptions(getMetadataOptions());
         readers[i].setGroupFiles(false);
       }
       readers[0].setId(files[0]);

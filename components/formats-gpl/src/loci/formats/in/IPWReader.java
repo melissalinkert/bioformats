@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -244,9 +244,9 @@ public class IPWReader extends FormatReader {
           for (String token : tokens) {
             String label = "Timestamp";
             String data = token.trim();
-            if (token.indexOf("=") != -1) {
-              label = token.substring(0, token.indexOf("=")).trim();
-              data = token.substring(token.indexOf("=") + 1).trim();
+            if (token.indexOf('=') != -1) {
+              label = token.substring(0, token.indexOf('=')).trim();
+              data = token.substring(token.indexOf('=') + 1).trim();
             }
             addGlobalMeta(label, data);
             if (label.equals("frames")) m.sizeT = Integer.parseInt(data);

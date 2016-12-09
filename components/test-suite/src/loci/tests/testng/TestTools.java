@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats manual and automated test suite.
  * %%
- * Copyright (C) 2006 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2006 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -48,7 +48,6 @@ import loci.common.RandomAccessInputStream;
 import loci.formats.IFormatReader;
 import loci.formats.IFormatWriter;
 import loci.formats.ImageReader;
-import loci.formats.in.SlideBook6Reader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +66,17 @@ public class TestTools {
     "----------------------------------------";
 
   public static final String baseConfigName = ".bioformats";
+
+  /**
+   * Safely return a system property by key excluding default Ant values
+   */
+  public static String getProperty(String key) {
+    String value = System.getProperty(key);
+    if (value == null || value.equals("${" + key + "}")) {
+      return null;
+    }
+    return value;
+  }
 
   /** Calculate the SHA-1 of a byte array. */
   public static String sha1(byte[] b, int offset, int len) {
@@ -141,7 +151,11 @@ public class TestTools {
   /** Returns true if a byte buffer of the given size will fit in memory. */
   public static boolean canFitInMemory(long bufferSize) {
     Runtime r = Runtime.getRuntime();
-    long mem = r.freeMemory() / 2;
+
+    // better indicator than freeMemory() of how much memory is actually available
+    long mem = r.maxMemory() - (r.totalMemory() - r.freeMemory());
+
+    mem /= 2;
     int threadCount = 1;
     try {
       threadCount = Integer.parseInt(System.getProperty("testng.threadCount"));
@@ -194,8 +208,10 @@ public class TestTools {
 
   /**
    * Retrieve an external configuration file given a root directory and test
-   * configuration
+   * configuration.
+   * @deprecated No replacement.
    */
+  @Deprecated
   public static String getExternalConfigFile(String root,
     final ConfigurationTree config)
   {
@@ -210,9 +226,11 @@ public class TestTools {
   }
 
   /**
-   * Retrieve an external symlinkedconfiguration file given a root directory 
-   * and a test configuration
+   * Retrieve an external symlinked configuration file given a root directory
+   * and a test configuration.
+   * @deprecated No replacement.
    */
+  @Deprecated
   public static String getExternalSymlinkConfigFile(String root,
     final ConfigurationTree config)
   {
@@ -245,22 +263,16 @@ public class TestTools {
     boolean isToplevel =
      toplevelConfig != null && new File(toplevelConfig).exists();
     Arrays.sort(subs);
-    boolean isSymlinkConfig = false;
 
     List<String> subsList = new ArrayList<String>();
 
     if (config.getConfigDirectory() != null) {
-      String configFile = getExternalConfigFile(root, config);
-      if (configFile != null) {
-        LOGGER.debug("found config file: {}", configFile);
-        subsList.add(configFile);
-      } else {
-        configFile = getExternalSymlinkConfigFile(root, config);
-        if (configFile != null) {
-          LOGGER.debug("found symlinked config file: {}", configFile);
-          subsList.add(configFile);
-          isSymlinkConfig = true;
-        }
+      // Look for a configuration file under the configuration directory
+      String configRoot = config.relocateToConfig(root);
+      Location configFile = new Location(configRoot, baseConfigName);
+      if (configFile.exists()) {
+        LOGGER.debug("found config file: {}", configFile.getAbsolutePath());
+        subsList.add(configFile.getAbsolutePath());
       }
     }
 
@@ -271,20 +283,12 @@ public class TestTools {
       if ((!isToplevel && isConfigFile(file, configFileSuffix)) ||
           (isToplevel && subs[i].equals(toplevelConfig)))
       {
-        if (config.getConfigDirectory() == null) {
+        if (config.getConfigDirectory() != null) {
           LOGGER.debug("adding config file: {}", file.getAbsolutePath());
           subsList.add(0, file.getAbsolutePath());
         }
       } else {
-        if (isSymlinkConfig) {
-          try {
-            subsList.add(file.getCanonicalPath());
-          } catch (IOException e) {
-            subsList.add(file.getAbsolutePath());
-          }
-        } else {
-          subsList.add(file.getAbsolutePath());
-        }
+        subsList.add(file.getAbsolutePath());
       }
     }
 
@@ -297,7 +301,7 @@ public class TestTools {
     catch (IOException exc) {
       LOGGER.debug("", exc);
     }
-    catch (Exception e) { }
+    catch (Throwable e) { }
 
     Arrays.sort(subs, new Comparator() {
       @Override
@@ -328,7 +332,7 @@ public class TestTools {
       }
     });
 
-    ImageReader typeTester = TestTools.getTestImageReader();
+    ImageReader typeTester = new ImageReader();
 
     for (int i=0; i<subsList.size(); i++) {
       Location file = new Location(subsList.get(i));
@@ -478,16 +482,24 @@ public class TestTools {
     return false;
   }
 
+
   /**
-   * Return an ImageReader that is appropriate for testing.
-   * All constructed reader wrappers should use this ImageReader,
-   * as it removes any readers that aren't to be tested.
+   * Determine whether or not a Throwable was caused by an OutOfMemoryError.
+   *
+   * @param t Throwable object to check
+   * @return true if <code>t</code> is or was caused by an OutOfMemoryError, false otherwise
    */
-  public static ImageReader getTestImageReader() {
-    // Remove external SlideBook6Reader class for testing purposes
-    ImageReader ir = new ImageReader();
-    ir.getDefaultReaderClasses().removeClass(SlideBook6Reader.class);
-    return ir;
+  public static boolean isOutOfMemory(Throwable t) {
+    if (t instanceof OutOfMemoryError) {
+      return true;
+    }
+    while (t.getCause() != null) {
+      if (t.getCause() instanceof OutOfMemoryError) {
+        return true;
+      }
+      t = t.getCause();
+    }
+    return false;
   }
 
 }

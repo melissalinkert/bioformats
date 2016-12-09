@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -45,6 +45,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.in.MetadataLevel;
 import loci.formats.in.MetadataOptions;
+import loci.formats.in.DynamicMetadataOptions;
 import loci.formats.meta.MetadataStore;
 
 import org.slf4j.Logger;
@@ -120,10 +121,13 @@ public class ImageReader implements IFormatReader {
     // add readers to the list
     List<IFormatReader> list = new ArrayList<IFormatReader>();
     Class<? extends IFormatReader>[] c = classList.getClasses();
+    // assign the same options instance to all readers
+    MetadataOptions opt = new DynamicMetadataOptions();
     for (int i=0; i<c.length; i++) {
       IFormatReader reader = null;
       try {
         reader = c[i].newInstance();
+        reader.setMetadataOptions(opt);
       }
       catch (IllegalAccessException exc) { }
       catch (InstantiationException exc) { }

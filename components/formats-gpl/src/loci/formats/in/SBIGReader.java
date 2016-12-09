@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -146,7 +146,7 @@ public class SBIGReader extends FormatReader {
     String[] lines = DataTools.readFile(currentId).split("\n");
     for (String line : lines) {
       line = line.trim();
-      int eq = line.indexOf("=");
+      int eq = line.indexOf('=');
       if (eq != -1) {
         String key = line.substring(0, eq).trim();
         String value = line.substring(eq + 1).trim();

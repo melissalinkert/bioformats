@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -48,10 +48,11 @@ import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
-import loci.formats.meta.MetadataConverter;
 import loci.formats.meta.MetadataStore;
 import loci.formats.ome.OMEXMLMetadata;
 import loci.formats.services.OMEXMLService;
+
+import ome.xml.meta.MetadataConverter;
 import ome.xml.model.primitives.Color;
 import ome.xml.model.primitives.NonNegativeInteger;
 import ome.xml.model.primitives.PositiveFloat;
@@ -524,7 +525,7 @@ public class CellVoyagerReader extends FormatReader
 
 		// Time interval
 		if (Double.valueOf( readFrameInterval( msDocument ) ) != null) {
-			omeMD.setPixelsTimeIncrement(new Time( Double.valueOf( readFrameInterval( msDocument ) ), UNITS.S), 0 );
+			omeMD.setPixelsTimeIncrement(new Time( Double.valueOf( readFrameInterval( msDocument ) ), UNITS.SECOND), 0 );
 		}
 
 		/*
@@ -770,7 +771,7 @@ public class CellVoyagerReader extends FormatReader
 				channelIndex = 0;
 				for ( int i = 0; i < channelInfos.size(); i++ )
 				{
-					store.setChannelPinholeSize( new Length(pinholeSize, UNITS.MICROM), seriesIndex, channelIndex++ );
+					store.setChannelPinholeSize( new Length(pinholeSize, UNITS.MICROMETER), seriesIndex, channelIndex++ );
 					store.setChannelName( channelInfos.get( i ).name, seriesIndex, i );
 				}
 			}
@@ -1067,7 +1068,7 @@ public class CellVoyagerReader extends FormatReader
 		@Override
 		public String toString()
 		{
-			final StringBuffer str = new StringBuffer();
+			final StringBuilder str = new StringBuilder();
 			str.append( "Channel " + channelNumber + ": \n" );
 			str.append( " - name: " + name + "\n" );
 			str.append( " - isEnabled: " + isEnabled + "\n" );

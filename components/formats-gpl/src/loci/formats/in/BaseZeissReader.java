@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -229,21 +229,21 @@ public abstract class BaseZeissReader extends FormatReader {
     CoreMetadata m = core.get(0);
 
     m.dimensionOrder = "XY";
-    if (isRGB()) m.dimensionOrder += "C";
+    if (isRGB()) m.dimensionOrder += 'C';
     for (int i=0; i<coordinates.length-1; i++) {
       int[] zct1 = coordinates[i];
       int[] zct2 = coordinates[i + 1];
       int deltaZ = zct2[0] - zct1[0];
       int deltaC = zct2[1] - zct1[1];
       int deltaT = zct2[2] - zct1[2];
-      if (deltaZ > 0 && getDimensionOrder().indexOf("Z") == -1) {
-        m.dimensionOrder += "Z";
+      if (deltaZ > 0 && getDimensionOrder().indexOf('Z') == -1) {
+        m.dimensionOrder += 'Z';
       }
-      if (deltaC > 0 && getDimensionOrder().indexOf("C") == -1) {
-        m.dimensionOrder += "C";
+      if (deltaC > 0 && getDimensionOrder().indexOf('C') == -1) {
+        m.dimensionOrder += 'C';
       }
-      if (deltaT > 0 && getDimensionOrder().indexOf("T") == -1) {
-        m.dimensionOrder += "T";
+      if (deltaT > 0 && getDimensionOrder().indexOf('T') == -1) {
+        m.dimensionOrder += 'T';
       }
     }
     m.dimensionOrder =
@@ -321,7 +321,8 @@ public abstract class BaseZeissReader extends FormatReader {
       store.setObjectiveCorrection(getCorrection("Other"), 0, 0);
       store.setObjectiveImmersion(getImmersion("Other"), 0, 0);
 
-      Integer[] channelKeys = channelName.keySet().toArray(new Integer[0]);
+      Integer[] channelKeys = channelName.keySet().toArray(
+          new Integer[channelName.size()]);
       Arrays.sort(channelKeys);
 
       // link DetectorSettings to an actual Detector
@@ -387,7 +388,7 @@ public abstract class BaseZeissReader extends FormatReader {
           try { exp = new Double(exposure); }
           catch (NumberFormatException e) { }
           catch (NullPointerException e) { }
-          store.setPlaneExposureTime(new Time(exp, UNITS.S), i, plane);
+          store.setPlaneExposureTime(new Time(exp, UNITS.SECOND), i, plane);
 
           int posIndex = i * getImageCount() + plane;
 
@@ -395,7 +396,7 @@ public abstract class BaseZeissReader extends FormatReader {
             String timestamp = timestamps.get(posIndex);
             long stamp = parseTimestamp(timestamp);
             stamp -= firstStamp;
-            store.setPlaneDeltaT(new Time((double) stamp / 1600000, UNITS.S), i, plane);
+            store.setPlaneDeltaT(new Time((double) stamp / 1600000, UNITS.SECOND), i, plane);
           }
 
           if (stageX.get(posIndex) != null) {
@@ -432,7 +433,7 @@ public abstract class BaseZeissReader extends FormatReader {
     int roiIndex = 0;
     int shapeIndex = 0;
     String shapeID;
-    StringBuffer points;
+    StringBuilder points;
 
     for (Layer layer : layers) {
       for (Shape shape : layer.shapes) {
@@ -585,7 +586,7 @@ public abstract class BaseZeissReader extends FormatReader {
           case SPLINE_CLOSED:
           case MEAS_SPLINE_CLOSED:
             // Currently splines not representable in model, so use polyline.
-            points = new StringBuffer();
+            points = new StringBuilder();
             for (int p=0; p < shape.points.length; p+=2) {
               points.append(shape.points[p+0]);
               points.append(",");
@@ -633,7 +634,7 @@ public abstract class BaseZeissReader extends FormatReader {
             break;
           case RECTANGLE:
           case MEAS_RECTANGLE:
-            points = new StringBuffer();
+            points = new StringBuilder();
             for (int p=0; p < 8; p+=2) {
               points.append(shape.points[p+0]);
               points.append(",");
@@ -924,7 +925,7 @@ public abstract class BaseZeissReader extends FormatReader {
         else if (key.startsWith("Objective Name")) {
           String[] tokens = value.split(" ");
           for (int q=0; q<tokens.length; q++) {
-            int slash = tokens[q].indexOf("/");
+            int slash = tokens[q].indexOf('/');
             if (slash != -1 && slash - q > 0) {
               Double mag = 
                   Double.parseDouble(tokens[q].substring(0, slash - q));
@@ -937,7 +938,7 @@ public abstract class BaseZeissReader extends FormatReader {
           }
         }
         else if (key.startsWith("Objective Working Distance")) {
-          store.setObjectiveWorkingDistance(new Length(new Double(value), UNITS.MICROM), 0, 0);
+          store.setObjectiveWorkingDistance(new Length(new Double(value), UNITS.MICROMETER), 0, 0);
         }
         else if (key.startsWith("Objective Immersion Type")) {
           String immersion = "Other";

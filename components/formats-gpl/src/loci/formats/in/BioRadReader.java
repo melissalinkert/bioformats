@@ -2,7 +2,7 @@
  * #%L
  * OME Bio-Formats package for reading and converting biological file formats.
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -646,9 +646,9 @@ public class BioRadReader extends FormatReader {
             addGlobalMetaList("Note", n.toString());
             break;
           case NOTE_TYPE_VARIABLE:
-            if (n.p.indexOf("=") >= 0) {
-              String key = n.p.substring(0, n.p.indexOf("=")).trim();
-              String value = n.p.substring(n.p.indexOf("=") + 1).trim();
+            if (n.p.indexOf('=') >= 0) {
+              String key = n.p.substring(0, n.p.indexOf('=')).trim();
+              String value = n.p.substring(n.p.indexOf('=') + 1).trim();
               addGlobalMeta(key, value);
 
               if (key.equals("INFO_OBJECTIVE_NAME")) {
@@ -1128,7 +1128,7 @@ public class BioRadReader extends FormatReader {
 
     @Override
     public String toString() {
-      StringBuffer sb = new StringBuffer(100);
+      final StringBuilder sb = new StringBuilder(100);
       sb.append("level=");
       sb.append(level);
       sb.append("; num=");

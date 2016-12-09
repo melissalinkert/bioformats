@@ -88,7 +88,6 @@ Libraries and scripting applications
     imglib/index
     itk/index
     qu-matlab/index
-    subimager/index
 
 
 Numerical data processing applications
@@ -122,6 +121,7 @@ Visualization and analysis applications
     imago/index
     iqm/index
     macnif/index
+    micromanager/index
     mipav/index
     vaa3d/index
     visbio/index

@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -105,7 +105,7 @@ public class MinimalTiffReader extends FormatReader {
 
   /** Constructs a new MinimalTiffReader. */
   public MinimalTiffReader() {
-    this("Minimal TIFF", new String[] {"tif", "tiff"});
+    this("Minimal TIFF", new String[] {"tif", "tiff", "tf2", "tf8", "btf"});
   }
 
   /** Constructs a new MinimalTiffReader. */

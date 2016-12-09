@@ -2,7 +2,7 @@
  * #%L
  * BSD implementations of Bio-Formats readers and writers
  * %%
- * Copyright (C) 2005 - 2015 Open Microscopy Environment:
+ * Copyright (C) 2005 - 2016 Open Microscopy Environment:
  *   - Board of Regents of the University of Wisconsin-Madison
  *   - Glencoe Software, Inc.
  *   - University of Dundee
@@ -784,19 +784,19 @@ public class DicomReader extends FormatReader {
 
         // all physical sizes were stored in mm, so must be converted to um
         if (pixelSizeX != null) {
-          Length x = FormatTools.getPhysicalSizeX(new Double(pixelSizeX), UNITS.MM);
+          Length x = FormatTools.getPhysicalSizeX(new Double(pixelSizeX), UNITS.MILLIMETER);
           if (x != null) {
             store.setPixelsPhysicalSizeX(x, i);
           }
         }
         if (pixelSizeY != null) {
-          Length y = FormatTools.getPhysicalSizeY(new Double(pixelSizeY), UNITS.MM);
+          Length y = FormatTools.getPhysicalSizeY(new Double(pixelSizeY), UNITS.MILLIMETER);
           if (y != null) {
             store.setPixelsPhysicalSizeY(y, i);
           }
         }
         if (pixelSizeZ != null) {
-          Length z = FormatTools.getPhysicalSizeZ(new Double(pixelSizeZ), UNITS.MM);
+          Length z = FormatTools.getPhysicalSizeZ(new Double(pixelSizeZ), UNITS.MILLIMETER);
           if (z != null) {
             store.setPixelsPhysicalSizeZ(z, i);
           }
@@ -850,7 +850,7 @@ public class DicomReader extends FormatReader {
         catch (NumberFormatException e) { }
       }
       else if (key.indexOf("Palette Color LUT Data") != -1) {
-        String color = key.substring(0, key.indexOf(" ")).trim();
+        String color = key.substring(0, key.indexOf(' ')).trim();
         int ndx = color.equals("Red") ? 0 : color.equals("Green") ? 1 : 2;
         long fp = in.getFilePointer();
         in.seek(in.getFilePointer() - elementLength + 1);

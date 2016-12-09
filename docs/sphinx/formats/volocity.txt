@@ -6,7 +6,7 @@ Volocity
 
 Extensions: .mvd2
 
-Developer: `PerkinElmer <http://www.perkinelmer.com/pages/020/cellularimaging/products/volocity.xhtml>`_
+Developer: `PerkinElmer <http://www.perkinelmer.com/lab-products-and-services/cellular-imaging/>`_
 
 
 **Support**

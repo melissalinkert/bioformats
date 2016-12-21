@@ -355,7 +355,6 @@ public class NativeND2Reader extends FormatReader {
     in = new RandomAccessInputStream(id, BUFFER_SIZE);
 
     boolean useChunkMap = true; // could be deactivated here ...
-
     channelColors = new HashMap<String, Integer>();
 
     if (in.read() == -38 && in.read() == -50) {
@@ -668,9 +667,10 @@ public class NativeND2Reader extends FormatReader {
 
               lastImage = entry;
 
-              // assumption nameLength is constant throughout the file for image blocks!
+              // not safe to assume that the name length is constant
+              // it will vary based upon the plane index
               imageOffsets.add(new Long(entry.position + 16));
-              imageLengths.add(new int[] {nameLength, (int)(entry.length - nameLength - 16), getSizeX() * getSizeY()});
+              imageLengths.add(new int[] {entry.name.length() + 1, (int) dataLength, getSizeX() * getSizeY()});
               imageNames.add(entry.name.substring(12));
 
               blockCount ++;

@@ -73,8 +73,39 @@ public class PyramidTiffReader extends BaseTiffReader {
     IFD ifd = parser.getFirstIFD();
     if (ifd == null) return false;
     String software = ifd.getIFDTextValue(IFD.SOFTWARE);
-    if (software == null) return false;
-    return software.indexOf("Faas") >= 0;
+    if (software != null && software.indexOf("Faas") >= 0) {
+      return true;
+    }
+
+    // compare width and height of first and last IFD
+    // all IFDs could be checked, but that may affect performance
+    try {
+      long[] offsets = parser.getIFDOffsets();
+      if (offsets.length == 1) {
+        return false;
+      }
+      IFD lastIFD = parser.getIFD(offsets[offsets.length - 1]);
+
+      if (lastIFD.getImageWidth() >= ifd.getImageWidth() ||
+        lastIFD.getImageLength() >= ifd.getImageLength())
+      {
+        return false;
+      }
+
+      int powerOfTwo = 0;
+      long width = ifd.getImageWidth();
+      while (width > lastIFD.getImageWidth()) {
+        width /= 2;
+        powerOfTwo++;
+      }
+
+      long height = ifd.getImageLength() / (int) Math.pow(2, powerOfTwo);
+      return height == lastIFD.getImageLength();
+    }
+    catch (FormatException e) {
+      LOGGER.trace("Could not finish type checking", e);
+    }
+    return false;
   }
 
   /**

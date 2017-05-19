@@ -60,6 +60,22 @@ Type "ant -p" for a list of targets.
     <fail if="failedTest"/>
   </target>
 
+  <target name="test-missing-formats" depends="compile"
+    description="check the performance and file handle configuration for missing formats">
+    <testng testname="Missing format test"
+      suitename="Bio-Formats missing format test"
+      failureProperty="failedTest">
+      <classpath>
+        <pathelement location="${basedir}"/>
+        <pathelement location="${classes.dir}"/>
+      </classpath>
+      <classpath refid="test.classpath"/>
+      <classfileset file="${classes.dir}/${missing-test.class}"/>
+      <sysproperty key="testng.filename" value="${testng.filename}"/>
+    </testng>
+    <fail if="failedTest"/>
+  </target>
+
   <target name="test-tiff-writer" depends="compile"
     description="run tests for TIFF writing (conversion)">
     <exec executable="${basedir}/target-test-runner">

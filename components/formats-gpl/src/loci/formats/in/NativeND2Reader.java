@@ -1992,7 +1992,7 @@ public class NativeND2Reader extends FormatReader {
     }
 
     if (zHigh != null && zLow != null && trueSizeZ != null) {
-      core.get(0).sizeZ = (int) (Math.abs(zHigh - zLow) / trueSizeZ) + 1;
+      core.get(0).sizeZ = (int) (Math.ceil(Math.abs(zHigh - zLow) / trueSizeZ)) + 1;
     }
   }
 

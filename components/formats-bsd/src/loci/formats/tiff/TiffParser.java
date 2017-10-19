@@ -1059,6 +1059,11 @@ public class TiffParser {
     int[] bitsPerSample = ifd.getBitsPerSample();
     int nChannels = bitsPerSample.length;
 
+    if (compression == TiffCompression.GROUP_3_FAX) {
+      // Group 3 fax codec automatically unpacks bits, so no need to do so here
+      bitsPerSample[0] = 8;
+    }
+
     int sampleCount = (int) (((long) 8 * bytes.length) / bitsPerSample[0]);
     if (photoInterp == PhotoInterp.Y_CB_CR) sampleCount *= 3;
     if (planar) {

@@ -44,6 +44,7 @@ import loci.formats.FormatException;
 import loci.formats.UnsupportedCompressionException;
 import loci.formats.codec.Codec;
 import loci.formats.codec.CodecOptions;
+import loci.formats.codec.Group3FaxCodec;
 import loci.formats.codec.JPEG2000Codec;
 import loci.formats.codec.JPEG2000CodecOptions;
 import loci.formats.codec.JPEGCodec;
@@ -70,8 +71,27 @@ public enum TiffCompression implements CodedEnum {
   // (TIFF code, codec, codec name)
   DEFAULT_UNCOMPRESSED(0, new PassthroughCodec(), "Uncompressed"),
   UNCOMPRESSED(1, new PassthroughCodec(), "Uncompressed"),
-  CCITT_1D(2, null, "CCITT Group 3 1-Dimensional Modified Huffman"),
-  GROUP_3_FAX(3, null, "CCITT T.4 bi-level encoding (Group 3 Fax)"),
+  CCITT_1D(2, new Group3FaxCodec(), "CCITT Group 3 1-Dimensional Modified Huffman"),
+  GROUP_3_FAX(3, new Group3FaxCodec(), "CCITT T.4 bi-level encoding (Group 3 Fax)") {
+    @Override
+    public CodecOptions getCompressionCodecOptions(IFD ifd) throws FormatException {
+      return getCompressionCodecOptions(ifd, null);
+    }
+
+    @Override
+    public CodecOptions getCompressionCodecOptions(IFD ifd, CodecOptions opt)
+      throws FormatException
+    {
+      CodecOptions options = super.getCompressionCodecOptions(ifd, opt);
+
+      int t4Options = ifd.getIFDIntValue(IFD.T4_OPTIONS);
+      if ((t4Options & 1) == 1) {
+        throw new UnsupportedCompressionException("Unsupported T4Options: " + t4Options);
+      }
+
+      return options;
+    }
+  },
   GROUP_4_FAX(4, null, "CCITT T.6 bi-level encoding (Group 4 Fax)"),
   LZW(5, new LZWCodec(), "LZW"),
   OLD_JPEG(6, new JPEGCodec(), "Old JPEG"),

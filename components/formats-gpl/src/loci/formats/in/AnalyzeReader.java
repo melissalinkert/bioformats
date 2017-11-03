@@ -168,7 +168,8 @@ public class AnalyzeReader extends FormatReader {
   public void reopenFile() throws IOException {
     super.reopenFile();
     if (pixelFile == null) {
-      pixelFile = new RandomAccessInputStream(pixelsFilename);
+      Location parent = new Location(currentId).getParentFile();
+      pixelFile = new RandomAccessInputStream(new Location(parent, pixelsFilename).getAbsolutePath());
     }
   }
 
@@ -192,6 +193,8 @@ public class AnalyzeReader extends FormatReader {
     in = new RandomAccessInputStream(id);
     pixelsFilename = id.substring(0, id.lastIndexOf(".")) + ".img";
     pixelFile = new RandomAccessInputStream(pixelsFilename);
+    // cache a relative path name
+    pixelsFilename = pixelsFilename.substring(pixelsFilename.lastIndexOf("/") + 1);
 
     LOGGER.info("Reading header");
 

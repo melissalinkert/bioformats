@@ -46,6 +46,7 @@ import loci.common.RandomAccessOutputStream;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
+import loci.formats.meta.IMetadata;
 import loci.formats.meta.MetadataRetrieve;
 import loci.formats.meta.MetadataStore;
 import loci.formats.services.OMEXMLService;
@@ -607,11 +608,27 @@ public class Memoizer extends ReaderWrapper {
     this.versionChecking = version;
   }
 
+  /**
+   * Set the {@link IMetadata} instance to be used for caching.
+   * By default, a {@link OMEXMLMetadata} is cached,
+   * so that all metadata is preserved independent of what was
+   * passed to {@link #setMetadataStore(MetadataStore)}.
+   *
+   * The default is the safest option, but can greatly inflate the size
+   * of the memo file.  This allows a different {@link MetadataStore} to be
+   * used in cases where the full set of metadata is not needed and
+   * memo size and loading speed optimizations are necessary.
+   */
+  public void setReplacementMetadataStore(IMetadata replacement) {
+    replacementMetadataStore = replacement;
+  }
+
   protected void cleanup() {
     if (ser != null) {
       ser.close();
       ser = null;
     }
+    replacementMetadataStore = null;
   }
 
   @Override
@@ -672,7 +689,12 @@ public class Memoizer extends ReaderWrapper {
 
       if (memo == null) {
         OMEXMLService service = getService();
-        super.setMetadataStore(service.createOMEXMLMetadata());
+        if (replacementMetadataStore != null) {
+          super.setMetadataStore(replacementMetadataStore);
+        }
+        else {
+          super.setMetadataStore(service.createOMEXMLMetadata());
+        }
         long start = System.currentTimeMillis();
         super.setId(id);
         long elapsed = System.currentTimeMillis() - start;

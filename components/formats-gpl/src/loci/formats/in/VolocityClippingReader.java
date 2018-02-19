@@ -224,7 +224,7 @@ public class VolocityClippingReader extends FormatReader {
       firstOffset = in.getFilePointer() + 65;
     }
     else {
-      firstOffset -= 59;
+      firstOffset -= 69;
     }
 
     if (getSizeX() * getSizeY() * 100 >= in.length()) {
@@ -243,6 +243,10 @@ public class VolocityClippingReader extends FormatReader {
         in.seek(firstOffset);
       }
     }
+
+    in.seek(firstOffset);
+    while (in.readShort() == 0);
+    firstOffset = in.getFilePointer() - 2;
 
     pixelOffsets.add(firstOffset);
 

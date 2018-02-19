@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -315,7 +317,7 @@ public class SlidebookReader extends FormatReader {
           while (in.read() != ']');
         }
         else {
-          if ((fp % 2) == 1) fp -= 2;
+          //if ((fp % 2) == 1) fp -= 2;
           in.seek(fp);
 
           // make sure there isn't another block nearby
@@ -343,8 +345,8 @@ public class SlidebookReader extends FormatReader {
                 if ((buf[i + 4] == 'I' && buf[i + 5] == 'I') ||
                   (buf[i + 4] == 'M' && buf[i + 5] == 'M'))
                 {
-                  if (((buf[i] == 'h' || buf[i] == 'i') && buf[i + 1] == 0) ||
-                    (buf[i] == 0 && (buf[i + 1] == 'h' || buf[i + 1] == 'i')))
+                  if (((buf[i] == 'h' || buf[i] == 'i' || buf[i] == '}') && buf[i + 1] == 0) ||
+                    (buf[i] == 0 && (buf[i + 1] == 'h' || buf[i + 1] == 'i' || buf[i + 1] == '}')))
                   {
                     found = true;
                     in.seek(in.getFilePointer() - n + i - 20);
@@ -466,6 +468,8 @@ public class SlidebookReader extends FormatReader {
     int[] sizeC = new int[pixelOffsets.size()];
 
     int[] divValues = new int[pixelOffsets.size()];
+
+    Set<Integer> invalidOffsets = new HashSet<Integer>();
 
     // try to find the width and height
     int iCount = 0;
@@ -733,6 +737,28 @@ public class SlidebookReader extends FormatReader {
             }
           }
         }
+        else if (n == '}') {
+          in.skipBytes(24);
+          for (int j=0; j<pixelOffsets.size(); j++) {
+            long end = j == pixelOffsets.size() - 1 ? in.length() :
+              pixelOffsets.get(j + 1).longValue();
+            if (in.getFilePointer() < end) {
+              int y = in.readShort();
+              int x = in.readShort();
+              int z = in.readShort();
+              if (sizeZ[j] == 0 || (y > 1 && x > 1)) {
+                sizeY[j] = y;
+                sizeX[j] = x;
+                sizeZ[j] = z;
+              }
+
+              if (sizeX[j] < 64 || sizeY[j] < 64) {
+                invalidOffsets.add(j);
+              }
+              break;
+            }
+          }
+        }
         else if (isSpool) {
           // spool files don't necessarily have block identifiers
           for (int j=0; j<pixelOffsets.size(); j++) {
@@ -762,10 +788,11 @@ public class SlidebookReader extends FormatReader {
     boolean noFlattening =
       currentName != null && currentName.equals("Untitled");
     for (int i=1; i<getSeriesCount(); i++) {
-      if (imageNames[i] == null || !imageNames[i].equals(currentName) ||
+      if ((imageNames[i] == null || !imageNames[i].equals(currentName) ||
         noFlattening ||
         (i == 1 && (sizeX[i - 1] != sizeX[i] || sizeY[i - 1] != sizeY[i] ||
-        sizeC[i - 1] != sizeC[i] || sizeZ[i - 1] != sizeZ[i])))
+        sizeC[i - 1] != sizeC[i] || sizeZ[i - 1] != sizeZ[i]))) &&
+        !invalidOffsets.contains(i - 1))
       {
         currentName = imageNames[i];
         CoreMetadata nextCore = core.get(i - 1);
@@ -786,7 +813,7 @@ public class SlidebookReader extends FormatReader {
     core.get(getSeriesCount() - 1).sizeT = t;
     realCore.add(core.get(getSeriesCount() - 1));
     boolean flattened = false;
-    if (core.size() != realCore.size() && !noFlattening) {
+    if (core.size() != realCore.size() && (!noFlattening || invalidOffsets.size() > 0)) {
       flattened = true;
       core = realCore;
       orderedSeries.clear();
@@ -797,11 +824,11 @@ public class SlidebookReader extends FormatReader {
         orderedSeries.add(thisSeries);
         uniqueSeries.put(thisSeries, nextIndex);
 
-        long length = pixelLengths.get(nextIndex);
-        length *= core.get(i).sizeT;
-        pixelLengths.set(i, length);
-
-        nextIndex += core.get(i).sizeT;
+        core.get(i).sizeT = 1;
+        nextIndex++;
+        while (invalidOffsets.contains(nextIndex)) {
+          nextIndex++;
+        }
       }
     }
 
@@ -821,7 +848,7 @@ public class SlidebookReader extends FormatReader {
       List<Integer> pixelIndexes =
         uniqueSeries.get(orderedSeries.get(nextPixelIndex));
       int nBlocks = pixelIndexes.size();
-      if (nextBlock >= nBlocks) {
+      if (nextBlock >= nBlocks || (nBlocks == 1 && i > 0)) {
         nextPixelIndex++;
         nextBlock = 0;
         pixelIndexes = uniqueSeries.get(orderedSeries.get(nextPixelIndex));
@@ -830,8 +857,10 @@ public class SlidebookReader extends FormatReader {
       else {
         nextBlock++;
       }
-      int index =
-        pixelIndexes.size() == getSeriesCount() ? pixelIndexes.get(0) : i;
+      int index = sizeX.length != getSeriesCount() ? pixelIndexes.get(0) : i;
+      if (index >= pixelLengths.size()) {
+        index = pixelLengths.size() - 1;
+      }
 
       long pixels = pixelLengths.get(index).longValue() / 2;
       boolean x = true;
@@ -1157,6 +1186,9 @@ public class SlidebookReader extends FormatReader {
       planeOffset[i] = new long[getImageCount()];
       int nextImage = 0;
       Integer pixelIndex = i;
+      while (invalidOffsets.contains(pixelIndex)) {
+        pixelIndex++;
+      }
       long offset = pixelOffsets.get(pixelIndex);
       int planeSize = getSizeX() * getSizeY() * 2;
 
@@ -1169,13 +1201,19 @@ public class SlidebookReader extends FormatReader {
 
       long length = pixelLengths.get(pixelIndex);
       int planes = (int) (length / planeSize);
-      if (planes > ms.imageCount) {
+      if (planes <= 0 || planes > ms.imageCount) {
         planes = ms.imageCount;
       }
 
       for (int p=0; p<planes; p++, nextImage++) {
         int[] zct = getZCTCoords(p);
         if (flattened && zct[0] == 0 && zct[1] == 0) {
+          while (invalidOffsets.contains(nextOffsetIndex)) {
+            nextOffsetIndex++;
+          }
+          if (nextOffsetIndex >= pixelOffsets.size()) {
+            continue;
+          }
           offset = pixelOffsets.get(nextOffsetIndex++);
 
           if (zct[2] > 0 && planeOffset[i][nextImage - 1] % 2 != offset % 2 &&
@@ -1221,6 +1259,48 @@ public class SlidebookReader extends FormatReader {
         seriesIndex += inc;
       }
     }
+
+    realCore.clear();
+    ArrayList<Long> currentOffsets = new ArrayList<Long>();
+    for (int i=0; i<getSeriesCount(); i++) {
+      realCore.add(core.get(i));
+      for (int q=0; q<planeOffset[i].length; q++) {
+        currentOffsets.add(planeOffset[i][q]);
+      }
+    }
+    int nextPlaneOffset = 1;
+    for (int i=1; i<realCore.size(); ) {
+      if (realCore.get(i).sizeX == realCore.get(i - 1).sizeX &&
+        realCore.get(i).sizeY == realCore.get(i - 1).sizeY &&
+        realCore.get(i).sizeZ == realCore.get(i - 1).sizeZ &&
+        realCore.get(i).sizeT == realCore.get(i - 1).sizeT)
+      {
+        realCore.get(i - 1).sizeC++;
+        realCore.get(i - 1).imageCount += (realCore.get(i - 1).sizeZ * realCore.get(i - 1).sizeT);
+        realCore.remove(i);
+      }
+      else if (realCore.get(i).sizeX == 1 && realCore.get(i).sizeY == 1) {
+        realCore.remove(i);
+      }
+      else {
+        i++;
+      }
+      nextPlaneOffset++;
+    }
+    core = realCore;
+    planeOffset = new long[getSeriesCount()][];
+    int nextOffset = 0;
+    for (int i=0; i<getSeriesCount(); i++) {
+      setSeries(i);
+      planeOffset[i] = new long[core.get(i).imageCount];
+      for (int q=0; q<planeOffset[i].length; q++, nextOffset++) {
+        planeOffset[i][q] = currentOffsets.get(nextOffset);
+        if (q > 0 && planeOffset[i][q] == 0) {
+          planeOffset[i][q] = planeOffset[i][q - 1] + FormatTools.getPlaneSize(this);
+        }
+      }
+    }
+    setSeries(0);
 
     MetadataStore store = makeFilterMetadata();
     MetadataTools.populatePixels(store, this, true);

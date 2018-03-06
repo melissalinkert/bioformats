@@ -381,6 +381,16 @@ public class TiffReader extends BaseTiffReader {
       m.sizeT = ifds.size();
       m.imageCount = ifds.size();
     }
+
+    // make sure any subresolutions get the same dimension adjustment
+
+    for (int i=1; i<core.size(); i++) {
+      core.get(i).dimensionOrder = m.dimensionOrder;
+      core.get(i).sizeZ = m.sizeZ;
+      core.get(i).sizeC = m.sizeC;
+      core.get(i).sizeT = m.sizeT;
+      core.get(i).imageCount = m.imageCount;
+    }
   }
 
   /**

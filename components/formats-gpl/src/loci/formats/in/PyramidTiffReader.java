@@ -100,7 +100,7 @@ public class PyramidTiffReader extends BaseTiffReader {
       }
 
       long height = ifd.getImageLength() / (int) Math.pow(2, powerOfTwo);
-      return height == lastIFD.getImageLength();
+      return height == lastIFD.getImageLength() && powerOfTwo == offsets.length - 1;
     }
     catch (FormatException e) {
       LOGGER.trace("Could not finish type checking", e);

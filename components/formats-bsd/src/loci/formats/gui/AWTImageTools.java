@@ -801,7 +801,7 @@ public final class AWTImageTools {
         if (table != null && table.length > 0 && table[0] != null) {
           int len = table[0].length;
           byte[] dummy = table.length < 3 ? new byte[len] : null;
-          byte[] red = table.length >= 1 ? table[0] : dummy;
+          byte[] red = table[0];
           byte[] green = table.length >= 2 ? table[1] : dummy;
           byte[] blue = table.length >= 3 ? table[2] : dummy;
           model = new IndexColorModel(8, len, red, green, blue);

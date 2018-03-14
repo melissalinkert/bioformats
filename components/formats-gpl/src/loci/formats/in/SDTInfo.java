@@ -574,8 +574,8 @@ public class SDTInfo {
       long baseOffset = in.getFilePointer();
       long softwareRevision = readUnsignedLong(in);
       long paramLength = readUnsignedLong(in);
-      long reserved1 = readUnsignedLong(in);
-      int reserved2 = in.readShort() & 0xffff;
+      long reservedOne = readUnsignedLong(in);
+      int reservedTwo = in.readShort() & 0xffff;
 
       // SPCBinHdr
 

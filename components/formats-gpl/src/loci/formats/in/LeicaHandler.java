@@ -217,14 +217,6 @@ public class LeicaHandler extends BaseHandler {
           }
         }
 
-        for (int c=0; c<nChannels; c++) {
-          int index = c < detectorIndices.size() ?
-            detectorIndices.get(c).intValue() : detectorIndices.size() - 1;
-          if (index < 0 || index >= nChannels || index >= 0) break;
-          String id = MetadataTools.createLSID("Detector", numDatasets, index);
-          store.setDetectorSettingsID(id, numDatasets, c);
-        }
-
         String[] keys = channels.keySet().toArray(new String[0]);
         Arrays.sort(keys);
         for (int c=0; c<keys.length; c++) {

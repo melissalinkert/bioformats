@@ -1307,8 +1307,10 @@ public class NativeND2Reader extends FormatReader {
         if (useZ != null && !useZ) {
           CoreMetadata original = core.get(0);
           int nSeries = imageOffsets.size() / (getSizeZ() * getSizeT());
-          for (int i=1; i<nSeries; i++) {
-            core.add(original);
+          if (nSeries != core.size()) {
+            for (int i=1; i<nSeries; i++) {
+              core.add(original);
+            }
           }
           numSeries = core.size();
         }

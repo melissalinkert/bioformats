@@ -779,47 +779,42 @@ public class Exporter {
                             realZ * realC * realT, coords[0], coords[1], coords[2]);
                 }
 
-                if (notSupportedType) {
-                    IJ.error("Pixel type not supported by this format.");
-                }
-                else {
-                    w.changeOutputFile(outputFiles[fileIndex]);
+                w.changeOutputFile(outputFiles[fileIndex]);
 
-                    int currentChannel = FormatTools.getZCTCoords(
-                            ORDER, sizeZ, sizeC, sizeT, imp.getStackSize(), i)[1];
+                int currentChannel = FormatTools.getZCTCoords(
+                        ORDER, sizeZ, sizeC, sizeT, imp.getStackSize(), i)[1];
 
-                    if (luts[currentChannel] != null) {
-                        // expand to 16-bit LUT if necessary
+                if (luts[currentChannel] != null) {
+                    // expand to 16-bit LUT if necessary
 
-                        int bpp = FormatTools.getBytesPerPixel(thisType);
-                        if (bpp == 1) {
-                            w.setColorModel(luts[currentChannel]);
-                        }
-                        else if (bpp == 2) {
-                            int lutSize = luts[currentChannel].getMapSize();
-                            byte[][] lut = new byte[3][lutSize];
-                            luts[currentChannel].getReds(lut[0]);
-                            luts[currentChannel].getGreens(lut[1]);
-                            luts[currentChannel].getBlues(lut[2]);
+                    int bpp = FormatTools.getBytesPerPixel(thisType);
+                    if (bpp == 1) {
+                        w.setColorModel(luts[currentChannel]);
+                    }
+                    else if (bpp == 2) {
+                        int lutSize = luts[currentChannel].getMapSize();
+                        byte[][] lut = new byte[3][lutSize];
+                        luts[currentChannel].getReds(lut[0]);
+                        luts[currentChannel].getGreens(lut[1]);
+                        luts[currentChannel].getBlues(lut[2]);
 
-                            short[][] newLut = new short[3][65536];
-                            int bins = newLut[0].length / lut[0].length;
-                            for (int c=0; c<newLut.length; c++) {
-                                for (int q=0; q<newLut[c].length; q++) {
-                                    int index = q / bins;
-                                    newLut[c][q] = (short) ((lut[c][index] * lut[0].length) + (q % bins));
-                                }
+                        short[][] newLut = new short[3][65536];
+                        int bins = newLut[0].length / lut[0].length;
+                        for (int c=0; c<newLut.length; c++) {
+                            for (int q=0; q<newLut[c].length; q++) {
+                                int index = q / bins;
+                                newLut[c][q] = (short) ((lut[c][index] * lut[0].length) + (q % bins));
                             }
-
-                            w.setColorModel(new Index16ColorModel(16, newLut[0].length,
-                                    newLut, littleEndian));
                         }
+
+                        w.setColorModel(new Index16ColorModel(16, newLut[0].length,
+                                newLut, littleEndian));
                     }
-                    else if (!proc.isDefaultLut()) {
-                        w.setColorModel(proc.getColorModel());
-                    }
-                    w.saveBytes(no[fileIndex]++, plane);
                 }
+                else if (!proc.isDefaultLut()) {
+                    w.setColorModel(proc.getColorModel());
+                }
+                w.saveBytes(no[fileIndex]++, plane);
             }
             w.close();
         }

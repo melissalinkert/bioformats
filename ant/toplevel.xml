@@ -45,6 +45,16 @@ Type "ant -p" for a list of targets.
       findbugs-tests"
     description="run findbugs on most components"/>
 
+  <target name="spotbugs"
+    depends="spotbugs-autogen,
+      spotbugs-formats-gpl,
+      spotbugs-bio-formats-plugins,
+      spotbugs-formats-api,
+      spotbugs-formats-bsd,
+      spotbugs-bio-formats-tools,
+      spotbugs-tests"
+    description="run spotbugs on most components"/>
+
   <target name="clean"
     depends="
       clean-autogen,
@@ -126,6 +136,11 @@ Type "ant -p" for a list of targets.
     <ant dir="components/formats-api" target="formats-api.findbugs"/>
   </target>
 
+  <target name="spotbugs-formats-api" depends="jar-formats-api"
+    description="run spotbugs on reader and writer APIs">
+    <ant dir="components/formats-api" target="formats-api.spotbugs"/>
+  </target>
+
   <target name="clean-formats-api"
     description="remove build files for reader and writer APIs">
     <ant dir="components/formats-api" target="formats-api.clean"/>
@@ -156,6 +171,11 @@ Type "ant -p" for a list of targets.
   <target name="findbugs-formats-bsd" depends="jar-formats-bsd"
     description="run findbugs on BSD format implementations">
     <ant dir="components/formats-bsd" target="formats-bsd.findbugs"/>
+  </target>
+
+  <target name="spotbugs-formats-bsd" depends="jar-formats-bsd"
+    description="run spotbugs on BSD format implementations">
+    <ant dir="components/formats-bsd" target="formats-bsd.spotbugs"/>
   </target>
 
   <target name="clean-formats-bsd"
@@ -196,6 +216,11 @@ Type "ant -p" for a list of targets.
     <ant dir="components/bio-formats-tools" target="bio-formats-tools.findbugs"/>
   </target>
 
+  <target name="spotbugs-bio-formats-tools" depends="jar-bio-formats-tools"
+    description="run spotbugs on Bio-Formats tools">
+    <ant dir="components/bio-formats-tools" target="bio-formats-tools.spotbugs"/>
+  </target>
+
   <target name="clean-bio-formats-tools"
     depends="clean-formats-api,
       clean-formats-bsd,
@@ -229,6 +254,11 @@ Type "ant -p" for a list of targets.
   <target name="findbugs-formats-gpl" depends="jar-formats-gpl"
     description="run findbugs on Bio-Formats">
     <ant dir="components/formats-gpl" target="formats-gpl.findbugs"/>
+  </target>
+
+  <target name="spotbugs-formats-gpl" depends="jar-formats-gpl"
+    description="run spotbugs on Bio-Formats">
+    <ant dir="components/formats-gpl" target="formats-gpl.spotbugs"/>
   </target>
 
   <target name="clean-formats-gpl"
@@ -268,6 +298,11 @@ Type "ant -p" for a list of targets.
     <ant dir="components/autogen" target="autogen.findbugs"/>
   </target>
 
+  <target name="spotbugs-autogen" depends="jar-autogen"
+    description="run spotbugs on Bio-Formats autogen">
+    <ant dir="components/autogen" target="autogen.spotbugs"/>
+  </target>
+
   <target name="clean-autogen"
     depends="clean-formats-api,clean-formats-bsd"
     description="remove build files for Bio-Formats autogen">
@@ -299,6 +334,11 @@ Type "ant -p" for a list of targets.
   <target name="findbugs-bio-formats-plugins" depends="jar-bio-formats-plugins"
     description="run findbugs on Bio-Formats Plugins for ImageJ">
     <ant dir="components/bio-formats-plugins" target="bio-formats-plugins.findbugs"/>
+  </target>
+
+  <target name="spotbugs-bio-formats-plugins" depends="jar-bio-formats-plugins"
+    description="run spotbugs on Bio-Formats Plugins for ImageJ">
+    <ant dir="components/bio-formats-plugins" target="bio-formats-plugins.spotbugs"/>
   </target>
 
   <target name="clean-bio-formats-plugins"
@@ -339,6 +379,11 @@ Type "ant -p" for a list of targets.
   <target name="findbugs-tests" depends="jar-tests"
     description="run findbugs on Bio-Formats testing framework">
     <ant dir="components/test-suite" target="tests.findbugs"/>
+  </target>
+
+  <target name="spotbugs-tests" depends="jar-tests"
+    description="run spotbugs on Bio-Formats testing framework">
+    <ant dir="components/test-suite" target="tests.spotbugs"/>
   </target>
 
   <target name="clean-tests"

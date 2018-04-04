@@ -19,6 +19,12 @@ Type "ant -p" for a list of targets.
       <taskdef name="findbugs" classpath="${findbugs.home}/findbugs-ant.jar${path.separator}${findbugs.home}/lib/findbugs-ant.jar" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
     </then>
   </if>
+  <if>
+    <isset property="spotbugs.home"/>
+    <then>
+      <taskdef resource="edu/umd/cs/findbugs/anttask/tasks.properties" classpath="${spotbugs.home}/spotbugs-ant.jar${path.separator}${spotbugs.home}/lib/spotbugs-ant.jar"/>
+    </then>
+  </if>
   <condition property="doTests">
     <available file="${tests.dir}"/>
   </condition>
@@ -158,6 +164,48 @@ your FindBugs installation's lib directory. E.g.:
       </else>
     </if>
   </target>
+
+  <target name="spotbugs" depends="jar"
+    description="check source code for bugs">
+    <mkdir dir="${build.dir}"/>
+    <if>
+      <isset property="spotbugs.home"/>
+      <then>
+        <spotbugs home="${spotbugs.home}" jvmargs="-Xmx512m"
+          output="xml:withMessages" outputFile="${build.dir}/spotbugs.xml"
+          excludeFilter="${root.dir}/excludebugs.xml" reportLevel="medium"
+          errorProperty="spotbugsErrors"
+          warningsProperty="spotbugsWarnings">
+          <auxClasspath refid="runtime.classpath"/>
+          <sourcePath path="${src.dir}"/>
+          <class location="${classes.dir}"/>
+        </spotbugs>
+
+        <if>
+          <isset property="spotbugsErrors"/>
+          <then>
+            <fail message="Spotbugs produced one or more errors."/>
+          </then>
+        </if>
+        <if>
+          <isset property="spotbugsWarnings"/>
+          <then>
+            <fail message="Spotbugs produced one or more warnings."/>
+          </then>
+        </if>
+      </then>
+      <else>
+<echo>
+Please set the spotbugs.home property to point to
+your Spotbugs installation's lib directory. E.g.:
+  ant -Dspotbugs.home=${user.home}/spotbugs/lib spotbugs
+</echo>
+        <fail message="Spotbugs not found."/>
+      </else>
+    </if>
+  </target>
+
+
 
   <target name="style" depends="compile"
     description="check source code style">

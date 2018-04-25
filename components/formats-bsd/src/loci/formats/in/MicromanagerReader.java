@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
 
+import loci.common.Constants;
 import loci.common.DataTools;
 import loci.common.DateTools;
 import loci.common.Location;
@@ -707,23 +708,27 @@ public class MicromanagerReader extends FormatReader {
     Vector<Double> stamps = new Vector<Double>();
     p.voltage = new Vector<Double>();
 
-    RandomAccessInputStream s = new RandomAccessInputStream(jsonData);
+    byte[] b = new byte[0];
+    try (RandomAccessInputStream s = new RandomAccessInputStream(jsonData)) {
+      if (s.length() > Integer.MAX_VALUE) {
+        LOGGER.warn(jsonData + " exceeds 2GB; metadata parsing is likely to fail");
+      }
+      else if (s.length() > 100 * 1024 * 1024) {
+        LOGGER.warn(jsonData + " is larger than 100MB and may require additional memory to parse. " +
+          "A minimum of 1024MB is suggested.");
+      }
 
-    if (s.length() > Integer.MAX_VALUE) {
-      LOGGER.warn(jsonData + " exceeds 2GB; metadata parsing is likely to fail");
+      b = new byte[(int) s.length()];
+      s.readFully(b);
     }
-    else if (s.length() > 100 * 1024 * 1024) {
-      LOGGER.warn(jsonData + " is larger than 100MB and may require additional memory to parse. " +
-        "A minimum of 1024MB is suggested.");
-    }
-
-    byte[] b = new byte[(int) s.length()];
-    s.readFully(b);
-    s.close();
+    start = 0;
 
     int[] slice = new int[3];
     while (start < b.length) {
       String token = getNextLine(b).trim();
+      if (token.length() == 0) {
+        continue;
+      }
       boolean open = token.indexOf('[') != -1;
       boolean closed = token.indexOf(']') != -1;
       if (open || (!open && !closed && !token.equals("{") &&
@@ -1124,9 +1129,14 @@ public class MicromanagerReader extends FormatReader {
   /** Initialize the TIFF reader with the first file in the current series. */
   private void setupReader() {
     try {
-      String file = positions.get(getSeries()).getFile(
-        getDimensionOrder(), getSizeZ(), getSizeC(), getSizeT(),
-        getImageCount(), 0);
+      String file = null;
+      int plane = 0;
+      while (file == null && plane < getImageCount()) {
+        file = positions.get(getSeries()).getFile(
+          getDimensionOrder(), getSizeZ(), getSizeC(), getSizeT(),
+          getImageCount(), plane);
+        plane++;
+      }
       tiffReader.setId(file);
     }
     catch (Exception e) {
@@ -1172,15 +1182,19 @@ public class MicromanagerReader extends FormatReader {
     }
   }
 
-  private String getNextLine(byte[] buf) {
+  private String getNextLine(byte[] buf) throws IOException {
     for (int i=start; i<buf.length; i++) {
       if (buf[i] == '\n') {
-        String line = new String(buf, start, (i - start) + 1);
+        int len = (i - start) + 1;
+        String line = new String(buf, start, len, Constants.ENCODING);
+        if (line.trim().length() == 0) continue;
         start = i + 1;
         return line;
       }
     }
-    return null;
+    int tmpStart = start;
+    start = buf.length;
+    return new String(buf, tmpStart, buf.length - tmpStart, Constants.ENCODING);
   }
 
   // -- Helper classes --

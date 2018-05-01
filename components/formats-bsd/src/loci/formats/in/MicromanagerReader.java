@@ -724,6 +724,7 @@ public class MicromanagerReader extends FormatReader {
     start = 0;
 
     int[] slice = new int[3];
+    String prevKey = null;
     while (start < b.length) {
       String token = getNextLine(b).trim();
       if (token.length() == 0) {
@@ -764,6 +765,17 @@ public class MicromanagerReader extends FormatReader {
         value = value.substring(0, value.length() - 1);
         value = value.replaceAll("\"", "");
         if (value.endsWith(",")) value = value.substring(0, value.length() - 1);
+        if (value.length() == 0) {
+          prevKey = key;
+          continue;
+        }
+        else if (prevKey != null) {
+          key = prevKey;
+          prevKey = null;
+        }
+        else if (key.equals("PropType")) {
+          continue;
+        }
         handleKeyValue(key, value);
         if (key.equals("Channels")) {
           ms.sizeC = Integer.parseInt(value);
@@ -804,6 +816,11 @@ public class MicromanagerReader extends FormatReader {
           if (p.baseTiff == null) {
             p.baseTiff = value;
           }
+          if (p.tiffs == null) {
+            p.tiffs = new Vector<String>();
+          }
+          Location realFile = new Location(parent, value);
+          p.tiffs.add(realFile.getAbsolutePath());
         }
         else if (key.equals("Width")) {
           ms.sizeX = Integer.parseInt(value);

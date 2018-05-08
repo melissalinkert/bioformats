@@ -321,27 +321,22 @@ public class NativeND2Reader extends FormatReader {
     if (!fileOnly) {
       offsets = null;
       isJPEG = isLossless = false;
-      codec = null;
-      tsT.clear();
 
       fieldIndex = 0;
       xOffset = yOffset = zOffset = 0;
       pfsOffset = pfsStateOffset = 0;
-      posX = posY = posZ = null;
-      channelColors = null;
       split = false;
       nXFields = 0;
-      backupHandler = null;
       trueSizeX = 0;
       trueSizeY = 0;
       trueSizeZ = null;
-      textChannelNames.clear();
-      textEmissionWavelengths.clear();
       useZ = null;
       textData = false;
       refractiveIndex = null;
-      exposureTime.clear();
       positionCount = 0;
+      colors = null;
+
+      cleanup();
     }
   }
 
@@ -1600,6 +1595,7 @@ public class NativeND2Reader extends FormatReader {
       }
 
       populateMetadataStore(handler);
+      cleanup();
       return;
     }
     else in.seek(0);
@@ -1845,6 +1841,7 @@ public class NativeND2Reader extends FormatReader {
     }
 
     populateMetadataStore(handler);
+    cleanup();
   }
 
   // -- Helper methods --
@@ -2490,6 +2487,19 @@ public class NativeND2Reader extends FormatReader {
         }
       }
     }
+  }
+
+  private void cleanup() {
+    tsT.clear();
+    posX = null;
+    posY = null;
+    posZ = null;
+    exposureTime.clear();
+    channelColors = null;
+    backupHandler = null;
+    textChannelNames.clear();
+    textEmissionWavelengths.clear();
+    codec = null;
   }
 
 }

@@ -1587,7 +1587,6 @@ public class NativeND2Reader extends FormatReader {
               // timestamps are stored in ms; we want them in seconds
               double time = in.readDouble() / 1000;
               tsT.add(time);
-              addSeriesMetaList("timestamp", time);
             }
           }
           setSeries(0);
@@ -2141,7 +2140,6 @@ public class NativeND2Reader extends FormatReader {
         if (posZ == null) posZ = handler.getZPositions();
       }
 
-      String pos = "for position";
       for (int n=0; n<getImageCount(); n++) {
         int[] coords = getZCTCoords(n);
         int index = coords[0];
@@ -2149,26 +2147,17 @@ public class NativeND2Reader extends FormatReader {
         if (posX != null) {
           if (index >= posX.size()) index = i;
           if (index < posX.size()) {
-            String key = "X position ";
             store.setPlanePositionX(posX.get(index), i, n);
-            addSeriesMetaList(key, posX.get(index));
-            addGlobalMetaList(key + pos, posX.get(index));
           }
         }
         if (posY != null) {
           if (index < posY.size()) {
-            String key = "Y position ";
             store.setPlanePositionY(posY.get(index), i, n);
-            addSeriesMetaList(key, posY.get(index));
-            addGlobalMetaList(key + pos, posY.get(index));
           }
         }
         if (posZ != null) {
           if (index < posZ.size()) {
             store.setPlanePositionZ(posZ.get(index), i, n);
-            String key = "Z position " + pos + ", plane";
-            addSeriesMetaList(key, posZ.get(index));
-            addGlobalMetaList(key, posZ.get(index));
           }
         }
       }

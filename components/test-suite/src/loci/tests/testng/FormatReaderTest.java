@@ -127,6 +127,8 @@ public class FormatReaderTest {
 
   private OMEXMLService omexmlService = null;
 
+  private int fileCount = 0;
+
   // -- Constructor --
 
   public FormatReaderTest(String filename, float multiplier, boolean inMemory) {
@@ -159,9 +161,18 @@ public class FormatReaderTest {
     HashMap<String, Object> idMap = Location.getIdMap();
     idMap.clear();
     Location.setIdMap(idMap);
+    LOGGER.warn("Total file count = {}", fileCount);
+    fileCount = 0;
   }
 
   // -- Tests --
+
+  @Test(groups = {"stats"})
+  public void testStats() {
+    String testName = "testStats";
+    if (!initFile()) result(testName, false, "initFile");
+    fileCount += reader.getUsedFiles().length;
+  }
 
   @Test(groups = {"all", "pixels", "automated"})
   public void testBufferedImageDimensions() {

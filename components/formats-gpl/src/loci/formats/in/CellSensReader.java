@@ -456,10 +456,11 @@ public class CellSensReader extends FormatReader {
   @Override
   public int getOptimalTileWidth() {
     FormatTools.assertId(currentId, true, 1);
-    if (getCoreIndex() < core.size() - 1) {
+    if (getCoreIndex() < tileX.size()) {
       return tileX.get(getCoreIndex());
     }
-    int ifdIndex = 1 - (core.size() - getCoreIndex());
+    int maxIFD = core.size() - tileX.size();
+    int ifdIndex = maxIFD - (core.size() - getCoreIndex());
     try {
       return (int) ifds.get(ifdIndex).getTileWidth();
     }
@@ -473,10 +474,11 @@ public class CellSensReader extends FormatReader {
   @Override
   public int getOptimalTileHeight() {
     FormatTools.assertId(currentId, true, 1);
-    if (getCoreIndex() < core.size() - 1) {
+    if (getCoreIndex() < tileY.size()) {
       return tileY.get(getCoreIndex());
     }
-    int ifdIndex = 1 - (core.size() - getCoreIndex());
+    int maxIFD = core.size() - tileY.size();
+    int ifdIndex = maxIFD - (core.size() - getCoreIndex());
     try {
       return (int) ifds.get(ifdIndex).getTileLength();
     }
@@ -517,7 +519,7 @@ public class CellSensReader extends FormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
 
-    if (getCoreIndex() < core.size() - 1) {
+    if (getCoreIndex() < rows.size()) {
       int tileRows = rows.get(getCoreIndex());
       int tileCols = cols.get(getCoreIndex());
 
@@ -570,7 +572,8 @@ public class CellSensReader extends FormatReader {
       return buf;
     }
     else {
-      int ifdIndex = 1 - (core.size() - getCoreIndex());
+      int maxIFD = core.size() - rows.size();
+      int ifdIndex = maxIFD - (core.size() - getCoreIndex());
       return parser.getSamples(ifds.get(ifdIndex), buf, x, y, w, h);
     }
   }
@@ -691,6 +694,10 @@ public class CellSensReader extends FormatReader {
     core.clear();
 
     IFDList exifs = parser.getExifIFDs();
+    if (files.size() == 1 && !expectETS) {
+      // all pixel data is contained in the .vsi
+      seriesCount = ifds.size();
+    }
 
     int index = 0;
     for (int s=0; s<seriesCount; s++) {

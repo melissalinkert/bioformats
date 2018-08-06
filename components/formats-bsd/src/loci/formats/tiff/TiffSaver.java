@@ -972,6 +972,8 @@ public class TiffSaver {
 
     int tileCount = isTiled ? tilesPerRow * tilesPerColumn : 1;
     for (int i=0; i<strips.length; i++) {
+      LOGGER.debug("i = {}, strips.length = {}", i, strips.length);
+      LOGGER.debug("  seeking to {}", out.length());
       out.seek(out.length());
       int index = interleaved ? i : (i / nChannels) * nChannels;
       int c = interleaved ? 0 : i % nChannels;
@@ -984,6 +986,7 @@ public class TiffSaver {
             thisOffset + 1, totalTiles, byteCounts.get(thisOffset),
             offsets.get(thisOffset)));
       }
+      LOGGER.debug("  writing strip of length {}", strips[i].length);
       out.write(strips[i]);
     }
     if (isTiled) {

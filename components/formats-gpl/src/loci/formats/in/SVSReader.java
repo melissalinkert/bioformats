@@ -348,6 +348,7 @@ public class SVSReader extends BaseTiffReader {
     }
 
     reorderResolutions();
+    thumbnailIFDs.clear();
   }
 
   /* @see loci.formats.BaseTiffReader#initMetadataStore() */

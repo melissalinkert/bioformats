@@ -173,6 +173,52 @@ public class SVSReader extends BaseTiffReader {
     return buf;
   }
 
+  /* @see loci.formats.IFormatReader#getThumbSizeX() */
+  @Override
+  public int getThumbSizeX() {
+    if (core.size() == 1 || getSeries() >= getSeriesCount() - 2) {
+      return super.getThumbSizeX();
+    }
+
+    int smallestSeries = getSeriesCount() - 3;
+    if (smallestSeries >= 0) {
+      int thisSeries = getSeries();
+      int resolution = getResolution();
+      setSeries(smallestSeries);
+      if (!hasFlattenedResolutions()) {
+        setResolution(getResolutionCount() - 1);
+      }
+      int x = super.getThumbSizeX();
+      setSeries(thisSeries);
+      setSeries(resolution);
+      return x;
+    }
+    return super.getThumbSizeX();
+  }
+
+  /* @see loci.formats.IFormatReader#getThumbSizeY() */
+  @Override
+  public int getThumbSizeY() {
+    if (core.size() == 1 || getSeries() >= getSeriesCount() - 2) {
+      return super.getThumbSizeY();
+    }
+
+    int smallestSeries = getSeriesCount() - 3;
+    if (smallestSeries >= 0) {
+      int thisSeries = getSeries();
+      int resolution = getResolution();
+      setSeries(smallestSeries);
+      if (!hasFlattenedResolutions()) {
+        setResolution(getResolutionCount() - 1);
+      }
+      int y = super.getThumbSizeY();
+      setSeries(thisSeries);
+      setSeries(resolution);
+      return y;
+    }
+    return super.getThumbSizeY();
+  }
+
   /* @see loci.formats.IFormatReader#openThumbBytes(int) */
   @Override
   public byte[] openThumbBytes(int no) throws FormatException, IOException {
@@ -186,7 +232,7 @@ public class SVSReader extends BaseTiffReader {
       int resolution = getResolution();
       setSeries(smallestSeries);
       if (!hasFlattenedResolutions()) {
-        setResolution(1);
+        setResolution(getResolutionCount() - 1);
       }
       byte[] thumb = FormatTools.openThumbBytes(this, no);
       setSeries(thisSeries);

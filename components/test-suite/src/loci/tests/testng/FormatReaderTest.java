@@ -2650,6 +2650,33 @@ public class FormatReaderTest {
     }
   }
 
+  @Test(groups = {"detect-pyramid"})
+  public void detectPyramid() {
+    if (!initFile()) result("detectPyramid", false, "initFile");
+    if (reader.getSeriesCount() == 1) {
+      // no way this could be a pyramid, so return early to speed up
+      return;
+    }
+    try {
+      IFormatReader resolutionReader =
+        new BufferedImageReader(new FileStitcher());
+      resolutionReader.setFlattenedResolutions(false);
+      resolutionReader.setId(id);
+
+      for (int i=0; i<resolutionReader.getSeriesCount(); i++) {
+        resolutionReader.setSeries(i);
+        if (resolutionReader.getResolutionCount() > 1) {
+          LOGGER.warn("Found pyramid: {}", id);
+          return;
+        }
+      }
+    }
+    catch (Throwable t) {
+      LOGGER.info("", t);
+      assert false;
+    }
+  }
+
   // -- Helper methods --
 
   /** Sets up the current IFormatReader. */

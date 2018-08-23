@@ -130,6 +130,7 @@ Type "ant -p" for a list of targets.
     <testng groups="detect-pyramid" testname="Cache generation"
       listener="loci.tests.testng.DotTestListener"
       suitename="Bio-Formats software test suite"
+      parallel="instances" threadCount="${testng.threadCount}"
       failureProperty="failedTest">
       <classpath>
         <pathelement location="${basedir}"/><!-- logback.xml -->

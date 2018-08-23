@@ -2657,8 +2657,9 @@ public class FormatReaderTest {
       // no way this could be a pyramid, so return early to speed up
       return;
     }
+    IFormatReader resolutionReader = null;
     try {
-      IFormatReader resolutionReader =
+      resolutionReader =
         new BufferedImageReader(new FileStitcher());
       resolutionReader.setFlattenedResolutions(false);
       resolutionReader.setId(id);
@@ -2674,6 +2675,12 @@ public class FormatReaderTest {
     catch (Throwable t) {
       LOGGER.info("", t);
       assert false;
+    }
+    finally {
+      try {
+      if (resolutionReader != null) resolutionReader.close();
+      }
+      catch (IOException e) { }
     }
   }
 

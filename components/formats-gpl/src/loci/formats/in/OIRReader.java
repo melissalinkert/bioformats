@@ -182,7 +182,7 @@ public class OIRReader extends FormatReader {
     while (first < pixelUIDs.length) {
       if (getZ(pixelUIDs[first]) - minZ == zct[0] &&
         getT(pixelUIDs[first]) - minT == zct[2] &&
-        pixelUIDs[first].indexOf(channels.get(zct[1] % channels.size()).id) > 0)
+        getC(pixelUIDs[first]) == zct[1])
       {
         if (startIndex < 0) {
           startIndex = first;
@@ -1407,20 +1407,12 @@ public class OIRReader extends FormatReader {
 
   private int getZ(String uid) {
     int zIndex = uid.indexOf("z");
-    if (zIndex < 0) {
-      return 0;
-    }
-    // assumes 3 digits
-    return Integer.parseInt(uid.substring(zIndex + 1, zIndex + 4)) - 1;
+    return getIndex(uid, zIndex);
   }
 
   private int getT(String uid) {
     int tIndex = uid.indexOf("t");
-    if (tIndex < 0) {
-      return 0;
-    }
-    // assumes 3 digits
-    return Integer.parseInt(uid.substring(tIndex + 1, tIndex + 4)) - 1;
+    return getIndex(uid, tIndex);
   }
 
   private int getBlock(String uid) {
@@ -1429,6 +1421,29 @@ public class OIRReader extends FormatReader {
       return 0;
     }
     return Integer.parseInt(uid.substring(index + 1));
+  }
+
+  private int getC(String uid) {
+    if (getSizeC() == channels.size()) {
+      for (int c=0; c<channels.size(); c++) {
+        if (uid.indexOf(channels.get(c).id) > 0) {
+          return c;
+        }
+      }
+      return -1;
+    }
+
+    // expect this to be lambda data
+    int lambdaIndex = uid.indexOf("l");
+    return getIndex(uid, lambdaIndex);
+  }
+
+  private int getIndex(String uid, int dimIndex) {
+    if (dimIndex < 0) {
+      return 0;
+    }
+    // assumes 3 digits
+    return Integer.parseInt(uid.substring(dimIndex + 1, dimIndex + 4)) - 1;
   }
 
   // -- Helper classes --

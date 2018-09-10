@@ -1179,7 +1179,12 @@ public class MicromanagerReader extends FormatReader {
     if (key == null || value == null) {
       return;
     }
-    addSeriesMeta(key, value);
+    if (spim) {
+      addSeriesMetaList(key, value);
+    }
+    else {
+      addSeriesMeta(key, value);
+    }
 
     if (key.equals("MicroManagerVersion")) {
       String[] version = value.split("\\.");

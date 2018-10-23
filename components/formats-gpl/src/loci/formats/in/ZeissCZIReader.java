@@ -2062,8 +2062,16 @@ public class ZeissCZIReader extends FormatReader {
             if (positions.getLength() > 0) {
               Element position = (Element) positions.item(0);
               String[] pos = position.getTextContent().split(",");
-              positionsX[nextPosition] = new Length(DataTools.parseDouble(pos[0]), UNITS.MICROM);
-              positionsY[nextPosition] = new Length(DataTools.parseDouble(pos[1]), UNITS.MICROM);
+              // make sure scene positions aren't assigned to subresolutions
+              // or label/macro/overview images, since the CenterPosition
+              // isn't typically stored unless there is a pyramid
+              if (hasFlattenedResolutions()) {
+                nextPosition *= (maxResolution + 1);
+              }
+              if (nextPosition < positionsX.length) {
+                positionsX[nextPosition] = new Length(DataTools.parseDouble(pos[0]), UNITS.MICROM);
+                positionsY[nextPosition] = new Length(DataTools.parseDouble(pos[1]), UNITS.MICROM);
+              }
             }
             nextPosition++;
           }

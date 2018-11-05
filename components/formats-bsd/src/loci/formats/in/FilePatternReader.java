@@ -64,8 +64,8 @@ public class FilePatternReader extends FormatReader {
 
   // -- Fields --
 
-  private transient FileStitcher stitcher;
-  private transient IFormatReader helper;
+  private FileStitcher stitcher;
+  private IFormatReader helper;
   private String pattern;
   private ClassList<IFormatReader> newClasses;
   private String[] files;

@@ -1022,6 +1022,7 @@ public class Memoizer extends ReaderWrapper {
       }
 
       if (!equal) {
+        LOGGER.warn("readers not equal");
         copy.close();
         return null;
       }

@@ -1227,6 +1227,8 @@ public final class FormatTools {
 
     while (copyWrapper != null) {
       if (!copyWrapper.getClass().equals(realWrapper.getClass())) {
+        LOGGER.warn("copyWrapper class = {}", copyWrapper.getClass());
+        LOGGER.warn("realWrapper class = {}", realWrapper.getClass());
         return false;
       }
       if (copyWrapper instanceof ReaderWrapper) {
@@ -1242,28 +1244,35 @@ public final class FormatTools {
     // check the state that is set pre-initialization
 
     if (a.isNormalized() != b.isNormalized()) {
+      LOGGER.warn("a.isNormalized = {}", a.isNormalized());
       return false;
     }
 
     if (a.isOriginalMetadataPopulated() != b.isOriginalMetadataPopulated()) {
+      LOGGER.warn("a.isOriginalMetadataPopulated = {}", a.isOriginalMetadataPopulated()); 
       return false;
     }
 
     if (a.isGroupFiles() != b.isGroupFiles()) {
+      LOGGER.warn("a.isGroupFiles = {}", a.isGroupFiles());
       return false;
     }
 
     if (a.isMetadataFiltered() != b.isMetadataFiltered()) {
+      LOGGER.warn("a.isMetadataFiltered = {}", a.isMetadataFiltered());
       return false;
     }
 
     if (a.hasFlattenedResolutions() != b.hasFlattenedResolutions()) {
+      LOGGER.warn("a.hasFlattenedResolutions = {}", a.hasFlattenedResolutions());
       return false;
     }
 
     if (!a.getMetadataOptions().getMetadataLevel().equals(
       b.getMetadataOptions().getMetadataLevel()))
     {
+      LOGGER.warn("a metadata level = {}", a.getMetadataOptions().getMetadataLevel());
+      LOGGER.warn("b metadata level = {}", b.getMetadataOptions().getMetadataLevel());
       return false;
     }
 

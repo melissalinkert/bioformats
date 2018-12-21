@@ -1998,6 +1998,17 @@ public class ZeissCZIReader extends FormatReader {
         angles = Integer.parseInt(sizeV);
       }
 
+      if (prestitched != null && prestitched && mosaics == 1) {
+        String sizeX = getFirstNodeValue(image, "SizeX");
+        if (sizeX != null) {
+          core.get(0).sizeX = Integer.parseInt(sizeX);
+        }
+        String sizeY = getFirstNodeValue(image, "SizeY");
+        if (sizeY != null) {
+          core.get(0).sizeY = Integer.parseInt(sizeY);
+        }
+      }
+
       Element dimensions = getFirstNode(image, "Dimensions");
 
       Element tNode = getFirstNode(dimensions, "T");

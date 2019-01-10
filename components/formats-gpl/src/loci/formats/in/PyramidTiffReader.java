@@ -122,6 +122,10 @@ public class PyramidTiffReader extends BaseTiffReader {
   /* @see loci.formats.in.BaseTiffReader#initStandardMetadata() */
   @Override
   protected void initStandardMetadata() throws FormatException, IOException {
+    if (thumbnailIFDs.size() > 0) {
+      ifds.addAll(thumbnailIFDs);
+      thumbnailIFDs.clear();
+    }
     int seriesCount = ifds.size();
 
     // repopulate core metadata

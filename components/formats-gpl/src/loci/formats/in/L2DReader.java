@@ -35,6 +35,7 @@ import loci.common.DateTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -210,7 +211,7 @@ public class L2DReader extends FormatReader {
       TiffReader r = new TiffReader();
       r.setMetadataStore(getMetadataStore());
       r.setId(id);
-      core = new ArrayList<CoreMetadata>(r.getCoreMetadataList());
+      core = new CoreMetadataList(r.getCoreMetadataList());
       metadataStore = r.getMetadataStore();
 
       final Map<String, Object> globalMetadata = r.getGlobalMetadata();
@@ -241,7 +242,7 @@ public class L2DReader extends FormatReader {
     tiffs = new String[scans.length][];
     metadataFiles = new List[scans.length];
 
-    core = new ArrayList<CoreMetadata>(scans.length);
+    core = new CoreMetadataList(scans.length);
 
     String[] comments = new String[scans.length];
     String[] wavelengths = new String[scans.length];

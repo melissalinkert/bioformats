@@ -40,6 +40,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -293,7 +294,7 @@ public class ColumbusReader extends FormatReader {
 
     reader = new MinimalTiffReader();
     reader.setId(tmpPlanes[0].file);
-    core = reader.getCoreMetadataList();
+    core = new CoreMetadataList(reader.getCoreMetadataList());
 
     CoreMetadata m = core.get(0);
 

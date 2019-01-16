@@ -41,6 +41,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.common.Region;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FilePattern;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
@@ -429,7 +430,7 @@ public class MIASReader extends FormatReader {
       TiffReader r = new TiffReader();
       r.setMetadataStore(getMetadataStore());
       r.setId(tiffs[0][0]);
-      core = new ArrayList<CoreMetadata>(r.getCoreMetadataList());
+      core = new CoreMetadataList(r.getCoreMetadataList());
       metadataStore = r.getMetadataStore();
 
       final Map<String, Object> globalMetadata = r.getGlobalMetadata();

@@ -38,9 +38,9 @@ import java.util.List;
 
 import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
+import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
-import loci.formats.SubResolutionFormatReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ import loci.formats.tiff.TiffParser;
  *
  * @author Melissa Linkert melissa at glencoesoftware.com
  */
-public class MinimalTiffReader extends SubResolutionFormatReader {
+public class MinimalTiffReader extends FormatReader {
 
   // -- Constants --
 

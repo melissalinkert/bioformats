@@ -26,7 +26,6 @@
 package loci.formats.in;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import loci.common.DataTools;
 import loci.common.Location;
@@ -34,6 +33,7 @@ import loci.common.RandomAccessInputStream;
 import loci.formats.FormatReader;
 import loci.formats.ChannelSeparator;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
@@ -189,7 +189,7 @@ public class NDPISReader extends FormatReader {
     readers[0].getReader().setMetadataStore(store);
     readers[0].setId(ndpiFiles[0]);
 
-    core = new ArrayList<CoreMetadata>(readers[0].getCoreMetadataList());
+    core = new CoreMetadataList(readers[0].getCoreMetadataList());
     for (int i=0; i<core.size(); i++) {
       CoreMetadata ms = core.get(i);
       ms.sizeC = readers.length;

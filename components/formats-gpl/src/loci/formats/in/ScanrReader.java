@@ -42,6 +42,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -322,7 +323,7 @@ public class ScanrReader extends FormatReader {
       TiffReader r = new TiffReader();
       r.setMetadataStore(getMetadataStore());
       r.setId(id);
-      core = new ArrayList<CoreMetadata>(r.getCoreMetadataList());
+      core = new CoreMetadataList(r.getCoreMetadataList());
       metadataStore = r.getMetadataStore();
 
       final Map<String, Object> globalMetadata = r.getGlobalMetadata();

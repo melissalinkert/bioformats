@@ -51,12 +51,12 @@ import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
 import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
+import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.IFormatReader;
 import loci.formats.MetadataTools;
 import loci.formats.MissingLibraryException;
 import loci.formats.Modulo;
-import loci.formats.SubResolutionFormatReader;
 import loci.formats.meta.MetadataStore;
 import loci.formats.ome.OMEXMLMetadata;
 import loci.formats.services.OMEXMLService;
@@ -81,7 +81,7 @@ import ome.xml.model.primitives.Timestamp;
  * <a href="https://docs.openmicroscopy.org/latest/ome-model/ome-tiff/">OME-TIFF</a>
  * files.
  */
-public class OMETiffReader extends SubResolutionFormatReader {
+public class OMETiffReader extends FormatReader {
 
   // -- Fields --
 
@@ -115,7 +115,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
 
   // -- IFormatReader API methods --
 
-  /* @see loci.formats.SubResolutionFormatReader#isSingleFile(String) */
+  /* @see loci.formats.FormatReader#isSingleFile(String) */
   @Override
   public boolean isSingleFile(String id) throws FormatException, IOException {
     // companion files in a binary-only dataset should always have additional files
@@ -159,7 +159,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return nImages > 0 && nImages <= ifdOffsets.length;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#isThisType(String, boolean) */
+  /* @see loci.formats.FormatReader#isThisType(String, boolean) */
   @Override
   public boolean isThisType(String name, boolean open) {
     if (checkSuffix(name, "companion.ome")) {
@@ -190,7 +190,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return valid;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#isThisType(RandomAccessInputStream) */
+  /* @see loci.formats.FormatReader#isThisType(RandomAccessInputStream) */
   @Override
   public boolean isThisType(RandomAccessInputStream stream) throws IOException {
     TiffParser tp = new TiffParser(stream);
@@ -258,7 +258,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return false;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#getDomains() */
+  /* @see loci.formats.FormatReader#getDomains() */
   @Override
   public String[] getDomains() {
     FormatTools.assertId(currentId, true, 1);
@@ -266,7 +266,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
       FormatTools.NON_SPECIAL_DOMAINS;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#get8BitLookupTable() */
+  /* @see loci.formats.FormatReader#get8BitLookupTable() */
   @Override
   public byte[][] get8BitLookupTable() throws FormatException, IOException {
     if (info[series][lastPlane] == null ||
@@ -279,7 +279,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return info[series][lastPlane].reader.get8BitLookupTable();
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#get16BitLookupTable() */
+  /* @see loci.formats.FormatReader#get16BitLookupTable() */
   @Override
   public short[][] get16BitLookupTable() throws FormatException, IOException {
     if (info[series][lastPlane] == null ||
@@ -292,7 +292,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return info[series][lastPlane].reader.get16BitLookupTable();
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#reopenFile() */
+  /* @see loci.formats.FormatReader#reopenFile() */
   @Override
   public void reopenFile() throws IOException {
     super.reopenFile();
@@ -309,7 +309,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
   }
 
   /*
-   * @see loci.formats.SubResolutionFormatReader#openBytes(int, byte[], int, int, int, int)
+   * @see loci.formats.FormatReader#openBytes(int, byte[], int, int, int, int)
    */
   @Override
   public byte[] openBytes(int no, byte[] buf, int x, int y, int w, int h)
@@ -352,7 +352,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return buf;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#getSeriesUsedFiles(boolean) */
+  /* @see loci.formats.FormatReader#getSeriesUsedFiles(boolean) */
   @Override
   public String[] getSeriesUsedFiles(boolean noPixels) {
     FormatTools.assertId(currentId, true, 1);
@@ -373,7 +373,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return usedFiles.toArray(new String[usedFiles.size()]);
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#fileGroupOption() */
+  /* @see loci.formats.FormatReader#fileGroupOption() */
   @Override
   public int fileGroupOption(String id) {
     try {
@@ -386,7 +386,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     return FormatTools.CAN_GROUP;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#close(boolean) */
+  /* @see loci.formats.FormatReader#close(boolean) */
   @Override
   public void close(boolean fileOnly) throws IOException {
     super.close(fileOnly);
@@ -413,14 +413,14 @@ public class OMETiffReader extends SubResolutionFormatReader {
     }
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#getOptimalTileWidth() */
+  /* @see loci.formats.FormatReader#getOptimalTileWidth() */
   @Override
   public int getOptimalTileWidth() {
     FormatTools.assertId(currentId, true, 1);
     return ((OMETiffCoreMetadata) currentCore()).tileWidth;
   }
 
-  /* @see loci.formats.SubResolutionFormatReader#getOptimalTileHeight() */
+  /* @see loci.formats.FormatReader#getOptimalTileHeight() */
   @Override
   public int getOptimalTileHeight() {
     FormatTools.assertId(currentId, true, 1);
@@ -429,7 +429,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
 
   // -- Internal FormatReader API methods --
 
-  /* @see loci.formats.SubResolutionFormatReader#initFile(String) */
+  /* @see loci.formats.FormatReader#initFile(String) */
   @Override
   protected void initFile(String id) throws FormatException, IOException {
     // normalize file name
@@ -1206,12 +1206,12 @@ public class OMETiffReader extends SubResolutionFormatReader {
    * for display purposes and was not be suitable for use with
    * FormatWriter due to not containing required BinData
    * BigEndian attributes. This is no longer the case; the general
-   * {@link SubResolutionFormatReader#getMetadataStore()} method will always create
+   * {@link FormatReader#getMetadataStore()} method will always create
    * valid metadata which is suitable for both display and use
    * with FormatWriter, and so should be used instead.
    *
    * @return the metadata store.
-   * @deprecated Use the general {@link SubResolutionFormatReader#getMetadataStore()} method.
+   * @deprecated Use the general {@link FormatReader#getMetadataStore()} method.
    */
   public MetadataStore getMetadataStoreForDisplay() {
     return getMetadataStore();
@@ -1224,12 +1224,12 @@ public class OMETiffReader extends SubResolutionFormatReader {
    * for use with FormatWriter, but would possibly not generate
    * valid OME-XML if both BinData and TiffData elements were
    * present.  This is no longer the case; the general
-   * {@link SubResolutionFormatReader#getMetadataStore()} method will always create
+   * {@link FormatReader#getMetadataStore()} method will always create
    * valid metadata which is suitable for use with FormatWriter,
    * and so should be used instead.
    *
    * @return the metadata store.
-   * @deprecated Use the general {@link SubResolutionFormatReader#getMetadataStore()} method.
+   * @deprecated Use the general {@link FormatReader#getMetadataStore()} method.
    */
   public MetadataStore getMetadataStoreForConversion() {
     return getMetadataStore();

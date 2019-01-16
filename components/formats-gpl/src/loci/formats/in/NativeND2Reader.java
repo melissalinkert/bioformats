@@ -42,10 +42,10 @@ import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
 import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
+import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.ImageTools;
 import loci.formats.MetadataTools;
-import loci.formats.SubResolutionFormatReader;
 import loci.formats.codec.Codec;
 import loci.formats.codec.CodecOptions;
 import loci.formats.codec.JPEG2000Codec;
@@ -71,7 +71,7 @@ import ome.units.UNITS;
  *
  * Thanks to Tom Caswell for additions to the ND2 metadata parsing logic.
  */
-public class NativeND2Reader extends SubResolutionFormatReader {
+public class NativeND2Reader extends FormatReader {
 
   // -- Constants --
 

@@ -33,9 +33,9 @@
 package loci.formats.in;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.DelegateReader;
 import loci.formats.FormatException;
 import loci.formats.UnsupportedCompressionException;
@@ -92,7 +92,7 @@ public class TiffDelegateReader extends DelegateReader {
     nativeReader.setId(id);
     nativeReaderInitialized = true;
     currentId = nativeReader.getCurrentFile();
-    core = new ArrayList<CoreMetadata>(nativeReader.getCoreMetadataList());
+    core = new CoreMetadataList(nativeReader.getCoreMetadataList());
     metadata = nativeReader.getGlobalMetadata();
     metadataStore = nativeReader.getMetadataStore();
   }

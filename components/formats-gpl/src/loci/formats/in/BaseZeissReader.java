@@ -38,6 +38,7 @@ import java.lang.Math;
 
 import loci.common.DateTools;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatTools;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
@@ -292,7 +293,7 @@ public abstract class BaseZeissReader extends FormatReader {
     // rather not using the size of core as the series count until
     // it's filled.
     for (int i=1; i<core.size(); i++) {
-      core.set(i, new CoreMetadata(core.get(0)));
+      core.set(i, 0, new CoreMetadata(core.get(0)));
     }
   }
 

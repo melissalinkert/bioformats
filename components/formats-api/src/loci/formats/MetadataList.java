@@ -111,6 +111,18 @@ public class MetadataList<T> {
   }
 
   /**
+   * Get the array element for the specified index.
+   * The first element at the specified primary index is returned.
+   * To specify primary and secondary indexes, use {@link #get(int, int)}.
+   *
+   * @param i1 The primary array index
+   * @return the element
+   */
+  public T get(int i1) {
+    return get(i1, 0);
+  }
+
+  /**
    * Get the array element for the specified indexes.
 
    * @param i1 The primary array index
@@ -186,6 +198,23 @@ public class MetadataList<T> {
    */
   public void clear(int i1) {
     data.get(i1).clear();
+  }
+
+  /**
+   * Remove the specified primary array element.
+   * @param i1 The primary array index
+   */
+  public void remove(int i1) {
+    data.remove(i1);
+  }
+
+  /**
+   * Remove the specified array element.
+   * @param i1 The primary array index
+   * @param i2 The secondary array index
+   */
+  public void remove(int i1, int i2) {
+    data.get(i1).remove(i2);
   }
 
   /**

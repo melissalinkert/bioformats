@@ -40,6 +40,7 @@ import loci.common.xml.BaseHandler;
 import loci.common.xml.XMLTools;
 import loci.formats.ChannelSeparator;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -266,7 +267,7 @@ public class AFIReader extends FormatReader {
       }
     }
 
-    core = reader[0].getCoreMetadataList();
+    core = new CoreMetadataList(reader[0].getCoreMetadataList());
 
     for (int i=0; i<core.size() - EXTRA_IMAGES; i++) {
       CoreMetadata c = core.get(i);

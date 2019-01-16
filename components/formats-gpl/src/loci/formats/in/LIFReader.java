@@ -51,6 +51,7 @@ import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.common.xml.XMLTools;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -1135,7 +1136,7 @@ public class LIFReader extends FormatReader {
     tileCount = new int[imageNodes.size()];
     Arrays.fill(tileCount, 1);
     tileBytesInc = new long[imageNodes.size()];
-    core = new ArrayList<CoreMetadata>(imageNodes.size());
+    core = new CoreMetadataList(imageNodes.size());
     acquiredDate = new double[imageNodes.size()];
     descriptions = new String[imageNodes.size()];
     laserWavelength = new List[imageNodes.size()];
@@ -1204,7 +1205,7 @@ public class LIFReader extends FormatReader {
     for (int count : tileCount) {
       totalSeries += count;
     }
-    ArrayList<CoreMetadata> newCore = new ArrayList<CoreMetadata>();
+    CoreMetadataList newCore = new CoreMetadataList();
     for (int i=0; i<core.size(); i++) {
       for (int tile=0; tile<tileCount[i]; tile++) {
         newCore.add(core.get(i));

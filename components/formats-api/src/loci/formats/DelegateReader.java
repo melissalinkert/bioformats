@@ -306,12 +306,12 @@ public abstract class DelegateReader extends FormatReader {
       }
     }
     if (nativeReaderInitialized) {
-      core = new ArrayList<CoreMetadata>(nativeReader.getCoreMetadataList());
+      core = new CoreMetadataList(nativeReader.getCoreMetadataList());
       metadata = nativeReader.getGlobalMetadata();
       metadataStore = nativeReader.getMetadataStore();
     }
     if (legacyReaderInitialized) {
-      core = new ArrayList<CoreMetadata>(legacyReader.getCoreMetadataList());
+      core = new CoreMetadataList(legacyReader.getCoreMetadataList());
       metadata = legacyReader.getGlobalMetadata();
       metadataStore = legacyReader.getMetadataStore();
     }

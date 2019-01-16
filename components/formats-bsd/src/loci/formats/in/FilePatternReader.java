@@ -41,6 +41,7 @@ import loci.common.DataTools;
 import loci.common.Location;
 import loci.formats.ClassList;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FileStitcher;
 import loci.formats.FormatException;
 import loci.formats.IFormatReader;
@@ -228,7 +229,7 @@ public class FilePatternReader extends WrappedReader {
     helper.setUsingPatternIds(true);
     helper.setCanChangePattern(false);
     helper.setId(pattern);
-    core = helper.getCoreMetadataList();
+    core = new CoreMetadataList(helper.getCoreMetadataList());
   }
 
 }

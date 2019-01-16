@@ -40,6 +40,7 @@ import loci.common.Constants;
 import loci.common.DataTools;
 import loci.common.RandomAccessInputStream;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -757,7 +758,7 @@ public class SlidebookReader extends FormatReader {
 
     // TODO: extend the name matching to include "* Timepoint *"
     String currentName = imageNames[0];
-    ArrayList<CoreMetadata> realCore = new ArrayList<CoreMetadata>();
+    CoreMetadataList realCore = new CoreMetadataList();
     int t = 1;
     boolean noFlattening =
       currentName != null && currentName.equals("Untitled");

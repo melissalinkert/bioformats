@@ -37,7 +37,7 @@ import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
-import loci.formats.SubResolutionFormatReader;
+import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.MissingLibraryException;
@@ -50,7 +50,7 @@ import ome.units.quantity.Length;
 /**
  * Reader for Bitplane Imaris 5.5 (HDF) files.
  */
-public class ImarisHDFReader extends SubResolutionFormatReader {
+public class ImarisHDFReader extends FormatReader {
 
   // -- Constants --
 

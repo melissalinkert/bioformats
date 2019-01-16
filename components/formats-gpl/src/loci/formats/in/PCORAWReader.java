@@ -30,6 +30,7 @@ import java.io.IOException;
 import loci.common.DataTools;
 import loci.common.Location;
 import loci.common.RandomAccessInputStream;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -143,7 +144,7 @@ public class PCORAWReader extends FormatReader {
     reader.setMetadataStore(getMetadataStore());
     reader.setId(id);
 
-    core = reader.getCoreMetadataList();
+    core = new CoreMetadataList(reader.getCoreMetadataList());
     metadata = reader.getGlobalMetadata();
 
     in = new RandomAccessInputStream(id);

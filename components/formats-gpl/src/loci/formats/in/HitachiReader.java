@@ -28,7 +28,6 @@ package loci.formats.in;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 
 import loci.common.DataTools;
 import loci.common.DateTools;
@@ -39,6 +38,7 @@ import loci.common.Location;
 import loci.common.RandomAccessInputStream;
 import loci.formats.ClassList;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
@@ -229,7 +229,7 @@ public class HitachiReader extends FormatReader {
     helperReader = new ImageReader(newClasses);
     helperReader.setId(pixelsFile);
 
-    core = new ArrayList<CoreMetadata>(helperReader.getCoreMetadataList());
+    core = new CoreMetadataList(helperReader.getCoreMetadataList());
 
     MetadataStore store = makeFilterMetadata();
     MetadataTools.populatePixels(store, this,

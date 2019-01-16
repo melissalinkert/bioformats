@@ -38,6 +38,7 @@ import loci.common.RandomAccessInputStream;
 import loci.common.xml.XMLTools;
 import loci.formats.AxisGuesser;
 import loci.formats.CoreMetadata;
+import loci.formats.CoreMetadataList;
 import loci.formats.FilePattern;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
@@ -473,7 +474,7 @@ public class TCSReader extends FormatReader {
       metadata = handler.getGlobalMetadata();
       MetadataTools.merge(handler.getGlobalMetadata(), metadata, "");
 
-      core = handler.getCoreMetadataList();
+      core = new CoreMetadataList(handler.getCoreMetadataList());
 
       for (int i=0; i<getSeriesCount(); i++) {
         CoreMetadata ms = core.get(i);

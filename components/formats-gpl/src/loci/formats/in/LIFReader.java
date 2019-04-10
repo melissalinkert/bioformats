@@ -401,7 +401,9 @@ public class LIFReader extends FormatReader {
   public String[] getSeriesUsedFiles(boolean noPixels) {
     FormatTools.assertId(currentId, true, 1);
     final List<String> files = new ArrayList<String>();
-    files.add(currentId);
+    if (!noPixels) {
+      files.add(currentId);
+    }
 
     Location currentFile = new Location(currentId).getAbsoluteFile();
     Location parent = currentFile.getParentFile();

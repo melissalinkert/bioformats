@@ -2043,6 +2043,48 @@ public class FormatReaderTest {
     result(testName, success, msg);
   }
 
+  @Test(groups = {"all", "fast", "automated"})
+  public void testUsedFileOverlap() {
+    if (config == null) throw new SkipException("No config tree");
+    String testName = "testUsedFileOverlap";
+    if (!initFile()) result(testName, false, "initFile");
+
+    // neither noPixels nor !noPixels lists should be/contain null
+    String[] allUsed = reader.getUsedFiles();
+    if (allUsed == null) {
+      result(testName, false, "Complete used file list is null");
+      return;
+    }
+    List<String> allUsedFiles = Arrays.asList(allUsed);
+    for (String f : allUsedFiles) {
+      if (f == null) {
+        result(testName, false, "Complete used file list contains null");
+        return;
+      }
+    }
+
+    String[] companionUsed = reader.getUsedFiles(true);
+    if (companionUsed == null) {
+      result(testName, false, "Companion used file list is null");
+      return;
+    }
+    List<String> companionUsedFiles = Arrays.asList(companionUsed);
+    for (String f : companionUsedFiles) {
+      if (f == null) {
+        result(testName, false, "Companion used file list contains null");
+        return;
+      }
+    }
+
+    // the intersection of the noPixels and !noPixels sets should be non-empty
+    if (!allUsedFiles.containsAll(companionUsedFiles)) {
+      result(testName, false, "Files missing from complete used file list");
+      return;
+    }
+    int intersection = allUsedFiles.size() - companionUsedFiles.size();
+    result(testName, intersection > 0, intersection + " pixels files");
+  }
+
   @Test(groups = {"all", "xml", "fast", "automated"})
   public void testValidXML() {
     if (config == null) throw new SkipException("No config tree");

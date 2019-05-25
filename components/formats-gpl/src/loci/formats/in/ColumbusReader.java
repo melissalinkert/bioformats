@@ -293,7 +293,10 @@ public class ColumbusReader extends FormatReader {
 
     reader = new MinimalTiffReader();
     reader.setId(tmpPlanes[0].file);
-    core = reader.getCoreMetadataList();
+    core.clear();
+    for (CoreMetadata c : reader.getCoreMetadataList()) {
+      core.add(new CoreMetadata(c));
+    }
 
     CoreMetadata m = core.get(0);
 

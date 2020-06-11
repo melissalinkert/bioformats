@@ -575,6 +575,12 @@ public class VentanaReader extends BaseTiffReader {
               overlap.a, area.tileRows, area.tileColumns), overlap.y);
           }
         }
+        else if (overlap.direction.equals("LEFT")) {
+          rightSum += overlap.x;
+          rightCount++;
+          columnYAdjust.put(getTileColumn(
+            overlap.a, area.tileRows, area.tileColumns), overlap.y);
+        }
         else if (overlap.direction.equals("UP")) {
           upSum += overlap.y;
           upCount++;

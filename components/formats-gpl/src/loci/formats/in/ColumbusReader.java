@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import javax.xml.parsers.ParserConfigurationException;
 
 import loci.common.Constants;
@@ -304,22 +305,16 @@ public class ColumbusReader extends FormatReader {
     m.sizeC = 0;
     m.sizeT = 0;
 
-    ArrayList<Integer> uniqueSamples = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueRows = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueCols = new ArrayList<Integer>();
+    HashSet<Integer> uniqueSamples = new HashSet<Integer>();
+    HashSet<Integer> uniqueRows = new HashSet<Integer>();
+    HashSet<Integer> uniqueCols = new HashSet<Integer>();
     for (Plane p : tmpPlanes) {
       planes.add(p);
 
       int sampleIndex = p.row * handler.getPlateColumns() + p.col;
-      if (!uniqueSamples.contains(sampleIndex)) {
-        uniqueSamples.add(sampleIndex);
-      }
-      if (!uniqueRows.contains(p.row)) {
-        uniqueRows.add(p.row);
-      }
-      if (!uniqueCols.contains(p.col)) {
-        uniqueCols.add(p.col);
-      }
+      uniqueSamples.add(sampleIndex);
+      uniqueRows.add(p.row);
+      uniqueCols.add(p.col);
 
       // missing wells are allowed, but the field/channel/timepoint
       // counts are assumed to be non-sparse

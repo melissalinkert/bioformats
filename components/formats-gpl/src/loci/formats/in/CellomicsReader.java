@@ -275,8 +275,6 @@ public class CellomicsReader extends FormatReader {
     int wellColumns = 0;
     int fields = 0;
 
-    ArrayList<Integer> uniqueRows = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueCols = new ArrayList<Integer>();
     ArrayList<Integer> uniqueFields = new ArrayList<Integer>();
     ArrayList<Integer> uniqueChannels = new ArrayList<Integer>();
     for (String f : filenames) {
@@ -285,8 +283,6 @@ public class CellomicsReader extends FormatReader {
       int field = getField(f);
       int channel = getChannel(f);
 
-      if (!uniqueRows.contains(wellRow)) uniqueRows.add(wellRow);
-      if (!uniqueCols.contains(wellCol)) uniqueCols.add(wellCol);
       if (!uniqueFields.contains(field)) uniqueFields.add(field);
       if (!uniqueChannels.contains(channel)) uniqueChannels.add(channel);
 

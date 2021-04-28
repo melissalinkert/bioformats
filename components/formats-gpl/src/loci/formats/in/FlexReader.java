@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import loci.common.Constants;
@@ -940,7 +941,7 @@ public class FlexReader extends FormatReader {
         fieldCount = 1;
       }
 
-      final List<String> uniqueChannels = new ArrayList<String>();
+      final HashSet<String> uniqueChannels = new HashSet<String>();
       for (int i=0; i<imageNames.size(); i++) {
         String name = imageNames.get(i);
         String[] tokens = name.split("_");
@@ -951,7 +952,7 @@ public class FlexReader extends FormatReader {
         }
         else tokens = name.split(":");
         String channel = tokens[tokens.length - 1];
-        if (!uniqueChannels.contains(channel)) uniqueChannels.add(channel);
+        uniqueChannels.add(channel);
       }
       if (fieldCount == 0) fieldCount = 1;
       ms0.sizeC = (int) Math.max(uniqueChannels.size(), 1);

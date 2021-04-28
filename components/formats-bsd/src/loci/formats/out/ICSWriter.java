@@ -34,8 +34,8 @@ package loci.formats.out;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import loci.common.RandomAccessInputStream;
 import loci.common.RandomAccessOutputStream;
@@ -62,7 +62,7 @@ public class ICSWriter extends FormatWriter {
   private int lastPlane = -1;
   private RandomAccessOutputStream pixels;
 
-  private List<String> uniqueFiles = new ArrayList<String>();
+  private Set<String> uniqueFiles = new HashSet<String>();
 
   // NB: write in ZTC order by default.  Certain software (e.g. Volocity)
   //     lacks the capacity to import files with any other dimension
@@ -189,9 +189,7 @@ public class ICSWriter extends FormatWriter {
   public void setId(String id) throws FormatException, IOException {
     super.setId(id);
 
-    if (!uniqueFiles.contains(id)) {
-      uniqueFiles.add(id);
-    }
+    uniqueFiles.add(id);
 
     if (checkSuffix(currentId, "ids")) {
       String metadataFile = currentId.substring(0, currentId.lastIndexOf("."));

@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import loci.common.DateTools;
 import loci.common.Location;
@@ -188,7 +190,7 @@ public class MetamorphTiffReader extends BaseTiffReader {
     super.initFile(id);
 
     List<String> uniqueChannels = new ArrayList<String>();
-    final List<Double> uniqueZs = new ArrayList<Double>();
+    final Set<Double> uniqueZs = new HashSet<Double>();
     final List<Length> stageX = new ArrayList<Length>();
     final List<Length> stageY = new ArrayList<Length>();
 
@@ -232,9 +234,7 @@ public class MetamorphTiffReader extends BaseTiffReader {
         final List<Double> zPositions = handler.getZPositions();
         Double pos = Math.rint(zPositions.get(0));
 
-        if (!uniqueZs.contains(pos)) {
-          uniqueZs.add(pos);
-        }
+        uniqueZs.add(pos);
       }
 
       MetamorphHandler handler = new MetamorphHandler();
@@ -245,11 +245,11 @@ public class MetamorphTiffReader extends BaseTiffReader {
         int lastField = getField(lastStageLabel);
         int lastWellRow = getWellRow(lastStageLabel);
         int lastWellColumn = getWellColumn(lastStageLabel);
-  
+
         int field = getField(stageLabel);
         int fieldRow = getWellRow(stageLabel);
         int fieldColumn = getWellColumn(stageLabel);
-  
+
         wellCount = lastField - field + 1;
         fieldRowCount = lastWellRow - fieldRow + 1;
         fieldColumnCount = lastWellColumn - fieldColumn + 1;
@@ -308,22 +308,17 @@ public class MetamorphTiffReader extends BaseTiffReader {
 
     // calculate axis sizes
 
-    final List<Integer> uniqueC = new ArrayList<Integer>();
-    for (Integer c : wavelengths) {
-      if (!uniqueC.contains(c)) {
-        uniqueC.add(c);
-      }
-    }
+    final Set<Integer> uniqueC = new HashSet<Integer>();
+    uniqueC.addAll(wavelengths);
+
     int effectiveC = uniqueC.size();
     if (effectiveC == 0) effectiveC = 1;
     if (getSizeC() == 0) m.sizeC = 1;
     int samples = ifds.get(0).getSamplesPerPixel();
     m.sizeC *= effectiveC * samples;
 
-    final List<Double> uniqueZ = new ArrayList<Double>();
-    for (Double z : zPositions) {
-      if (!uniqueZ.contains(z)) uniqueZ.add(z);
-    }
+    final Set<Double> uniqueZ = new HashSet<Double>();
+    uniqueZ.addAll(zPositions);
 
     if (getSizeZ() == 0) m.sizeZ = 1;
     if (uniqueZ.size() > 1) m.sizeZ *= uniqueZ.size();

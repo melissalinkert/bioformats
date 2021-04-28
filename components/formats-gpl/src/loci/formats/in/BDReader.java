@@ -322,19 +322,6 @@ public class BDReader extends FormatReader {
       addGlobalMeta("Camera binning", binning);
     }
 
-    final List<String> uniqueRows = new ArrayList<String>();
-    final List<String> uniqueColumns = new ArrayList<String>();
-
-    for (String well : wellLabels) {
-      String row = well.substring(0, 1).trim();
-      String column = well.substring(1).trim();
-
-      if (!uniqueRows.contains(row) && row.length() > 0) uniqueRows.add(row);
-      if (!uniqueColumns.contains(column) && column.length() > 0) {
-        uniqueColumns.add(column);
-      }
-    }
-
     int nSlices = getSizeZ() == 0 ? 1 : getSizeZ();
     int nTimepoints = getSizeT();
     int nWells = wellLabels.size();

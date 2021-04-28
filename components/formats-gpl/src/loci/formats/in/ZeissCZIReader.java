@@ -1702,7 +1702,7 @@ public class ZeissCZIReader extends FormatReader {
     int previousCoreIndex = getCoreIndex();
     setCoreIndex(coreIndex);
 
-    ArrayList<Integer> uniqueT = new ArrayList<Integer>();
+    HashSet<Integer> uniqueT = new HashSet<Integer>();
 
     int minPositions = Integer.MAX_VALUE;
     int maxPositions = Integer.MIN_VALUE;
@@ -1760,16 +1760,14 @@ public class ZeissCZIReader extends FormatReader {
               ms0.sizeZ = dimension.size;
             }
             break;
-          case 'T':        	  
-    		    int startIndex = dimension.start;
-    		    int endIndex = startIndex + dimension.size;
-    	  
-    		    for (int i=startIndex; i<endIndex; i++) {
-    			    if (!uniqueT.contains(i)) {
-                uniqueT.add(i);
-                ms0.sizeT = uniqueT.size();
-              }
-    		    }
+          case 'T':
+            int startIndex = dimension.start;
+            int endIndex = startIndex + dimension.size;
+
+            for (int i=startIndex; i<endIndex; i++) {
+              uniqueT.add(i);
+              ms0.sizeT = uniqueT.size();
+            }
             break;
           case 'R':
             if (dimension.start >= rotations) {

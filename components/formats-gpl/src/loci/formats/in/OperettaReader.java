@@ -28,6 +28,7 @@ package loci.formats.in;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import loci.common.DataTools;
 import loci.common.Location;
@@ -332,32 +333,20 @@ public class OperettaReader extends FormatReader {
 
     ArrayList<Plane> planeList = handler.getPlanes();
 
-    ArrayList<Integer> uniqueRows = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueCols = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueFields = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueZs = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueTs = new ArrayList<Integer>();
-    ArrayList<Integer> uniqueCs = new ArrayList<Integer>();
+    HashSet<Integer> uniqueRows = new HashSet<Integer>();
+    HashSet<Integer> uniqueCols = new HashSet<Integer>();
+    HashSet<Integer> uniqueFields = new HashSet<Integer>();
+    HashSet<Integer> uniqueZs = new HashSet<Integer>();
+    HashSet<Integer> uniqueTs = new HashSet<Integer>();
+    HashSet<Integer> uniqueCs = new HashSet<Integer>();
 
     for (Plane p : planeList) {
-      if (!uniqueRows.contains(p.row)) {
-        uniqueRows.add(p.row);
-      }
-      if (!uniqueCols.contains(p.col)) {
-        uniqueCols.add(p.col);
-      }
-      if (!uniqueFields.contains(p.field)) {
-        uniqueFields.add(p.field);
-      }
-      if (!uniqueZs.contains(p.z)) {
-        uniqueZs.add(p.z);
-      }
-      if (!uniqueCs.contains(p.c)) {
-        uniqueCs.add(p.c);
-      }
-      if (!uniqueTs.contains(p.t)) {
-        uniqueTs.add(p.t);
-      }
+      uniqueRows.add(p.row);
+      uniqueCols.add(p.col);
+      uniqueFields.add(p.field);
+      uniqueZs.add(p.z);
+      uniqueCs.add(p.c);
+      uniqueTs.add(p.t);
     }
 
     Integer[] rows = uniqueRows.toArray(new Integer[uniqueRows.size()]);

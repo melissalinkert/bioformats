@@ -32,8 +32,10 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import loci.common.ByteArrayHandle;
 import loci.common.DataTools;
@@ -363,16 +365,18 @@ public class ScanrReader extends FormatReader {
 
     XMLTools.parseXML(xml, new ScanrHandler());
 
-    final List<String> uniqueRows = new ArrayList<String>();
-    final List<String> uniqueColumns = new ArrayList<String>();
+    final Set<String> uniqueRows = new HashSet<String>();
+    final Set<String> uniqueColumns = new HashSet<String>();
 
     if (wellRows == 0 || wellColumns == 0) {
       for (String well : wellLabels.keySet()) {
         if (!Character.isLetter(well.charAt(0))) continue;
         String row = well.substring(0, 1).trim();
         String column = well.substring(1).trim();
-        if (!uniqueRows.contains(row) && row.length() > 0) uniqueRows.add(row);
-        if (!uniqueColumns.contains(column) && column.length() > 0) {
+        if (!row.isEmpty()) {
+          uniqueRows.add(row);
+        }
+        if (!column.isEmpty()) {
           uniqueColumns.add(column);
         }
       }
@@ -537,8 +541,10 @@ public class ScanrReader extends FormatReader {
         if (!Character.isLetter(well.charAt(0))) continue;
         String row = well.substring(0, 1).trim();
         String column = well.substring(1).trim();
-        if (!uniqueRows.contains(row) && row.length() > 0) uniqueRows.add(row);
-        if (!uniqueColumns.contains(column) && column.length() > 0) {
+        if (!row.isEmpty()) {
+          uniqueRows.add(row);
+        }
+        if (!column.isEmpty()) {
           uniqueColumns.add(column);
         }
       }

@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Vector;
 
 import loci.common.Constants;
@@ -643,9 +644,9 @@ public class MicromanagerReader extends FormatReader {
     }
 
     if (p.tiffs.size() == 0) {
-      Vector<String> uniqueZ = new Vector<String>();
-      Vector<String> uniqueC = new Vector<String>();
-      Vector<String> uniqueT = new Vector<String>();
+      HashSet<String> uniqueZ = new HashSet<String>();
+      HashSet<String> uniqueC = new HashSet<String>();
+      HashSet<String> uniqueT = new HashSet<String>();
 
       Location dir =
         new Location(p.metadataFile).getAbsoluteFile().getParentFile();
@@ -654,9 +655,9 @@ public class MicromanagerReader extends FormatReader {
       for (String f : files) {
         if (checkSuffix(f, "tif") || checkSuffix(f, "tiff")) {
           String[] blocks = f.split("_");
-          if (!uniqueT.contains(blocks[1])) uniqueT.add(blocks[1]);
-          if (!uniqueC.contains(blocks[2])) uniqueC.add(blocks[2]);
-          if (!uniqueZ.contains(blocks[3])) uniqueZ.add(blocks[3]);
+          uniqueT.add(blocks[1]);
+          uniqueC.add(blocks[2]);
+          uniqueZ.add(blocks[3]);
 
           String path = new Location(dir, f).getAbsolutePath();
           p.tiffs.add(path);

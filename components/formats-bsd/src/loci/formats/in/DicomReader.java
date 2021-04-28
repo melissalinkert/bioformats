@@ -37,9 +37,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -246,17 +248,9 @@ public class DicomReader extends FormatReader {
     if (files == null) {
       return null;
     }
-    final List<String> uniqueFiles = new ArrayList<String>();
-    for (String f : files) {
-      if (!uniqueFiles.contains(f)) {
-        uniqueFiles.add(f);
-      }
-    }
-    for (String f : companionFiles) {
-      if (!uniqueFiles.contains(f)) {
-        uniqueFiles.add(f);
-      }
-    }
+    final Set<String> uniqueFiles = new HashSet<String>();
+    uniqueFiles.addAll(files);
+    uniqueFiles.addAll(companionFiles);
     return uniqueFiles.toArray(new String[uniqueFiles.size()]);
   }
 

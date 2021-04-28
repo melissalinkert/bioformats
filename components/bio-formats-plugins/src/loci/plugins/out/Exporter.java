@@ -185,7 +185,7 @@ public class Exporter {
             }
         }
         //create a temporary file if window less
-        if (windowless && (outfile == null || outfile.length() == 0)) {
+        if (windowless && (outfile == null || outfile.isEmpty())) {
             File tmp = null;
             try {
                 String name = removeExtension(imp.getTitle());
@@ -216,7 +216,7 @@ public class Exporter {
             }
         }
         File f = null;
-        if (outfile == null || outfile.length() == 0) {
+        if (outfile == null || outfile.isEmpty()) {
             // open a dialog prompting for the filename to save
             // NB: Copied and adapted from ij.io.SaveDIalog.jSaveDispatchThread,
             // so that the save dialog has a file filter for choosing output format.

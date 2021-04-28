@@ -363,7 +363,7 @@ public class LeicaReader extends FormatReader {
     close();
 
     String leiFile = findLEIFile(id);
-    if (leiFile == null || leiFile.trim().length() == 0 ||
+    if (leiFile == null || leiFile.trim().isEmpty() ||
       new Location(leiFile).isDirectory())
     {
       if (checkSuffix(id, TiffReader.TIFF_SUFFIXES)) {
@@ -1311,7 +1311,7 @@ public class LeicaReader extends FormatReader {
       }
 
       LOGGER.trace("data: {}", data);
-      if (data.trim().length() == 0) {
+      if (data.trim().isEmpty()) {
         LOGGER.trace("Zero length dat string, continuing...");
         continue;
       }

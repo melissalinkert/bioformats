@@ -92,7 +92,7 @@ public class XMLValidate {
     List<String> extensions = Arrays.asList(TiffReader.TIFF_SUFFIXES);
     for (int i = 0; i < files.length; i++) {
         String file = files[i];
-        if (file == null || file.trim().length() == 0) {
+        if (file == null || file.trim().isEmpty()) {
           results[i] = false;
         } else{
           String extension = file.substring(file.lastIndexOf(".")+1);

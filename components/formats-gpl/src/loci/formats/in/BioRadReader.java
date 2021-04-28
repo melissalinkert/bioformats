@@ -589,7 +589,7 @@ public class BioRadReader extends FormatReader {
       StringTokenizer t = new StringTokenizer(value, " ");
       while (t.hasMoreTokens()) {
         String token = t.nextToken().trim();
-        if (token.length() > 0) v.add(token);
+        if (!token.isEmpty()) v.add(token);
       }
       String[] tokens = v.toArray(new String[v.size()]);
       try {

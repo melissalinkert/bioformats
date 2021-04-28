@@ -673,7 +673,7 @@ public class ImagePlusReader implements StatusReporter {
   }
 
   private static String[] substringsBetween(String str, String open, String close) {
-    if (str == null || open == null || close == null || open.length() == 0 || close.length() == 0) {
+    if (str == null || open == null || close == null || open.isEmpty() || close.isEmpty()) {
       return null;
     }
     int strLen = str.length();

@@ -1287,7 +1287,7 @@ public class OIRReader extends FormatReader {
 
   private void parseOriginalMetadata(Node root) {
     String value = root.getNodeValue();
-    if (value != null && value.trim().length() > 0) {
+    if (value != null && !value.trim().isEmpty()) {
       value = value.trim();
       String key = "";
 

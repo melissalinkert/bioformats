@@ -244,7 +244,7 @@ public class UpgradeChecker {
       // check if the string is not empty (upgrade available)
 
       String result = sb.toString();
-      if (sb.length() == 0) {
+      if (result.isEmpty()) {
         LOGGER.debug("No update needed");
         return false;
       } else {

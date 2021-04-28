@@ -746,7 +746,7 @@ public class BDReader extends FormatReader {
       String[] cols = lines[i].split("\t");
       if (cols.length < 6) break;
 
-      if (cols[2].trim().length() > 0) {
+      if (!cols[2].trim().isEmpty()) {
         String rectangleID = MetadataTools.createLSID("Shape", i - firstRow, 0);
         store.setRectangleID(rectangleID, i - firstRow, 0);
         store.setRectangleX(new Double(cols[2]), i - firstRow, 0);

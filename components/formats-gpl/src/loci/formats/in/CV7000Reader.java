@@ -285,7 +285,7 @@ public class CV7000Reader extends FormatReader {
       lightSources = new ArrayList<LightSource>();
       MeasurementSettingsHandler settingsHandler = new MeasurementSettingsHandler();
       String xml = readSanitizedXML(settingsPath);
-      if (xml.length() > 0) {
+      if (!xml.isEmpty()) {
         XMLTools.parseXML(xml, settingsHandler);
       }
     }
@@ -774,7 +774,7 @@ public class CV7000Reader extends FormatReader {
     public void endElement(String uri, String localName, String qName) {
       String value = currentValue.toString();
       if (qName.equals("bts:MeasurementRecord") && btsType.equals("IMG") &&
-        value.trim().length() > 0) {
+        !value.trim().isEmpty()) {
         Location imgFile = new Location(parentDir, value);
         if (imgFile.exists()) {
           planes.get(planes.size() - 1).file = imgFile.getAbsolutePath();
@@ -794,7 +794,7 @@ public class CV7000Reader extends FormatReader {
     {
       if (qName.equals("bts:MeasurementSamplePlate")) {
         wppPath = attributes.getValue("bts:WellPlateProductFileName");
-        if (wppPath != null && wppPath.trim().length() == 0) {
+        if (wppPath != null && wppPath.trim().isEmpty()) {
           wppPath = null;
         }
       }
@@ -805,7 +805,7 @@ public class CV7000Reader extends FormatReader {
         c.ySize = DataTools.parseDouble(attributes.getValue("bts:VerticalPixelDimension"));
         c.cameraNumber = Integer.parseInt(attributes.getValue("bts:CameraNumber"));
         c.correctionFile = attributes.getValue("bts:ShadingCorrectionSource");
-        if (c.correctionFile != null && c.correctionFile.trim().length() == 0) {
+        if (c.correctionFile != null && c.correctionFile.trim().isEmpty()) {
           c.correctionFile = null;
         }
         channels.add(c);

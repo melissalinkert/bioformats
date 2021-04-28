@@ -277,7 +277,7 @@ public class NRRDReader extends FormatReader {
     m.dimensionOrder = "XYCZT";
 
     String line = in.readLine();
-    while (line != null && line.length() > 0) {
+    while (line != null && !line.isEmpty()) {
       if (!line.startsWith("#") && !line.startsWith("NRRD")) {
         // parse key/value pair
         key = line.substring(0, line.indexOf(':')).trim();

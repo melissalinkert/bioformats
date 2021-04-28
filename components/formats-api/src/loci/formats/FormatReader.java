@@ -326,8 +326,8 @@ public abstract class FormatReader extends FormatHandler
       }
 
       // verify key & value are not empty
-      if (key.length() == 0) return;
-      if (string && val.trim().length() == 0) return;
+      if (key.isEmpty()) return;
+      if (string && val.trim().isEmpty()) return;
 
       if (string) value = val;
     }

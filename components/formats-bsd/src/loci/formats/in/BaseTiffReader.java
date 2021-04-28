@@ -502,7 +502,7 @@ public abstract class BaseTiffReader extends MinimalTiffReader {
    */
   private String getResolutionUnitFromComment(IFD ifd) {
     String comment = ifd.getComment();
-    if (comment != null && comment.trim().length() > 0) {
+    if (comment != null && !comment.trim().isEmpty()) {
       String p = "(.*)unit=(\\w+)(.*)";
       Pattern pattern = Pattern.compile(p, Pattern.DOTALL);
       Matcher m = pattern.matcher(comment);

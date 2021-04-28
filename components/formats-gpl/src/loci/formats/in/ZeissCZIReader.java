@@ -1234,7 +1234,7 @@ public class ZeissCZIReader extends FormatReader {
     store.setExperimenterUserName(userName, 0);
 
     String name = new Location(getCurrentFile()).getName();
-    if (imageName != null && imageName.trim().length() > 0) {
+    if (imageName != null && !imageName.trim().isEmpty()) {
       name = imageName;
     }
 
@@ -1294,7 +1294,7 @@ public class ZeissCZIReader extends FormatReader {
         continue;
       }
 
-      if (description != null && description.length() > 0) {
+      if (description != null && !description.isEmpty()) {
         store.setImageDescription(description, i);
       }
 
@@ -2450,7 +2450,7 @@ public class ZeissCZIReader extends FormatReader {
             store.setFilterSetLotNumber(lotNumber, 0, i);
           }
 
-          if (dichroicRef != null && dichroicRef.length() > 0) {
+          if (dichroicRef != null && !dichroicRef.isEmpty()) {
             store.setFilterSetDichroicRef(dichroicRef, 0, i);
           }
 
@@ -2461,7 +2461,7 @@ public class ZeissCZIReader extends FormatReader {
               if (ref == null || ref.length() <= 0) {
                 ref = excitation.getAttribute("Id");
               }
-              if (ref != null && ref.length() > 0) {
+              if (ref != null && !ref.isEmpty()) {
                 store.setFilterSetExcitationFilterRef(ref, 0, i, ex);
               }
             }
@@ -2473,7 +2473,7 @@ public class ZeissCZIReader extends FormatReader {
               if (ref == null || ref.length() <= 0) {
                 ref = emission.getAttribute("Id");
               }
-              if (ref != null && ref.length() > 0) {
+              if (ref != null && !ref.isEmpty()) {
                 store.setFilterSetEmissionFilterRef(ref, 0, i, em);
               }
             }
@@ -3384,7 +3384,7 @@ public class ZeissCZIReader extends FormatReader {
       if (attrName.endsWith("|")){
         attrName = attrName.substring(0, attrName.length() - 1);
       }
-      else if(attrName.length() == 0 && keyString.endsWith("|")) {
+      else if(attrName.isEmpty() && keyString.endsWith("|")) {
         keyString = keyString.substring(0, keyString.length() - 1);
       }
 
@@ -3444,7 +3444,7 @@ public class ZeissCZIReader extends FormatReader {
     else if (segmentID.equals("DELETED")) {
       segment = new Segment();
     }
-    else if (segmentID.length() == 0) {
+    else if (segmentID.isEmpty()) {
       segment = new Segment();
       skipData = true;
     }

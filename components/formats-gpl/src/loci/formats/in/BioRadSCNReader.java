@@ -152,7 +152,7 @@ public class BioRadSCNReader extends FormatReader {
       else if (line.startsWith("Content-Length")) {
         currentLength = Integer.parseInt(line.substring(line.indexOf(' ') + 1));
       }
-      else if (line.length() == 0) {
+      else if (line.isEmpty()) {
         if (currentType.equals("application/octet-stream")) {
           pixelsOffset = in.getFilePointer();
           in.skipBytes(currentLength);

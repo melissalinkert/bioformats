@@ -218,7 +218,7 @@ public class VarianFDFReader extends FormatReader {
 
     for (String line : lines) {
       line = line.trim();
-      if (line.length() == 0) break;
+      if (line.isEmpty()) break;
       if (line.startsWith("#")) continue;
 
       int space = line.indexOf(' ');

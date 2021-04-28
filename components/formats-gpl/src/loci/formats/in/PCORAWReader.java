@@ -235,7 +235,7 @@ public class PCORAWReader extends FormatReader {
           final StringBuilder description = new StringBuilder();
           for (int j=i + 1; j<lines.length; j++) {
             lines[j] = lines[j].trim();
-            if (lines[j].length() > 0) {
+            if (!lines[j].isEmpty()) {
               description.append(lines[j]);
               description.append(" ");
             }

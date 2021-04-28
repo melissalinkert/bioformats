@@ -183,7 +183,7 @@ public class ImaconReader extends BaseTiffReader {
 
     for (int i=0; i<getSeriesCount(); i++) {
       String name = imageName;
-      if (imageName.length() == 0) {
+      if (imageName.isEmpty()) {
         name = "#" + (i + 1);
       }
       else {

@@ -462,8 +462,9 @@ public abstract class BaseZeissReader extends FormatReader {
         store.setROIID(roiID, roiIndex);
         if (shape.name != null)
           store.setROIName(shape.name, roiIndex);
-        if (shape.text != null && shape.text.length() == 0)
+        if (shape.text != null && shape.text.isEmpty()) {
           shape.text = null;
+        }
 
         switch (shape.type) {
           case POINT:
@@ -1053,7 +1054,7 @@ public abstract class BaseZeissReader extends FormatReader {
    * @return an Integer.  0 if number was null.
    */
   protected static int parseInt(String number, int defaultnum) {
-    if (number != null && number.trim().length() > 0) {
+    if (number != null && !number.trim().isEmpty()) {
       return Integer.parseInt(number);
     }
     return defaultnum;

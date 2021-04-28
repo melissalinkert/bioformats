@@ -205,7 +205,7 @@ public class MicroCTReader extends FormatReader {
     try {
       String line = in.readLine().trim();
       int dimCount = 0;
-      while (line.length() > 0) {
+      while (!line.isEmpty()) {
         int eq = line.indexOf("=");
         if (eq >= 0) {
           String key = line.substring(0, eq);
@@ -316,7 +316,7 @@ public class MicroCTReader extends FormatReader {
    * lines.  The final line in the header is expected to be 0x0c0a.
    */
   private void skipHeader(RandomAccessInputStream s) throws IOException {
-    while (s.readLine().trim().length() > 0);
+    while (!s.readLine().trim().isEmpty());
   }
 
   /**

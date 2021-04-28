@@ -771,7 +771,7 @@ public class ScanrReader extends FormatReader {
     @Override
     public void endElement(String uri, String localName, String qName) {
       String v = currentValue.toString().trim();
-      if (v.length() > 0) {
+      if (!v.isEmpty()) {
         if (qName.equals("Name")) {
           key = v;
 

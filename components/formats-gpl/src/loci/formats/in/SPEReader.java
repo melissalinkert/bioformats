@@ -219,7 +219,7 @@ public class SPEReader extends FormatReader {
             break;
           case STRING:
             String stringValue = header.getString(headerEntry);
-            if (stringValue != null && stringValue.length() > 0) {
+            if (stringValue != null && !stringValue.isEmpty()) {
               addGlobalMeta(headerEntry.name(), stringValue);
             }
             break;

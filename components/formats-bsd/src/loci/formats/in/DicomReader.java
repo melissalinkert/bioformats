@@ -597,7 +597,7 @@ public class DicomReader extends FormatReader {
         case RESCALE_INTERCEPT:
         case WINDOW_CENTER:
             String winCenter = in.readString(elementLength);
-            if (winCenter.trim().length() == 0) centerPixelValue = -1;
+            if (winCenter.trim().isEmpty()) centerPixelValue = -1;
             else {
               try {
                 centerPixelValue = new Double(winCenter).intValue();
@@ -625,7 +625,7 @@ public class DicomReader extends FormatReader {
         case 537262910:
         case WINDOW_WIDTH:
           String t = in.readString(elementLength);
-          if (t.trim().length() == 0) maxPixelRange = -1;
+          if (t.trim().isEmpty()) maxPixelRange = -1;
           else {
             try {
               maxPixelRange = new Double(t.trim()).intValue();
@@ -932,7 +932,7 @@ public class DicomReader extends FormatReader {
       else if (key.equals("Acquisition Date")) originalDate = info;
       else if (key.equals("Acquisition Time")) originalTime = info;
       else if (key.equals("Instance Number")) {
-        if (info.trim().length() > 0) {
+        if (!info.trim().isEmpty()) {
           originalInstance = info;
         }
       }
@@ -1368,7 +1368,7 @@ public class DicomReader extends FormatReader {
         final String key = TYPES.get(tag);
         if ("Instance Number".equals(key)) {
           instance = stream.readString(elementLength).trim();
-          if (instance.length() == 0) instance = null;
+          if (instance.isEmpty()) instance = null;
         }
         else if ("Acquisition Time".equals(key)) {
           time = stream.readString(elementLength);

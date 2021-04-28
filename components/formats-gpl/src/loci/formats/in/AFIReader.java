@@ -387,7 +387,7 @@ public class AFIReader extends FormatReader {
     public void characters(char[] ch, int start, int length) {
       String value = new String(ch, start, length);
 
-      if (currentElement.equals("Path") && value.trim().length() > 0) {
+      if (currentElement.equals("Path") && !value.trim().isEmpty()) {
         pixels.add(value);
       }
     }

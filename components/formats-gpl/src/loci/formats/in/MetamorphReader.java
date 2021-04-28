@@ -1413,7 +1413,7 @@ public class MetamorphReader extends BaseTiffReader {
 
         if (colon < 0) {
           // normal line (not a key/value pair)
-          if (line.length() > 0) {
+          if (!line.isEmpty()) {
             // not a blank line
             sb.append(line);
             sb.append("  ");

@@ -788,7 +788,7 @@ public class PerkinElmerReader extends FormatReader {
     // there are 9 additional tokens, but I don't know what they're for
 
     for (String token : tokens) {
-      if (token.trim().length() == 0) continue;
+      if (token.trim().isEmpty()) continue;
       if (tNum >= hashKeys.length) break;
       if (token.equals("um")) tNum = 5;
       while ((tNum == 1 || tNum == 2) && !token.trim().equals("0")) {
@@ -813,7 +813,7 @@ public class PerkinElmerReader extends FormatReader {
     String[] tokens = DataTools.readFile(csvFile).split("\\s");
     final List<String> tmp = new ArrayList<String>();
     for (String token : tokens) {
-      if (token.trim().length() > 0) tmp.add(token.trim());
+      if (!token.trim().isEmpty()) tmp.add(token.trim());
     }
     tokens = tmp.toArray(new String[0]);
 

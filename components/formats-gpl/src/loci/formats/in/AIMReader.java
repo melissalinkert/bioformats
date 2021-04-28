@@ -150,7 +150,7 @@ public class AIMReader extends FormatReader {
           String[] tokens = value.split(" ");
           for (String token : tokens) {
             token = token.trim();
-            if (token.length() > 0) {
+            if (!token.isEmpty()) {
               if (xSize == null) {
                 xSize = new Double(token);
               }
@@ -167,7 +167,7 @@ public class AIMReader extends FormatReader {
           String[] tokens = value.split(" ");
           for (String token : tokens) {
             token = token.trim();
-            if (token.length() > 0) {
+            if (!token.isEmpty()) {
               if (xLength == null) {
                 xLength = new Double(token);
               }

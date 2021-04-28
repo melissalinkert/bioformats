@@ -570,7 +570,7 @@ public class SlidebookReader extends FormatReader {
             in.skipBytes(10);
             if (nextName < imageNames.length) {
               String name = readCString().trim();
-              if (name.length() > 0) {
+              if (!name.isEmpty()) {
                 imageNames[nextName++] = name;
               }
             }

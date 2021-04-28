@@ -2333,7 +2333,7 @@ public class NativeND2Reader extends SubResolutionFormatReader {
     store.setObjectiveImmersion(MetadataTools.getImmersion(immersion), 0, 0);
 
     String correction = handler.getCorrection();
-    if (correction == null || correction.length() == 0) correction = "Other";
+    if (correction == null || correction.isEmpty()) correction = "Other";
     store.setObjectiveCorrection(MetadataTools.getCorrection(correction), 0, 0);
 
     // link Objective to Image
@@ -2477,7 +2477,7 @@ public class NativeND2Reader extends SubResolutionFormatReader {
 
         sb.setLength(0);
         sb.append(lines[i++]);
-        while (i < lines.length && lines[i].trim().length() > 0) {
+        while (i < lines.length && !lines[i].trim().isEmpty()) {
           sb.append(' ');
           sb.append(lines[i++]);
           if (i >= lines.length) {

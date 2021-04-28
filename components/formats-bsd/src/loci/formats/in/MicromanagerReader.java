@@ -510,7 +510,7 @@ public class MicromanagerReader extends FormatReader {
           String[] lines = json.split("\n");
           for (String line : lines) {
             String toSplit = line.trim();
-            if (toSplit.length() == 0) {
+            if (toSplit.isEmpty()) {
               continue;
             }
             toSplit = toSplit.substring(0, toSplit.length() - 1);
@@ -520,7 +520,7 @@ public class MicromanagerReader extends FormatReader {
             }
             String key = values[0].replaceAll("\"", "");
             String value = values[1].replaceAll("\"", "");
-            if (key.length() > 0 && value.length() > 0) {
+            if (!key.isEmpty() && !value.isEmpty()) {
               parseKeyAndValue(key, value, digits, plane * nIFDs, nIFDs);
             }
           }
@@ -547,7 +547,7 @@ public class MicromanagerReader extends FormatReader {
 
           for (int q=0; q<tokens.length; q++) {
             String token = tokens[q];
-            if (token.length() == 0) {
+            if (token.isEmpty()) {
               nEmptyTokens++;
               continue;
             }
@@ -580,7 +580,7 @@ public class MicromanagerReader extends FormatReader {
               if (value == null && (propType == null || !propType.equals("PropType"))) {
                 StringBuilder sb = new StringBuilder(token);
 
-                while (q + 1 < tokens.length && tokens[q + 1].trim().length() > 0) {
+                while (q + 1 < tokens.length && !tokens[q + 1].trim().isEmpty()) {
                   sb.append(':');
                   sb.append(tokens[q + 1]);
                   q++;
@@ -747,7 +747,7 @@ public class MicromanagerReader extends FormatReader {
         if (endIndex == -1) endIndex = value.length();
 
         value = value.substring(startIndex + 1, endIndex).trim();
-        if (value.length() == 0) {
+        if (value.isEmpty()) {
           continue;
         }
         value = value.replaceAll("\"", "");
@@ -1040,7 +1040,7 @@ public class MicromanagerReader extends FormatReader {
 
           String prechannel = filename.toString();
 
-          if (blocks[2].length() > 0) {
+          if (!blocks[2].isEmpty()) {
             String channel = p.channels[c];
             if (channel.indexOf('-') != -1) {
               channel = channel.substring(0, channel.indexOf('-'));
@@ -1057,7 +1057,7 @@ public class MicromanagerReader extends FormatReader {
           filename.append(".tif");
 
           if (!new Location(filename.toString()).exists() &&
-            blocks[2].length() > 0)
+            !blocks[2].isEmpty())
           {
             // rewind and try using the full channel name
 

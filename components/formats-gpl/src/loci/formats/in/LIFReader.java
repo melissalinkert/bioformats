@@ -1246,7 +1246,7 @@ public class LIFReader extends FormatReader {
 
       String suffix = root.getAttribute("Identifier");
       String value = root.getAttribute("Variant");
-      if (suffix == null || suffix.trim().length() == 0) {
+      if (suffix == null || suffix.trim().isEmpty()) {
         suffix = root.getAttribute("Description");
       }
       final StringBuilder key = new StringBuilder();
@@ -1256,8 +1256,8 @@ public class LIFReader extends FormatReader {
         key.append(k);
         key.append("|");
       }
-      if (suffix != null && value != null && suffix.length() > 0 &&
-        value.length() > 0 && !suffix.equals("HighInteger") &&
+      if (suffix != null && value != null && !suffix.isEmpty() &&
+        !value.isEmpty() && !suffix.equals("HighInteger") &&
         !suffix.equals("LowInteger"))
       {
         addSeriesMetaList(key.toString() + suffix, value);
@@ -1341,7 +1341,7 @@ public class LIFReader extends FormatReader {
 
         boolean active = "1".equals(detector.getAttribute("IsActive"));
         String c = detector.getAttribute("Channel");
-        int channel = (c == null || c.trim().length() == 0) ? 0 : Integer.parseInt(c);
+        int channel = (c == null || c.trim().isEmpty()) ? 0 : Integer.parseInt(c);
         if (active) {
           if (detectorIndexes[image] != null && detectorModels[image] != null) {
             detectorModels[image].add(detectorIndexes[image].get(channel));

@@ -376,7 +376,7 @@ public class IvisionReader extends FormatReader {
     @Override
     public void characters(char[] ch, int start, int length) {
       String v = new String(ch, start, length).trim();
-      if (v.length() > 0) {
+      if (!v.isEmpty()) {
         if ("key".equals(currentElement)) {
           key = v;
         }

@@ -190,7 +190,7 @@ public class TestTools {
   public static boolean isConfigFile(Location file, String configFileSuffix)
   {
     String configName = baseConfigName;
-    if (configFileSuffix.length() > 0) {
+    if (!configFileSuffix.isEmpty()) {
       configName += ".";
       configName += configFileSuffix;
     }

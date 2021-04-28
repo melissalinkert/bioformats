@@ -2018,7 +2018,7 @@ public final class FormatTools {
         return null;
       }
       String unit = m.group(2);
-      if (unit == null || unit.trim().length() == 0) {
+      if (unit == null || unit.trim().isEmpty()) {
         unit = defaultUnit;
       }
 

@@ -176,7 +176,7 @@ public class ImporterOptions extends OptionsList {
 
   /** Parses the plugin argument for parameter values. */
   public void parseArg(String arg) {
-    if (arg == null || arg.length() == 0) return;
+    if (arg == null || arg.isEmpty()) return;
     if (new Location(arg).exists()) {
       // old style arg: entire argument is a file path
 

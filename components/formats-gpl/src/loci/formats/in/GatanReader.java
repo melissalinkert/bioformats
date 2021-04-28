@@ -512,7 +512,7 @@ public class GatanReader extends FormatReader {
           new Object[] {indent, i, n, dataType, sb});
         if (skip != 623191333) LOGGER.warn("Skip mismatch: {}", skip);
         if (n == 1) {
-          if ("Dimensions".equals(parent) && labelString.length() == 0) {
+          if ("Dimensions".equals(parent) && labelString.isEmpty()) {
             if (adjustEndianness) in.order(!in.isLittleEndian());
             if (i == 0) {
               core.get(0).sizeX = in.readInt();

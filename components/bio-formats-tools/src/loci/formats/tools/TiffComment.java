@@ -96,7 +96,7 @@ public class TiffComment {
           try (BufferedReader reader = new BufferedReader(
                       new InputStreamReader(System.in, Constants.ENCODING))) {
             String line = reader.readLine();
-            while (line != null && line.length() > 0) {
+            while (line != null && !line.isEmpty()) {
               if (newComment == null) newComment = line;
               else {
                 newComment += "\n" + line;

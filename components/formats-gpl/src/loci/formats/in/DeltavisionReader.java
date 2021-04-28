@@ -777,7 +777,7 @@ public class DeltavisionReader extends FormatReader {
       fileType < IMAGE_TYPES.length ? IMAGE_TYPES[fileType] : "unknown";
 
     String imageDesc = title[0];
-    if (imageDesc != null && imageDesc.length() == 0) imageDesc = null;
+    if (imageDesc != null && imageDesc.isEmpty()) imageDesc = null;
 
     // --- populate original metadata ---
 
@@ -1493,7 +1493,7 @@ public class DeltavisionReader extends FormatReader {
 
     while (s.getFilePointer() < s.length() - 1) {
       String line = s.readLine();
-      if (line == null || line.length() == 0) continue;
+      if (line == null || line.isEmpty()) continue;
 
       if (doStatistics) {
         String[] keys = line.split("  ");
@@ -1578,7 +1578,7 @@ public class DeltavisionReader extends FormatReader {
         }
       }
 
-      if (line.length() > 0 && line.indexOf('.') == -1) previousLine = line;
+      if (!line.isEmpty() && line.indexOf('.') == -1) previousLine = line;
 
       doStatistics = line.endsWith("- reading image data...");
     }

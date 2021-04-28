@@ -725,7 +725,7 @@ public class ImportProcess implements StatusReporter {
       sb.append((i + 1));
       sb.append(": ");
       String name = getOMEMetadata().getImageName(i);
-      if (name != null && name.length() > 0) {
+      if (name != null && !name.isEmpty()) {
         sb.append(name);
         sb.append(": ");
       }

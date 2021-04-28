@@ -1159,7 +1159,7 @@ public class ZeissLSMReader extends FormatReader {
             // we want to read until we find a null char
             int length = in.readInt();
             String name = in.readString(length);
-            while ((name.length() > 0) &&
+            while (!name.isEmpty() &&
               (name.codePointAt(name.length()-1) == 0))
             {
               name = name.substring(0, name.length()-1);
@@ -1968,7 +1968,7 @@ public class ZeissLSMReader extends FormatReader {
             filename = filename.replace('/', File.separatorChar);
             filename =
               filename.substring(filename.lastIndexOf(File.separator) + 1);
-            if (filename.length() > 0) {
+            if (!filename.isEmpty()) {
               Location file = new Location(parent, filename);
               if (file.exists()) {
                 referencedLSMs.add(file.getAbsolutePath());
@@ -2484,7 +2484,7 @@ public class ZeissLSMReader extends FormatReader {
       filter = getStringValue(CHANNEL_FILTER);
       if (filter != null) {
         filter = filter.trim();
-        if (filter.length() == 0 || filter.equals("None")) {
+        if (filter.isEmpty() || filter.equals("None")) {
           filter = null;
         }
       }
@@ -2543,7 +2543,7 @@ public class ZeissLSMReader extends FormatReader {
       filter = getStringValue(BEAM_SPLITTER_FILTER);
       if (filter != null) {
         filter = filter.trim();
-        if (filter.length() == 0 || filter.equals("None")) {
+        if (filter.isEmpty() || filter.equals("None")) {
           filter = null;
         }
       }

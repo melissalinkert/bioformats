@@ -64,7 +64,7 @@ public class ImporterMetadata extends HashMap<String, Object> {
       String s = "";
       if (usePrefix) {
         s = process.getOMEMetadata().getImageName(i);
-        if ((s == null || s.trim().length() == 0) && seriesCount > 1) {
+        if ((s == null || s.trim().isEmpty()) && seriesCount > 1) {
           StringBuffer sb = new StringBuffer();
           sb.append("Series ");
           int zeroes = digits - digits(i + 1);

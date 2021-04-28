@@ -186,7 +186,7 @@ public class MIASReader extends FormatReader {
 
     boolean validName =
       wellName.startsWith("Well") || wellName.equals("results") ||
-      (wellName.length() == 1 && wellName.replaceAll("\\d", "").length() == 0);
+      (wellName.length() == 1 && wellName.replaceAll("\\d", "").isEmpty());
     return validName && super.isThisType(filename, open);
   }
 
@@ -653,7 +653,7 @@ public class MIASReader extends FormatReader {
         }
         else if (blocks[block].equals("im")) tileRows = count[block];
         else if (blocks[block].equals("")) tileCols = count[block];
-        else if (blocks[block].replaceAll("\\d", "").length() == 0) {
+        else if (blocks[block].replaceAll("\\d", "").isEmpty()) {
           if (block == 3) tileRows = count[block];
           else if (block == 2) tileCols = count[block];
           else if (block == 0) {
@@ -758,7 +758,7 @@ public class MIASReader extends FormatReader {
 
       for (String line : lines) {
         line = line.trim();
-        if (line.length() == 0) continue;
+        if (line.isEmpty()) continue;
         if (line.startsWith("******") && line.endsWith("******")) nStarLines++;
 
         if (doKeyValue) {

@@ -200,7 +200,7 @@ public class FilePatternDialog extends ImporterDialog {
     String id = gd.getNextString();
 
     if (useRegex) {
-      if (contains.trim().length() > 0) {
+      if (!contains.trim().isEmpty()) {
         String dir =
           originalID.substring(0, originalID.lastIndexOf(File.separator) + 1);
         id = dir + ".*" + contains + ".*";

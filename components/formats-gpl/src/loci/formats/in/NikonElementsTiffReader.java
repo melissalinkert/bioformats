@@ -99,7 +99,7 @@ public class NikonElementsTiffReader extends BaseTiffReader {
     super.initStandardMetadata();
 
     String xml = ifds.get(0).getIFDTextValue(NIKON_XML_TAG).trim();
-    if (xml.length() == 0) {
+    if (xml.isEmpty()) {
       xml = ifds.get(0).getIFDTextValue(NIKON_XML_TAG_2).trim();
     }
     int open = xml.indexOf('<');
@@ -253,7 +253,7 @@ public class NikonElementsTiffReader extends BaseTiffReader {
     store.setObjectiveImmersion(MetadataTools.getImmersion(immersion), 0, 0);
 
     String correction = handler.getCorrection();
-    if (correction == null || correction.length() == 0) correction = "Other";
+    if (correction == null || correction.isEmpty()) correction = "Other";
     store.setObjectiveCorrection(MetadataTools.getCorrection(correction), 0, 0);
 
     String objective = MetadataTools.createLSID("Objective", 0, 0);

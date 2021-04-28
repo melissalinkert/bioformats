@@ -156,7 +156,7 @@ public class ConfigurationTree {
     }
     String subPath = path.substring((int) Math.min(
       oldRoot.length() + 1, path.length()));
-    if (subPath.length() == 0) {
+    if (subPath.isEmpty()) {
       return newRoot;
     }
     else {

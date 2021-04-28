@@ -1723,7 +1723,7 @@ public class CellSensReader extends FormatReader {
               else if (tag == DEVICE_MANUFACTURER) {
                 pyramid.deviceManufacturers.add(value);
               }
-              else if (tag == EXPOSURE_TIME && tagPrefix.length() == 0) {
+              else if (tag == EXPOSURE_TIME && tagPrefix.isEmpty()) {
                 pyramid.exposureTimes.add(new Long(value));
               }
               else if (tag == EXPOSURE_TIME) {
@@ -1820,7 +1820,7 @@ public class CellSensReader extends FormatReader {
               addMetaList(tagPrefix + tagName, value,
                 pyramids.get(metadataIndex).originalMetadata);
             }
-            else if (tag != VALUE || tagPrefix.length() > 0) {
+            else if (tag != VALUE || !tagPrefix.isEmpty()) {
               addGlobalMetaList(tagPrefix + tagName, value);
             }
             if ("Channel Wavelength Value".equals(tagPrefix + tagName)) {

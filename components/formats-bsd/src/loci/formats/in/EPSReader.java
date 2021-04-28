@@ -369,7 +369,7 @@ public class EPSReader extends FormatReader {
 
   private String readLine() throws IOException {
     String s = in.findString("\r", "\n");
-    return s.length() == 0 ? null : s;
+    return s.isEmpty() ? null : s;
   }
 
 }

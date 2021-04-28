@@ -857,7 +857,7 @@ public class ICSReader extends FormatReader {
         reader.getFilePointer() < reader.length() - 1)
       {
         line = line.trim();
-        if (line.length() > 0) {
+        if (!line.isEmpty()) {
           // split the line into tokens
           String[] tokens = tokenize(line);
 

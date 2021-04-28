@@ -723,7 +723,7 @@ public class OperettaReader extends FormatReader {
       }
       else if (activePlane != null) {
         if ("URL".equals(currentName)) {
-          if (value.length() > 0) {
+          if (!value.isEmpty()) {
             if (value.startsWith("http")) {
               activePlane.filename = value;
             }

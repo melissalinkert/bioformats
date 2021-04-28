@@ -177,7 +177,7 @@ public class OBFReader extends FormatReader {
 
       in.seek(meta_data_position);
 
-      for (String key = readString(); key.length() > 0; key = readString()) {
+      for (String key = readString(); !key.isEmpty(); key = readString()) {
         if (key.equals("ome_xml")) {
           final String ome_xml = readString();
           LOGGER.trace("OME-xml = {}", ome_xml);

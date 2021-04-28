@@ -216,7 +216,7 @@ public class OMETiffReader extends SubResolutionFormatReader {
     else if (description instanceof String) {
       comment = (String) description;
     }
-    if (comment == null || comment.trim().length() == 0) return false;
+    if (comment == null || comment.trim().isEmpty()) return false;
 
     comment = comment.trim();
 

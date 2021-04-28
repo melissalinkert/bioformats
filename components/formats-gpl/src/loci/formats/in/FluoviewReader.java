@@ -296,7 +296,7 @@ public class FluoviewReader extends BaseTiffReader {
       double voxel = resolutions[i];
       if (name == null || size == 0) continue;
       name = name.toLowerCase().trim();
-      if (name.length() == 0) continue;
+      if (name.isEmpty()) continue;
 
       if (name.equals("x")) {
         voxelX = voxel;

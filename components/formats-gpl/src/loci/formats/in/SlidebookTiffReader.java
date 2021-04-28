@@ -82,7 +82,7 @@ public class SlidebookTiffReader extends BaseTiffReader {
     String software = ifd.getIFDTextValue(IFD.SOFTWARE);
     if (software == null) return false;
     return software.equals(SLIDEBOOK_MAGIC_STRING) &&
-      ifd.getComment().length() == 0 && (ifd.containsKey(X_POS_TAG) ||
+      ifd.getComment().isEmpty() && (ifd.containsKey(X_POS_TAG) ||
       ifd.containsKey(Y_POS_TAG) || ifd.containsKey(Z_POS_TAG) ||
       ifd.containsKey(CHANNEL_TAG) || ifd.containsKey(PHYSICAL_SIZE_TAG) ||
       ifd.containsKey(MAGNIFICATION_TAG));

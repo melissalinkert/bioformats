@@ -146,9 +146,12 @@ public class SISReader extends BaseTiffReader {
       }
 
       in.skipBytes(28);
-      in.seek(in.readLong() - 84);
-      physicalSizeX = in.readDouble() * 1000;
-      physicalSizeY = in.readDouble() * 1000;
+      long pointer = in.readLong() - 84;
+      if (pointer > 0 && pointer + 16 <= in.length()) {
+        in.seek(pointer);
+        physicalSizeX = in.readDouble() * 1000;
+        physicalSizeY = in.readDouble() * 1000;
+      }
 
       return;
     }

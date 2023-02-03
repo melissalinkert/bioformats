@@ -33,6 +33,7 @@
 package loci.formats.codec;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.FormatException;
@@ -77,6 +78,44 @@ public interface Codec {
    *   appropriate type.
    */
   byte[] compress(byte[][] data, CodecOptions options) throws FormatException;
+
+  /**
+   * Compresses data from an array into a ByteBuffer.
+   * A preexisting destination ByteBuffer may be provided,
+   * and a compressor may choose to use (or not) that ByteBuffer
+   * if it has enough remaining space.
+   * Regardless, the function returns a reference to the ByteBuffer
+   * where the compressed data was actually stored.
+   * This potentially avoids unnecessary buffer creation and copying,
+   * since the ByteBuffer position indicates
+   * how much of the buffer is actually used.
+   *
+   * @param target A preallocated ByteBuffer that may be used for the compressed data.  This may be <code>null</code> to force the compressor to allocate a fresh buffer.
+   * @param data The data to be compressed.
+   * @param options Options to be used during compression, if appropriate.
+   * @return The ByteBuffer holding the compressed data.
+   * @throws CodecException If input cannot be processed.
+   */
+  ByteBuffer compress(ByteBuffer target, byte[] data, CodecOptions options) throws FormatException;
+
+  /**
+   * Compresses data from a ByteBuffer into a ByteBuffer.
+   * A preexisting destination ByteBuffer may be provided,
+   * and a compressor may choose to use (or not) that ByteBuffer
+   * if it has enough remaining space.
+   * Regardless, the function returns a reference to the ByteBuffer
+   * where the compressed data was actually stored.
+   * This potentially avoids unnecessary buffer creation and copying,
+   * since the ByteBuffer position indicates
+   * how much of the buffer is actually used.
+   *
+   * @param target A preallocated ByteBuffer that may be used for the compressed data.  This may be <code>null</code> to force the compressor to allocate a fresh buffer.
+   * @param input The data to be compressed.
+   * @param options Options to be used during compression, if appropriate.
+   * @return The ByteBuffer holding the compressed data.
+   * @throws CodecException If input cannot be processed.
+   */
+  ByteBuffer compress(ByteBuffer target, ByteBuffer input, CodecOptions options) throws FormatException;
 
   /**
    * Decompresses a block of data.

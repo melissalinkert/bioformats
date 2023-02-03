@@ -33,6 +33,7 @@
 package loci.formats.codec;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import loci.common.RandomAccessInputStream;
 import loci.formats.FormatException;
@@ -73,6 +74,28 @@ class WrappedCodec extends BaseCodec {
   {
     try {
       return codec.compress(data, getOptions(options));
+    }
+    catch (ome.codecs.CodecException e) {
+      throw unwrapCodecException(e);
+    }
+  }
+
+  @Override
+  public ByteBuffer compress(ByteBuffer target, byte[] input, CodecOptions options) throws FormatException
+  {
+    try {
+      return codec.compress(target, input, getOptions(options));
+    }
+    catch (ome.codecs.CodecException e) {
+      throw unwrapCodecException(e);
+    }
+  }
+
+  @Override
+  public ByteBuffer compress(ByteBuffer target, ByteBuffer input, CodecOptions options) throws FormatException
+  {
+    try {
+      return codec.compress(target, input, getOptions(options));
     }
     catch (ome.codecs.CodecException e) {
       throw unwrapCodecException(e);

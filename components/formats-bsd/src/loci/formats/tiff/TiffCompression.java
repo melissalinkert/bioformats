@@ -33,6 +33,7 @@
 package loci.formats.tiff;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -348,7 +349,7 @@ public enum TiffCompression implements CodedEnum {
     options.signed = false;
     return options;
   }
-  
+
   /** Encodes a strip of data. */
   public byte[] compress(byte[] input, CodecOptions options)
     throws FormatException, IOException
@@ -358,6 +359,26 @@ public enum TiffCompression implements CodedEnum {
           "Sorry, " + getCodecName() + " compression mode is not supported");
     }
     return codec.compress(input, options);
+  }
+
+  public ByteBuffer compress(ByteBuffer input, CodecOptions options)
+    throws FormatException, IOException
+  {
+    if (codec == null) {
+      throw new FormatException(
+          "Sorry, " + getCodecName() + " compression mode is not supported");
+    }
+    return codec.compress(null, input, options);
+  }
+
+  public ByteBuffer compress(ByteBuffer input, ByteBuffer output, CodecOptions options)
+    throws FormatException, IOException
+  {
+    if (codec == null) {
+      throw new FormatException(
+          "Sorry, " + getCodecName() + " compression mode is not supported");
+    }
+    return codec.compress(output, input, options);
   }
 
   /** Performs in-place differencing according to the given predictor value. */

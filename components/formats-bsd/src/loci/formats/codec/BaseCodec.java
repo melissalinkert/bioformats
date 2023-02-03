@@ -33,6 +33,7 @@
 package loci.formats.codec;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 import loci.common.RandomAccessInputStream;
@@ -155,6 +156,24 @@ public abstract class BaseCodec implements Codec {
       curPos += data[i].length;
     }
     return compress(toCompress, options);
+  }
+
+  @Override
+  public ByteBuffer compress(ByteBuffer target, byte[] input, CodecOptions options)
+    throws FormatException
+  {
+    target.put(compress(input, options));
+    return target;
+  }
+
+  @Override
+  public ByteBuffer compress(ByteBuffer target, ByteBuffer input, CodecOptions options)
+    throws FormatException
+  {
+    // codecs that actually support compression can choose to override this
+    // current codecs that extend loci.formats.codecs.BaseCodec but not
+    // loci.formats.codecs.WrappedCodec do not support compression at all
+    throw new IllegalArgumentException("Unsupported compression operation");
   }
 
   /* @see Codec#decompress(byte[]) */

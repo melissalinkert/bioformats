@@ -624,6 +624,7 @@ public class ZeissCZIReader extends FormatReader {
     // switch to the master file if this is part of a multi-file dataset
     int lastDot = id.lastIndexOf(".");
     String base = lastDot < 0 ? id : id.substring(0, lastDot);
+    /*
     if (base.endsWith(")") && isGroupFiles()) {
       LOGGER.info("Checking for master file");
       int lastFileSeparator = base.lastIndexOf(File.separator);
@@ -640,6 +641,7 @@ public class ZeissCZIReader extends FormatReader {
         }
       }
     }
+    */
 
     CoreMetadata ms0 = core.get(0);
 
@@ -651,43 +653,60 @@ public class ZeissCZIReader extends FormatReader {
 
     readSegments(id);
 
-    // check if we have the master file in a multi-file dataset
-    // file names are not stored in the files; we have to rely on a
-    // specific naming convention:
-    //
-    //  master_file.czi
-    //  master_file (1).czi
-    //  master_file (2).czi
-    //  ...
-    //
-    // the number of files is also not stored, so we have to manually check
-    // for all files with a matching name
+    if (isMultiFile(getFirstMetadataSegment())) {
+      /* debug */ System.out.println("*** grouping files");
+      // check if we have the master file in a multi-file dataset
+      // file names are not stored in the files; we have to rely on a
+      // specific naming convention:
+      //
+      //  master_file.czi
+      //  master_file (1).czi
+      //  master_file (2).czi
+      //  ...
+      //
+      // the number of files is also not stored, so we have to manually check
+      // for all files with a matching name
 
-    Location file = new Location(id).getAbsoluteFile();
-    base = file.getName();
-    lastDot = base.lastIndexOf(".");
-    if (lastDot >= 0) {
-      base = base.substring(0, lastDot);
-    }
+      /* debug */ System.out.println("looking for additional files...");
 
-    Location parent = file.getParentFile();
-    String[] list = parent.list(true);
-    for (String f : list) {
-      if (f.startsWith(base + "(") || f.startsWith(base + " (")) {
-        String part = f.substring(f.lastIndexOf("(") + 1, f.lastIndexOf(")"));
-        try {
-          pixels.put(Integer.parseInt(part),
-            new Location(parent, f).getAbsolutePath());
-        } catch (NumberFormatException e) {
-          LOGGER.debug("{} not included in multi-file dataset", f);
+      Location file = new Location(id).getAbsoluteFile();
+      base = file.getName();
+      lastDot = base.lastIndexOf(".");
+      if (lastDot >= 0) {
+        base = base.substring(0, lastDot);
+      }
+      if (base.indexOf("(") > 0) {
+        // if this isn't the main file, fix it so the main file is read first
+        base = base.substring(0, base.lastIndexOf("("));
+        segments.clear();
+      }
+
+      Location parent = file.getParentFile();
+      String[] list = parent.list(true);
+      for (String f : list) {
+        if (f.startsWith(base + "(") || f.startsWith(base + " (")) {
+          String part = f.substring(f.lastIndexOf("(") + 1, f.lastIndexOf(")"));
+          try {
+            pixels.put(Integer.parseInt(part),
+              new Location(parent, f).getAbsolutePath());
+          } catch (NumberFormatException e) {
+            LOGGER.debug("{} not included in multi-file dataset", f);
+          }
+        }
+        else if (f.startsWith(base + ".") && segments.size() == 0) {
+          // if the main file is found but wasn't passed to setId,
+          // parse it here before the other files
+          currentId = new Location(parent, f).getAbsolutePath();
+          readSegments(currentId);
         }
       }
-    }
+      /* debug */ System.out.println("# of files = " + pixels.size());
 
-    Integer[] keys = pixels.keySet().toArray(new Integer[pixels.size()]);
-    Arrays.sort(keys);
-    for (Integer key : keys) {
-      readSegments(pixels.get(key));
+      Integer[] keys = pixels.keySet().toArray(new Integer[pixels.size()]);
+      Arrays.sort(keys);
+      for (Integer key : keys) {
+        readSegments(pixels.get(key));
+      }
     }
 
     calculateDimensions();
@@ -1791,6 +1810,15 @@ public class ZeissCZIReader extends FormatReader {
     }
   }
 
+  private Metadata getFirstMetadataSegment() {
+    for (Segment segment : segments) {
+      if (segment instanceof Metadata) {
+        return (Metadata) segment;
+      }
+    }
+    return null;
+  }
+
   private void readAttachments() throws FormatException, IOException {
     if (!canReadAttachments()) {
       return;
@@ -2173,8 +2201,41 @@ public class ZeissCZIReader extends FormatReader {
     }
   }
 
-  private void translateMetadata(String xml) throws FormatException, IOException
-  {
+  private boolean isMultiFile(Metadata segment) throws FormatException, IOException {
+    if (segment == null) {
+      return false;
+    }
+    segment.fillInData();
+    try {
+      String xml = segment.xml;
+      xml = XMLTools.sanitizeXML(xml);
+
+      Element root = getRootElement(xml);
+      NodeList experiments = root.getElementsByTagName("Experiment");
+      if (experiments == null || experiments.getLength() == 0) {
+        return false;
+      }
+
+      Element experimentBlock =
+        getFirstNode((Element) experiments.item(0), "ExperimentBlocks");
+      Element acquisition = getFirstNode(experimentBlock, "AcquisitionBlock");
+      Element tilesSetup = getFirstNode(acquisition, "TilesSetup");
+      Element tileSampleHolder = getFirstNode(tilesSetup, "SampleHolder");
+
+      if (tileSampleHolder != null) {
+        String splitFiles = getFirstNodeValue(tileSampleHolder, "SplitScenesInSeparateFiles");
+        if (splitFiles != null) {
+          return Boolean.parseBoolean(splitFiles.toLowerCase().trim());
+        }
+      }
+      return false;
+    }
+    finally {
+      segment.clearXML();
+    }
+  }
+
+  private Element getRootElement(String xml) throws FormatException, IOException {
     Element root = null;
     try {
       ByteArrayInputStream s =
@@ -2198,33 +2259,26 @@ public class ZeissCZIReader extends FormatReader {
         break;
       }
     }
+    return realRoot;
+  }
 
-    translateExperiment(realRoot);
-    translateInformation(realRoot);
-    translateScaling(realRoot);
-    translateDisplaySettings(realRoot);
-    translateLayers(realRoot);
-    translateHardwareSettings(realRoot);
+  private void translateMetadata(String xml) throws FormatException, IOException
+  {
+    Element root = getRootElement(xml);
+
+    translateExperiment(root);
+    translateInformation(root);
+    translateScaling(root);
+    translateDisplaySettings(root);
+    translateLayers(root);
+    translateHardwareSettings(root);
 
     final Deque<String> nameStack = new ArrayDeque<String>();
-    populateOriginalMetadata(realRoot, nameStack);
+    populateOriginalMetadata(root, nameStack);
   }
 
   private boolean checkPALM(String xml) throws FormatException, IOException {
-    Element root = null;
-    try {
-      ByteArrayInputStream s =
-        new ByteArrayInputStream(xml.getBytes(Constants.ENCODING));
-      root = parser.parse(s).getDocumentElement();
-      s.close();
-    }
-    catch (SAXException e) {
-      throw new FormatException(e);
-    }
-
-    if (root == null) {
-      throw new FormatException("Could not parse the XML metadata.");
-    }
+    Element root = getRootElement(xml);
 
     NodeList customAttributes = root.getElementsByTagName("CustomAttributes");
     if (customAttributes != null && customAttributes.getLength() > 0) {

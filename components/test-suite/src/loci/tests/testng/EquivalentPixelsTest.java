@@ -31,21 +31,17 @@ import loci.formats.FormatTools;
 import loci.formats.IFormatReader;
 import loci.formats.ImageReader;
 import loci.formats.ReaderWrapper;
-import nl.javadude.assumeng.Assumption;
-import nl.javadude.assumeng.AssumptionListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 /**
  * Compare each pixel in two files to ensure that they are equivalent.
  */
-@Listeners(value = AssumptionListener.class)
 public class EquivalentPixelsTest
 {
   private static final Logger LOGGER =
@@ -144,6 +140,13 @@ public class EquivalentPixelsTest
         }
       }
     }
+  }
+
+  public static void main(String[] args) throws Exception {
+    EquivalentPixelsTest test = new EquivalentPixelsTest();
+    test.init(args[0], args[1]);
+    test.setId();
+    test.testEquivalent();
   }
 
 }

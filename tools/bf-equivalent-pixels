@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# bf-equivalent-pixels: a script for testing if two datasets have images with equivalent pixel values
+
+# Required JARs: bioformats_package.jar, bio-formats-testing-framework.jar
+
+RESOLVED_PATH=$(readlink -f "$0" 2>/dev/null \
+  || perl -MCwd -le 'print Cwd::abs_path(shift)' "$0" 2>/dev/null \
+  || echo "$0")
+BF_DIR=$(dirname $RESOLVED_PATH)
+
+BF_PROG=loci.tests.testng.EquivalentPixelsTest "$BF_DIR/bf.sh" "$@"

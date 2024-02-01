@@ -50,6 +50,14 @@ public abstract class DelegateReader extends FormatReader {
   /** Flag indicating whether to use legacy reader by default. */
   protected boolean useLegacy;
 
+  /**
+   * setId may alter the "useLegacy" variable
+   * Storing the state of the "useLegacy" variable prior to any
+   * internal changes allows the reader to reset "useLegacy"
+   * to its original state upon close.
+   */
+  private boolean initialUseLegacy;
+
   /** Native reader. */
   protected IFormatReader nativeReader;
 
@@ -235,6 +243,10 @@ public abstract class DelegateReader extends FormatReader {
     if (legacyReader != null) legacyReader.close(fileOnly);
     if (!fileOnly) {
       nativeReaderInitialized = legacyReaderInitialized = false;
+
+      // reset to whatever legacy setting was originally requested
+      // this erases any changes made during setId
+      setLegacy(initialUseLegacy);
     }
   }
 
@@ -272,6 +284,10 @@ public abstract class DelegateReader extends FormatReader {
   /* @see IFormatHandler#setId(String) */
   @Override
   public void setId(String id) throws FormatException, IOException {
+    // capture the current state of "useLegacy"
+    // it may be updated later in this method and should be reset upon close
+    initialUseLegacy = isLegacy();
+
     if (useLegacy && !nativeReaderInitialized && !legacyReaderInitialized) {
       try {
         legacyReader.setId(id);

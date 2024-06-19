@@ -47,8 +47,9 @@ import loci.formats.MetadataTools;
 import loci.formats.codec.Codec;
 import loci.formats.codec.CodecOptions;
 import loci.formats.codec.JPEGCodec;
-import loci.formats.codec.LosslessJPEGCodec;
 import loci.formats.codec.JPEG2000Codec;
+import loci.formats.codec.LosslessJPEGCodec;
+import loci.formats.codec.PassthroughCodec;
 import loci.formats.meta.MetadataStore;
 import loci.formats.tiff.IFD;
 import loci.formats.tiff.IFDList;
@@ -381,6 +382,10 @@ public class CellSensReader extends FormatReader {
   private ArrayList<String> extraFiles = new ArrayList<String>();
   private HashMap<Integer, String> fileMap = new HashMap<Integer, String>();
 
+  // TiffParser is used for uncompressed (openBytes) tile reading
+  // MinimalTiffReader is used for compressed (openCompressedBytes) tile reading,
+  // but doesn't need to be initialized
+  private MinimalTiffReader tiffReader = new MinimalTiffReader();
   private TiffParser parser;
   private IFDList ifds;
 
@@ -433,6 +438,136 @@ public class CellSensReader extends FormatReader {
        FAIL_ON_MISSING_KEY, FAIL_ON_MISSING_DEFAULT);
     }
     return FAIL_ON_MISSING_DEFAULT;
+  }
+
+  // -- ICompressedTileReader API methods --
+
+  @Override
+  public int getTileRows(int no) {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < rows.size()) {
+      return rows.get(getCoreIndex());
+    }
+    try {
+      return (int) ifds.get(getIFDIndex() + no).getTilesPerColumn();
+    }
+    catch (FormatException e) {
+      LOGGER.debug("Could not get tile row count", e);
+    }
+    return super.getTileRows(no);
+  }
+
+  @Override
+  public int getTileColumns(int no) {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < cols.size()) {
+      return cols.get(getCoreIndex());
+    }
+    try {
+      return (int) ifds.get(getIFDIndex() + no).getTilesPerRow();
+    }
+    catch (FormatException e) {
+      LOGGER.debug("Could not get tile column count", e);
+    }
+    return super.getTileColumns(no);
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < rows.size()) {
+      Integer index = getTileIndex(no, y, x);
+      if (index == null || index < 0) {
+        return new byte[0];
+      }
+
+      Long offset = tileOffsets.get(getCoreIndex())[index];
+      try (RandomAccessInputStream ets =
+        new RandomAccessInputStream(fileMap.get(getCoreIndex()))) {
+        ets.seek(offset);
+        long nextOffset = getNextOffset(tileOffsets.get(getCoreIndex()), index, ets.length());
+
+        // if this cast overflows, compressed tile is larger than 4GB
+        // so there are likely other problems
+        int tileSize = (int) (nextOffset - offset);
+
+        int compression = compressionType.get(getCoreIndex());
+        byte[] compressedBuf = new byte[tileSize];
+        ets.read(compressedBuf);
+        return compressedBuf;
+      }
+    }
+    IFD ifd = ifds.get(getIFDIndex() + no);
+    byte[] buf = new byte[(int) tiffReader.getCompressedByteCount(ifd, x, y)];
+    return tiffReader.copyTile(ifd, buf, x, y, parser);
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, byte[] buf, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < rows.size()) {
+      Integer index = getTileIndex(no, y, x);
+      if (index == null || index < 0) {
+        LOGGER.warn("Could not find tile (x={}, y={})", x, y);
+        Arrays.fill(buf, (byte) 0);
+        return buf;
+      }
+
+      Long offset = tileOffsets.get(getCoreIndex())[index];
+      try (RandomAccessInputStream ets =
+        new RandomAccessInputStream(fileMap.get(getCoreIndex()))) {
+        ets.seek(offset);
+        ets.readFully(buf);
+        return buf;
+      }
+    }
+    IFD ifd = ifds.get(getIFDIndex() + no);
+    return tiffReader.copyTile(ifd, buf, x, y, parser);
+  }
+
+  @Override
+  public Codec getTileCodec(int no) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < rows.size()) {
+      int compression = compressionType.get(getCoreIndex());
+      switch (compression) {
+        case RAW:
+          return new PassthroughCodec();
+        case JPEG:
+          return new JPEGCodec();
+        case JPEG_2000:
+          return new JPEG2000Codec();
+        case JPEG_LOSSLESS:
+          return new LosslessJPEGCodec();
+      }
+      // TODO: PNG/BMP readers would need to support precompressed
+      LOGGER.warn("Codec not available for tile with compression type {}", compression);
+      return null;
+    }
+    return ifds.get(getIFDIndex() + no).getCompression().getCodec();
+  }
+
+  @Override
+  public CodecOptions getTileCodecOptions(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+
+    if (getCoreIndex() < core.size() - 1 && getCoreIndex() < rows.size()) {
+      CodecOptions options = new CodecOptions();
+      options.interleaved = isInterleaved();
+      options.littleEndian = isLittleEndian();
+      return options;
+    }
+
+    IFD ifd = ifds.get(getIFDIndex() + no);
+    CodecOptions options = ifd.getCompression().getCompressionCodecOptions(ifd);
+    options.width = (int) ifd.getTileWidth();
+    options.height = (int) ifd.getTileLength();
+    return options;
   }
 
   // -- IFormatReader API methods --
@@ -1017,6 +1152,16 @@ public class CellSensReader extends FormatReader {
     return bpp * channels * tileX.get(index) * tileY.get(index);
   }
 
+  private long getNextOffset(Long[] offsets, int index, long end) {
+    long minValue = end;
+    for (Long o : offsets) {
+      if (o > offsets[index]) {
+        minValue = (long) Math.min(minValue, o);
+      }
+    }
+    return minValue;
+  }
+
   /**
    * Get an index to the pyramid which contains the
    * current series/resolution. Accounts for flattened resolutions
@@ -1074,11 +1219,11 @@ public class CellSensReader extends FormatReader {
     return resIndex;
   }
 
-  private byte[] decodeTile(int no, int row, int col)
+  private Integer getTileIndex(int no, int row, int col)
     throws FormatException, IOException
   {
     if (tileMap.get(getCoreIndex()) == null) {
-      return new byte[getTileSize()];
+      return null;
     }
 
     int[] zct = getZCTCoords(no);
@@ -1109,6 +1254,13 @@ public class CellSensReader extends FormatReader {
 
     ArrayList<TileCoordinate> map = tileMap.get(getCoreIndex());
     Integer index = map.indexOf(t);
+    return index;
+  }
+
+  private byte[] decodeTile(int no, int row, int col)
+    throws FormatException, IOException
+  {
+    Integer index = getTileIndex(no, row, col);
     if (index == null || index < 0) {
       // fill in the tile with the stored background color
       // usually this is either black or white
@@ -1130,9 +1282,7 @@ public class CellSensReader extends FormatReader {
     try (RandomAccessInputStream ets =
       new RandomAccessInputStream(fileMap.get(getCoreIndex()))) {
       ets.seek(offset);
-      CodecOptions options = new CodecOptions();
-      options.interleaved = isInterleaved();
-      options.littleEndian = isLittleEndian();
+      CodecOptions options = getTileCodecOptions(no, col, row);
       int tileSize = getTileSize();
       if (tileSize == 0) {
         tileSize = tileX.get(getCoreIndex()) * tileY.get(getCoreIndex()) * 10;
@@ -1148,37 +1298,27 @@ public class CellSensReader extends FormatReader {
       ets.read(compressedBuf);
 
       String file = null;
+      Codec codec = getTileCodec(no);
+      if (codec != null) {
+        buf = codec.decompress(compressedBuf, options);
+      }
+      else {
+        switch (compression) {
+          case PNG:
+            file = "tile.png";
+            reader = new APNGReader();
+          case BMP:
+            if (reader == null) {
+              file = "tile.bmp";
+              reader = new BMPReader();
+            }
 
-      switch (compression) {
-        case RAW:
-          buf = compressedBuf;
-          break;
-        case JPEG:
-          Codec codec = new JPEGCodec();
-          buf = codec.decompress(compressedBuf, options);
-          break;
-        case JPEG_2000:
-          codec = new JPEG2000Codec();
-          buf = codec.decompress(compressedBuf, options);
-          break;
-        case JPEG_LOSSLESS:
-          codec = new LosslessJPEGCodec();
-          buf = codec.decompress(compressedBuf, options);
-          break;
-        case PNG:
-          file = "tile.png";
-          reader = new APNGReader();
-        case BMP:
-          if (reader == null) {
-            file = "tile.bmp";
-            reader = new BMPReader();
-          }
-
-          Location.mapFile(file, new ByteArrayHandle(compressedBuf));
-          reader.setId(file);
-          buf = reader.openBytes(0);
-          Location.mapFile(file, null);
-          break;
+            Location.mapFile(file, new ByteArrayHandle(compressedBuf));
+            reader.setId(file);
+            buf = reader.openBytes(0);
+            Location.mapFile(file, null);
+            break;
+        }
       }
     } finally {
       if (reader != null) {

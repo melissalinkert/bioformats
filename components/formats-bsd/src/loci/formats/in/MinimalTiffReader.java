@@ -744,6 +744,10 @@ public class MinimalTiffReader extends SubResolutionFormatReader {
   }
 
   protected byte[] copyTile(IFD ifd, byte[] buf, int x, int y) throws FormatException, IOException {
+    return copyTile(ifd, buf, x, y, tiffParser);
+  }
+
+  protected byte[] copyTile(IFD ifd, byte[] buf, int x, int y, TiffParser parser) throws FormatException, IOException {
     long[] offsets = ifd.getStripOffsets();
     long[] byteCounts = ifd.getStripByteCounts();
 
@@ -764,12 +768,12 @@ public class MinimalTiffReader extends SubResolutionFormatReader {
     if (jpegTable != null && expectedBytes > 0) {
       System.arraycopy(jpegTable, 0, buf, 0, jpegTable.length - 2);
       // skip over the duplicate SOI marker
-      tiffParser.getStream().seek(offsets[tileIndex] + 2);
-      tiffParser.getStream().readFully(buf, jpegTable.length - 2, (int) byteCounts[tileIndex]);
+      parser.getStream().seek(offsets[tileIndex] + 2);
+      parser.getStream().readFully(buf, jpegTable.length - 2, (int) byteCounts[tileIndex]);
     }
     else if (byteCounts[tileIndex] > 0) {
-      tiffParser.getStream().seek(offsets[tileIndex]);
-      tiffParser.getStream().readFully(buf, 0, (int) byteCounts[tileIndex]);
+      parser.getStream().seek(offsets[tileIndex]);
+      parser.getStream().readFully(buf, 0, (int) byteCounts[tileIndex]);
     }
     return buf;
   }

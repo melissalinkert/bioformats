@@ -484,9 +484,17 @@ public class TiffWriter extends FormatWriter {
     int channels = retrieve.getPixelsSizeC(series).getValue().intValue();
     int z = retrieve.getPixelsSizeZ(series).getValue().intValue();
     int t = retrieve.getPixelsSizeT(series).getValue().intValue();
-    ifd.putIFDValue(IFD.IMAGE_DESCRIPTION,
-      "ImageJ=\nhyperstack=true\nimages=" + (channels * z * t) + "\nchannels=" +
-      channels + "\nslices=" + z + "\nframes=" + t);
+
+    String imagejMetadata = "ImageJ=\nhyperstack=true\nimages=" +
+      (channels * z * t) + "\nchannels=" +
+      channels + "\nslices=" + z + "\nframes=" + t;
+    Length physicalSizeZ = retrieve.getPixelsPhysicalSizeZ(series);
+    if (physicalSizeZ != null) {
+      Double zSpacing = physicalSizeZ.value().doubleValue();
+      String zUnit = physicalSizeZ.unit().getSymbol();
+      imagejMetadata += "\nzunit=" + zUnit + "\nspacing=" + zSpacing;
+    }
+    ifd.putIFDValue(IFD.IMAGE_DESCRIPTION, imagejMetadata);
 
     int index = (no * getResolutionCount()) + getResolution();
     int currentSeries = getSeries();

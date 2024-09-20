@@ -82,6 +82,7 @@ public class TiffReader extends BaseTiffReader {
   private String companionFile;
   private String description;
   private String calibrationUnit;
+  private String zUnit;
   private Double physicalSizeZ;
   private Time timeIncrement;
   private Integer xOrigin, yOrigin;
@@ -113,6 +114,7 @@ public class TiffReader extends BaseTiffReader {
       companionFile = null;
       description = null;
       calibrationUnit = null;
+      zUnit = null;
       physicalSizeZ = null;
       timeIncrement = null;
       xOrigin = null;
@@ -137,6 +139,7 @@ public class TiffReader extends BaseTiffReader {
 
     description = null;
     calibrationUnit = null;
+    zUnit = null;
     physicalSizeZ = null;
     timeIncrement = null;
     xOrigin = null;
@@ -293,6 +296,10 @@ public class TiffReader extends BaseTiffReader {
         calibrationUnit = value;
         put("Unit", calibrationUnit);
       }
+      else if (token.startsWith("zunit=")) {
+        zUnit = value;
+        put("Z Unit", zUnit);
+      }
       else if (token.startsWith("finterval=")) {
         Double valueDouble = parseDouble(value);
         if (valueDouble != null) {
@@ -404,7 +411,7 @@ public class TiffReader extends BaseTiffReader {
     if (physicalSizeZ != null) {
       double zDepth = physicalSizeZ.doubleValue();
       if (zDepth < 0) zDepth = -zDepth;
-      Length z = FormatTools.getPhysicalSizeZ(zDepth);
+      Length z = FormatTools.getPhysicalSizeZ(zDepth, zUnit);
       if (z != null) {
         store.setPixelsPhysicalSizeZ(z, 0);
       }

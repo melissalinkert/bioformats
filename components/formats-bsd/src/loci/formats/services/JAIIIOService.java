@@ -45,6 +45,7 @@ import loci.formats.codec.JPEG2000CodecOptions;
 /**
  * Interface defining methods for reading data using JAI Image I/O.
  */
+@Deprecated
 public interface JAIIIOService extends Service {
 
   /**

@@ -58,6 +58,8 @@ import loci.formats.MetadataTools;
 import loci.formats.MissingLibraryException;
 import loci.formats.Modulo;
 import loci.formats.SubResolutionFormatReader;
+import loci.formats.codec.Codec;
+import loci.formats.codec.CodecOptions;
 import loci.formats.meta.MetadataStore;
 import loci.formats.ome.OMEPyramidStore;
 import loci.formats.ome.OMEXMLMetadata;
@@ -119,6 +121,84 @@ public class OMETiffReader extends SubResolutionFormatReader {
     domains = FormatTools.NON_GRAPHICS_DOMAINS;
     hasCompanionFiles = true;
     datasetDescription = "One or more .ome.tiff files";
+  }
+
+  // -- ICompressedTileReader API methods --
+
+  @Override
+  public int getTileRows(int no) {
+    FormatTools.assertId(currentId, true, 1);
+    try {
+      IFD ifd = getIFD(no);
+      if (ifd != null) {
+        return (int) ifd.getTilesPerColumn();
+      }
+    }
+    catch (FormatException|IOException e) {
+      LOGGER.debug("Could not get tile row count", e);
+    }
+    return super.getTileRows(no);
+  }
+
+  @Override
+  public int getTileColumns(int no) {
+    FormatTools.assertId(currentId, true, 1);
+    try {
+      IFD ifd = getIFD(no);
+      if (ifd != null) {
+        return (int) ifd.getTilesPerRow();
+      }
+    }
+    catch (FormatException|IOException e) {
+      LOGGER.debug("Could not get tile column count", e);
+    }
+    return super.getTileColumns(no);
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    IFD ifd = getIFD(no);
+    if (ifd != null) {
+      MinimalTiffReader r = (MinimalTiffReader) info[series][no].reader;
+      byte[] buf = new byte[(int) r.getCompressedByteCount(ifd, x, y)];
+      return openCompressedBytes(no, buf, x, y);
+    }
+    return super.openCompressedBytes(no, x, y);
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, byte[] buf, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    IFD ifd = getIFD(no);
+    if (ifd != null) {
+      MinimalTiffReader r = (MinimalTiffReader) info[series][no].reader;
+      return r.copyTile(ifd, buf, x, y);
+    }
+    return super.openCompressedBytes(no, buf, x, y);
+  }
+
+  @Override
+  public Codec getTileCodec(int no) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    IFD ifd = getIFD(no);
+    if (ifd != null) {
+      return ifd.getCompression().getCodec();
+    }
+    return super.getTileCodec(no);
+  }
+
+  @Override
+  public CodecOptions getTileCodecOptions(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    IFD ifd = getIFD(no);
+    if (ifd != null) {
+      CodecOptions options = ifd.getCompression().getCompressionCodecOptions(ifd);
+      options.width = (int) ifd.getTileWidth();
+      options.height = (int) ifd.getTileLength();
+      return options;
+    }
+    return super.getTileCodecOptions(no, x, y);
   }
 
   // -- IFormatReader API methods --
@@ -356,27 +436,15 @@ public class OMETiffReader extends SubResolutionFormatReader {
   {
     FormatTools.checkPlaneParameters(this, no, buf.length, x, y, w, h);
     lastPlane = no;
-    int i = info[series][no].ifd;
 
-    if (!info[series][no].exists ||
-      info[series][no].reader == null ||
-      info[series][no].id == null)
-    {
+    IFD ifd = getIFD(no);
+
+    if (ifd == null) {
       Arrays.fill(buf, getFillColor());
       return buf;
     }
 
     MinimalTiffReader r = (MinimalTiffReader) info[series][no].reader;
-    if (r.getCurrentFile() == null) {
-      initializeReader(r, info[series][no].id);
-    }
-    r.lastPlane = i;
-    IFDList ifdList = r.getIFDs();
-    if (i >= ifdList.size()) {
-      LOGGER.warn("Error untangling IFDs; the OME-TIFF file may be malformed (IFD #{} missing).", i);
-      return buf;
-    }
-    IFD ifd = ifdList.get(i);
     try (RandomAccessInputStream s = new RandomAccessInputStream(info[series][no].id, 16)) {
       TiffParser p = new TiffParser(s);
       if (resolution > 0) {
@@ -1520,6 +1588,27 @@ public class OMETiffReader extends SubResolutionFormatReader {
   {
     r.setId(file);
     removeIFDComments(r);
+  }
+
+  private IFD getIFD(int no) throws FormatException, IOException {
+    if (!info[series][no].exists ||
+      info[series][no].reader == null ||
+      info[series][no].id == null)
+    {
+      return null;
+    }
+
+    MinimalTiffReader r = (MinimalTiffReader) info[series][no].reader;
+    if (r.getCurrentFile() == null) {
+      initializeReader(r, info[series][no].id);
+    }
+    r.lastPlane = info[series][no].ifd;
+    IFDList ifdList = r.getIFDs();
+    if (r.lastPlane >= ifdList.size()) {
+      LOGGER.warn("Error untangling IFDs; the OME-TIFF file may be malformed (IFD #{} missing).", r.lastPlane);
+      return null;
+    }
+    return ifdList.get(r.lastPlane);
   }
 
   private void removeIFDComments(IFormatReader r) {

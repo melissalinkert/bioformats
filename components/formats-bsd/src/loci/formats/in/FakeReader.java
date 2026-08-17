@@ -69,6 +69,11 @@ import loci.formats.FormatReader;
 import loci.formats.FormatTools;
 import loci.formats.MetadataTools;
 import loci.formats.ResourceNamer;
+import loci.formats.codec.Codec;
+import loci.formats.codec.CodecOptions;
+import loci.formats.codec.JPEG2000Codec;
+import loci.formats.codec.JPEGCodec;
+import loci.formats.codec.PassthroughCodec;
 import loci.formats.gui.AWTImageTools;
 import loci.formats.meta.MetadataStore;
 import loci.formats.ome.OMEXMLMetadata;
@@ -231,6 +236,11 @@ public class FakeReader extends FormatReader {
   private int sleepInitFile = 0;
   private boolean labelPlanes = false;
 
+  // precompressed tile options
+  private int tileRows = 1;
+  private int tileColumns = 1;
+  private String codec = "null";
+
   static void sleep(String msg, int ms) {
     if (ms <= 0) return; // EARLY EXIT
     try {
@@ -315,6 +325,59 @@ public class FakeReader extends FormatReader {
   public FakeReader() {
     super("Simulated data", "fake");
     hasCompanionFiles = true;
+  }
+
+  // -- ICompressedTileReader API methods --
+
+  @Override
+  public int getTileRows(int no) {
+    FormatTools.assertId(currentId, true, 1);
+    return tileRows;
+  }
+
+  @Override
+  public int getTileColumns(int no) {
+    FormatTools.assertId(currentId, true, 1);
+    return tileColumns;
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    CodecOptions options = getTileCodecOptions(no, x, y);
+    byte[] buf = openBytes(no, x * options.width, y * options.height, options.width, options.height);
+    Codec codec = getTileCodec(no);
+    return codec.compress(buf, options);
+  }
+
+  @Override
+  public byte[] openCompressedBytes(int no, byte[] buf, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    byte[] b = openCompressedBytes(no, x, y);
+    System.arraycopy(b, 0, buf, 0, b.length);
+    return buf;
+  }
+
+  @Override
+  public Codec getTileCodec(int no) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+    if (codec.equalsIgnoreCase("jpeg")) {
+      return new JPEGCodec();
+    }
+    else if (codec.equalsIgnoreCase("jpeg2000")) {
+      return new JPEG2000Codec();
+    }
+    return new PassthroughCodec();
+  }
+
+  @Override
+  public CodecOptions getTileCodecOptions(int no, int x, int y) throws FormatException, IOException {
+    FormatTools.assertId(currentId, true, 1);
+
+    CodecOptions options = new CodecOptions();
+    options.width = getSizeX() / getTileColumns(no);
+    options.height = getSizeY() / getTileRows(no);
+    return options;
   }
 
   // -- IFormatReader API methods --
@@ -589,6 +652,9 @@ public class FakeReader extends FormatReader {
     labelPlanes = false;
     excitationWavelengths.clear();
     emissionWavelengths.clear();
+    tileRows = 1;
+    tileColumns = 1;
+    codec = "null";
     super.close(fileOnly);
   }
 

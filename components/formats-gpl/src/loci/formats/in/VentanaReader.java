@@ -794,8 +794,10 @@ public class VentanaReader extends BaseTiffReader {
       store.setObjectiveSettingsID(objective, i);
 
       if (pixelSize != null) {
-        store.setPixelsPhysicalSizeX(pixelSize, i);
-        store.setPixelsPhysicalSizeY(pixelSize, i);
+        int[] pos = core.flattenedIndexes(i);
+        Length scaledSize = FormatTools.getScaledPhysicalSize(pixelSize, core.get(pos[0], 0).sizeX, getSizeX());
+        store.setPixelsPhysicalSizeX(scaledSize, i);
+        store.setPixelsPhysicalSizeY(scaledSize, i);
       }
       if (splitTiles()) {
         for (int p=0; p<getImageCount(); p++) {
@@ -866,9 +868,7 @@ public class VentanaReader extends BaseTiffReader {
         Object tagValue = ifd.get(tag);
         if (tagValue instanceof OnDemandLongArray) {
           OnDemandLongArray fileArray = (OnDemandLongArray) tagValue;
-          if (fileArray.getStream() == null) {
-            fileArray.setStream(in);
-          }
+          fileArray.setStream(in);
           array = fileArray.toArray();
         }
         else {

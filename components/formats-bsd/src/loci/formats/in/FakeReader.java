@@ -67,7 +67,11 @@ import loci.formats.CoreMetadata;
 import loci.formats.FormatException;
 import loci.formats.FormatReader;
 import loci.formats.FormatTools;
+import loci.formats.IAxisOrientationReader;
 import loci.formats.MetadataTools;
+import loci.formats.Orientation;
+import loci.formats.OrientationTerm;
+import loci.formats.OrientationType;
 import loci.formats.ResourceNamer;
 import loci.formats.codec.Codec;
 import loci.formats.codec.CodecOptions;
@@ -113,7 +117,7 @@ import ome.units.UNITS;
  *  <li>showinf 'pyramid&amp;sizeX=10000&amp;sizeY=10000&amp;resolutions=5&amp;resolutionScale=2.fake' -noflat -resolution 4</li>
  * </ul></p>
  */
-public class FakeReader extends FormatReader {
+public class FakeReader extends FormatReader implements IAxisOrientationReader {
 
   // -- Constants --
   private static final long ANN_LONG_VALUE = 365;
@@ -220,6 +224,8 @@ public class FakeReader extends FormatReader {
   /** List of used files if the fake is a SPW structure */
   private List<String> fakeSeries = new ArrayList<String>();
 
+  private List<Orientation> orientations = new ArrayList<Orientation>();
+
   private OMEXMLMetadata omeXmlMetadata;
 
   private OMEXMLService omeXmlService;
@@ -230,6 +236,9 @@ public class FakeReader extends FormatReader {
   private transient int plateCols = 0;
   private transient int fields = 0;
   private transient int plateAcqs = 0;
+
+  private transient int resolutionCount = 1;
+  private transient int resolutionScale = DEFAULT_RESOLUTION_SCALE;
 
   // Misc. debugging
   private int sleepOpenBytes = 0;
@@ -378,6 +387,17 @@ public class FakeReader extends FormatReader {
     options.width = getSizeX() / getTileColumns(no);
     options.height = getSizeY() / getTileRows(no);
     return options;
+  }
+
+  // -- IAxisOrientation API methods --
+
+  @Override
+  public Orientation[] getAxisOrientations() {
+    FormatTools.assertId(currentId, true, 1);
+    if (orientations.size() == 0) {
+      return new Orientation[5];
+    }
+    return orientations.toArray(new Orientation[orientations.size()]);
   }
 
   // -- IFormatReader API methods --
@@ -649,6 +669,8 @@ public class FakeReader extends FormatReader {
     plateCols = 0;
     fields = 0;
     plateAcqs = 0;
+    resolutionCount = 1;
+    resolutionScale = DEFAULT_RESOLUTION_SCALE;
     labelPlanes = false;
     excitationWavelengths.clear();
     emissionWavelengths.clear();
@@ -756,8 +778,6 @@ public class FakeReader extends FormatReader {
     boolean withInstrument = false;
 
     int seriesCount = 1;
-    int resolutionCount = 1;
-    int resolutionScale = DEFAULT_RESOLUTION_SCALE;
     int lutLength = 3;
 
     String acquisitionDate = null;
@@ -769,6 +789,8 @@ public class FakeReader extends FormatReader {
 
     // add properties file values to list of tokens.
     if (iniFile != null) {
+      orientations.clear();
+
       IniParser parser = new IniParser();
       IniList list = parser.parseINI(new File(iniFile));
 
@@ -1112,9 +1134,19 @@ public class FakeReader extends FormatReader {
   private void fillPhysicalSizes(MetadataStore store) {
     if (physicalSizeX == null && physicalSizeY == null && physicalSizeZ == null) return;
     for (int s=0; s<getSeriesCount(); s++) {
-      store.setPixelsPhysicalSizeX(physicalSizeX, s);
-      store.setPixelsPhysicalSizeY(physicalSizeY, s);
-      store.setPixelsPhysicalSizeZ(physicalSizeZ, s);
+      Length scaledX = physicalSizeX;
+      Length scaledY = physicalSizeY;
+      Length scaledZ = physicalSizeZ;
+      if (hasFlattenedResolutions()) {
+        int res = s % resolutionCount;
+        double resScale = Math.pow(resolutionScale, res);
+        scaledX = FormatTools.getScaledPhysicalSize(scaledX, resScale);
+        scaledY = FormatTools.getScaledPhysicalSize(scaledY, resScale);
+        scaledZ = FormatTools.getScaledPhysicalSize(scaledZ, resScale);
+      }
+      store.setPixelsPhysicalSizeX(scaledX, s);
+      store.setPixelsPhysicalSizeY(scaledY, s);
+      store.setPixelsPhysicalSizeZ(scaledZ, s);
     }
   }
 
@@ -1424,6 +1456,31 @@ public class FakeReader extends FormatReader {
   private void parseSeriesTable(IniTable table, MetadataStore store, int newSeries) {
     int s = getSeries();
     setSeries(newSeries);
+
+    // axis count is inferred from dimensionality
+    // this could be updated when modulo dimensions are supported
+    int axes = 5;
+
+    for (int a=0; a<axes; a++) {
+      String type = table.get("AxisOrientationType_" + a);
+      String term = table.get("AxisOrientationTerm_" + a);
+      Orientation orientation = null;
+      if (type != null && term != null) {
+        OrientationType orientType = OrientationType.fromString(type);
+        if (orientType != null) {
+          OrientationTerm[] enumValues = orientType.getOrientationTermClass().getEnumConstants();
+          if (enumValues != null) {
+            for (OrientationTerm t : enumValues) {
+              if (t.getDefinedTerm().equals(term)) {
+                orientation = new Orientation(orientType, t);
+                break;
+              }
+            }
+          }
+        }
+      }
+      orientations.add(orientation);
+    }
 
     for (int c=0; c<getEffectiveSizeC(); c++) {
       String channelName = table.get("ChannelName_" + c);

@@ -245,6 +245,13 @@ public class ZeissLSMReader extends FormatReader {
     return isGroupFiles() ? getMDBFile(id) != null : true;
   }
 
+  /* @see loci.formats.IFormatReader#reopenFile() */
+  @Override
+  public void reopenFile() throws IOException {
+    super.reopenFile();
+    tiffParser = new TiffParser(in);
+  }
+
   /* @see loci.formats.IFormatReader#close(boolean) */
   @Override
   public void close(boolean fileOnly) throws IOException {
@@ -491,6 +498,9 @@ public class ZeissLSMReader extends FormatReader {
         int count = seriesCounts.get(lsmFilenames[i]);
         TiffParser tp = new TiffParser(stream);
         Boolean littleEndian = tp.checkHeader();
+        if (littleEndian == null) {
+          throw new FormatException("Invalid TIFF file: " + lsmFilenames[i]);
+        }
         long[] ifdOffsets = tp.getIFDOffsets();
         int ifdsPerSeries = (ifdOffsets.length / 2) / count;
 

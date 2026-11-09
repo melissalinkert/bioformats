@@ -56,6 +56,7 @@ import loci.formats.tiff.IFDList;
 import loci.formats.tiff.PhotoInterp;
 import loci.formats.tiff.TiffParser;
 
+import ome.units.quantity.Length;
 import ome.units.UNITS;
 import ome.xml.model.primitives.Timestamp;
 
@@ -410,9 +411,11 @@ public class CellSensReader extends FormatReader {
   private ArrayList<Pyramid> pyramids = new ArrayList<Pyramid>();
   private boolean[] bgr;
 
+  private transient ArrayList<String> layerNames = new ArrayList<String>();
   private transient boolean expectETS = false;
   private transient int channelCount = 0;
   private transient int zCount = 0;
+  private transient int imageCount = 0;
 
   // -- Constructor --
 
@@ -610,7 +613,13 @@ public class CellSensReader extends FormatReader {
       return buf;
     }
     else {
-      return parser.getSamples(ifds.get(getIFDIndex() + no), buf, x, y, w, h);
+      IFD ifd = ifds.get(getIFDIndex() + no);
+      if (ifd.getImageWidth() == getSizeX() && ifd.getImageLength() == getSizeY()) {
+        return parser.getSamples(ifd, buf, x, y, w, h);
+      }
+      LOGGER.warn("Using blank plane for unreadable image (found dimensions {}x{})",
+        ifd.getImageWidth(), ifd.getImageLength());
+      return buf;
     }
   }
 
@@ -650,8 +659,10 @@ public class CellSensReader extends FormatReader {
       previousTag = 0;
       expectETS = false;
       pyramids.clear();
+      layerNames.clear();
       channelCount = 0;
       zCount = 0;
+      imageCount = 0;
       bgr = null;
     }
   }
@@ -744,6 +755,7 @@ public class CellSensReader extends FormatReader {
     int seriesCount = files.size();
     core.clear();
     int ignoredPyramids = 0;
+    int extraImages = 0;
     if (files.size() == 1) {
       for (Pyramid pyramid : pyramids) {
         if (!pyramid.name.equalsIgnoreCase("Overview")) {
@@ -754,14 +766,46 @@ public class CellSensReader extends FormatReader {
       seriesCount = ifds.size();
 
       if (ifds.size() > 1) {
+        IFD lastIFD = ifds.get(ifds.size() - 1);
+        if (lastIFD.getImageWidth() == 1 && lastIFD.getImageLength() == 1) {
+          ifds.remove(ifds.size() - 1);
+          seriesCount--;
+        }
+
         if (ifds.get(1).getSamplesPerPixel() == 1) {
-          seriesCount = 2;
           if (channelCount == 0 && zCount == 0) {
-            channelCount = ifds.size() - 1;
+            // there may be either 1 or 2 single planes before the channels/Z stack
+            int uniqueDims = 1;
+            for (int s=1; s<seriesCount; s++) {
+              if (ifds.get(s).getImageWidth() != ifds.get(s - 1).getImageWidth() ||
+                ifds.get(s).getImageLength() != ifds.get(s - 1).getImageLength() ||
+                ifds.get(s).getSamplesPerPixel() != ifds.get(s - 1).getSamplesPerPixel() ||
+                ifds.get(s).getBitsPerSample()[0] != ifds.get(s - 1).getBitsPerSample()[0])
+              {
+                if (channelCount > 0) {
+                  channelCount--;
+                  break;
+                }
+                uniqueDims++;
+                extraImages++;
+              }
+              else {
+                channelCount++;
+              }
+            }
+            channelCount++;
+            seriesCount = uniqueDims;
           }
           else if (zCount > 0) {
-            zCount /= 2;
-            channelCount = (ifds.size() - 1) / zCount;
+            seriesCount = 2;
+            extraImages = 1;
+            zCount /= seriesCount;
+            channelCount = (ifds.size() - extraImages) / zCount;
+          }
+          else if (channelCount > 0) {
+            seriesCount = 2;
+            extraImages = 1;
+            zCount = (ifds.size() - extraImages) / channelCount;
           }
         }
         else {
@@ -844,11 +888,11 @@ public class CellSensReader extends FormatReader {
         ms.sizeT = 1;
         ms.sizeC = ms.rgb ? samples : 1;
         if (files.size() == 1 && channelCount > 0 &&
-          channelCount < ifds.size() && s > 0)
+          channelCount < ifds.size() && s > (extraImages - 1))
         {
           ms.sizeC *= channelCount;
-          ms.sizeZ = (ifds.size() - 1) / channelCount;
-          ms.imageCount = ifds.size() - 1;
+          ms.sizeZ = (ifds.size() - extraImages) / channelCount;
+          ms.imageCount = ifds.size() - extraImages;
           ms.dimensionOrder = "XYZCT";
         }
         else {
@@ -922,124 +966,144 @@ public class CellSensReader extends FormatReader {
       }
       int ii = coreIndexToSeries(i);
 
-      if (pyramid != null) {
-        int nextPlane = 0;
-        int effectiveSizeC = core.get(i).rgb ? 1 : core.get(i).sizeC;
-        int[] tzc = new int[] {core.get(i).sizeT, core.get(i).sizeZ, core.get(i).sizeC};
-        for (int c=0; c<effectiveSizeC; c++) {
-          store.setDetectorSettingsID(
-            MetadataTools.createLSID("Detector", 0, nextPyramid - 1), ii, c);
-          store.setDetectorSettingsBinning(
-            MetadataTools.getBinning(pyramid.binningX + "x" + pyramid.binningY), ii, c);
+      int resolutions = hasFlattenedResolutions() ? core.get(i).resolutionCount : 1;
 
-          if (c == 0) {
-            store.setDetectorSettingsGain(pyramid.redGain, ii, c);
-            store.setDetectorSettingsOffset(pyramid.redOffset, ii, c);
-          }
-          else if (c == 1) {
-            store.setDetectorSettingsGain(pyramid.greenGain, ii, c);
-            store.setDetectorSettingsOffset(pyramid.greenOffset, ii, c);
-          }
-          else if (c == 2) {
-            store.setDetectorSettingsGain(pyramid.blueGain, ii, c);
-            store.setDetectorSettingsOffset(pyramid.blueOffset, ii, c);
-          }
+      for (int res=0; res<resolutions; res++) {
+        int imageIndex = ii + res;
+        if (pyramid != null) {
+          int nextPlane = 0;
+          int effectiveSizeC = core.get(i).rgb ? 1 : core.get(i).sizeC;
+          int[] tzc = new int[] {core.get(i).sizeT, core.get(i).sizeZ, core.get(i).sizeC};
+          for (int c=0; c<effectiveSizeC; c++) {
+            store.setDetectorSettingsID(
+              MetadataTools.createLSID("Detector", 0, nextPyramid - 1), imageIndex, c);
+            store.setDetectorSettingsBinning(
+              MetadataTools.getBinning(pyramid.binningX + "x" + pyramid.binningY), imageIndex, c);
 
-          if (c < pyramid.channelNames.size()) {
-            store.setChannelName(pyramid.channelNames.get(c), ii, c);
-          }
-          if (c < pyramid.channelWavelengths.size()) {
-            int wave = pyramid.channelWavelengths.get(c).intValue();
-            if (wave > 0) {
-              store.setChannelEmissionWavelength(
-                FormatTools.getEmissionWavelength((double) wave), ii, c);
+            if (c == 0) {
+              store.setDetectorSettingsGain(pyramid.redGain, imageIndex, c);
+              store.setDetectorSettingsOffset(pyramid.redOffset, imageIndex, c);
             }
-          }
-          for (int z=0; z<core.get(i).sizeZ; z++) {
-            for (int t=0; t<core.get(i).sizeT; t++) {
-              nextPlane = getIndex(z, c, t);
+            else if (c == 1) {
+              store.setDetectorSettingsGain(pyramid.greenGain, imageIndex, c);
+              store.setDetectorSettingsOffset(pyramid.greenOffset, imageIndex, c);
+            }
+            else if (c == 2) {
+              store.setDetectorSettingsGain(pyramid.blueGain, imageIndex, c);
+              store.setDetectorSettingsOffset(pyramid.blueOffset, imageIndex, c);
+            }
 
-              Long exp = pyramid.defaultExposureTime;
-              if (c < pyramid.exposureTimes.size()) {
-                exp = pyramid.exposureTimes.get(c);
-              }
-              else if (c < pyramid.otherExposureTimes.size()) {
-                exp = pyramid.otherExposureTimes.get(c);
-              }
-              if (exp != null) {
-                store.setPlaneExposureTime(
-                  FormatTools.createTime(exp / 1000000.0, UNITS.SECOND), ii, nextPlane);
-              }
-              store.setPlanePositionX(
-                FormatTools.createLength(pyramid.originX, UNITS.MICROMETER), ii, nextPlane);
-              store.setPlanePositionY(
-                FormatTools.createLength(pyramid.originY, UNITS.MICROMETER), ii, nextPlane);
-              if (z < pyramid.zValues.size()) {
-                store.setPlanePositionZ(
-                  FormatTools.createLength(pyramid.zValues.get(z),
-                  UNITS.MICROMETER), ii, nextPlane);
-              }
-              else if (pyramid.zStart != null && pyramid.zIncrement != null) {
-                store.setPlanePositionZ(
-                  FormatTools.createLength(pyramid.zStart + (z * pyramid.zIncrement),
-                  UNITS.MICROMETER), ii, nextPlane);
-              }
-              store.setPixelsPhysicalSizeZ(FormatTools.getPhysicalSizeZ(pyramid.zIncrement), ii);
-
-              // calculate index into timestamp list using TZC order
-              // that matches the plane iteration order here, and seems to work
-              // on the limited data we have that is fully 5D
-              // this approach may need to be re-evaluated for new data though
-              int reorderedPlane = FormatTools.positionToRaster(tzc, new int[] {t, z, c});
-              if (reorderedPlane < pyramid.tValues.size()) {
-                store.setPlaneDeltaT(
-                  FormatTools.createTime(pyramid.tValues.get(reorderedPlane),
-                  UNITS.MILLISECOND), ii, nextPlane);
+            if (c < pyramid.channelNames.size()) {
+              store.setChannelName(pyramid.channelNames.get(c), imageIndex, c);
+            }
+            if (c < pyramid.channelWavelengths.size()) {
+              int wave = pyramid.channelWavelengths.get(c).intValue();
+              if (wave > 0) {
+                store.setChannelEmissionWavelength(
+                  FormatTools.getEmissionWavelength((double) wave), imageIndex, c);
               }
             }
+            for (int z=0; z<core.get(i).sizeZ; z++) {
+              for (int t=0; t<core.get(i).sizeT; t++) {
+                nextPlane = getIndex(z, c, t);
+
+                Long exp = pyramid.defaultExposureTime;
+                if (c < pyramid.exposureTimes.size()) {
+                  exp = pyramid.exposureTimes.get(c);
+                }
+                else if (c < pyramid.otherExposureTimes.size()) {
+                  exp = pyramid.otherExposureTimes.get(c);
+                }
+                if (exp != null) {
+                  store.setPlaneExposureTime(
+                    FormatTools.createTime(exp / 1000000.0, UNITS.SECOND), imageIndex, nextPlane);
+                }
+                store.setPlanePositionX(
+                  FormatTools.createLength(pyramid.originX, UNITS.MICROMETER), imageIndex, nextPlane);
+                store.setPlanePositionY(
+                  FormatTools.createLength(pyramid.originY, UNITS.MICROMETER), imageIndex, nextPlane);
+                if (z < pyramid.zValues.size()) {
+                  store.setPlanePositionZ(
+                    FormatTools.createLength(pyramid.zValues.get(z),
+                    UNITS.MICROMETER), imageIndex, nextPlane);
+                }
+                else if (pyramid.zStart != null && pyramid.zIncrement != null) {
+                  store.setPlanePositionZ(
+                    FormatTools.createLength(pyramid.zStart + (z * pyramid.zIncrement),
+                    UNITS.MICROMETER), imageIndex, nextPlane);
+                }
+                store.setPixelsPhysicalSizeZ(FormatTools.getPhysicalSizeZ(pyramid.zIncrement), imageIndex);
+
+                // calculate index into timestamp list using TZC order
+                // that matches the plane iteration order here, and seems to work
+                // on the limited data we have that is fully 5D
+                // this approach may need to be re-evaluated for new data though
+                int reorderedPlane = FormatTools.positionToRaster(tzc, new int[] {t, z, c});
+                if (reorderedPlane < pyramid.tValues.size()) {
+                  store.setPlaneDeltaT(
+                    FormatTools.createTime(pyramid.tValues.get(reorderedPlane),
+                    UNITS.MILLISECOND), imageIndex, nextPlane);
+                }
+              }
+            }
           }
         }
-      }
 
-      store.setImageInstrumentRef(instrument, ii);
+        store.setImageInstrumentRef(instrument, imageIndex);
 
-      if (pyramid != null) {
-        String imageName = pyramid.name;
-        boolean duplicate = false;
-        for (int q=0; q<pyramids.size(); q++) {
-          if (q != (nextPyramid - 1) &&
-            imageName.equals(pyramids.get(q).name))
-          {
-            duplicate = true;
-            break;
+        if (pyramid != null) {
+          String imageName = pyramid.name;
+          boolean duplicate = false;
+          for (int q=0; q<pyramids.size(); q++) {
+            if (q != (nextPyramid - 1) &&
+              imageName.equals(pyramids.get(q).name))
+            {
+              duplicate = true;
+              break;
+            }
+          }
+
+          if (!imageName.equals("Overview") && !imageName.equals("Label") && duplicate) {
+            imageName += " #" + ii;
+          }
+          if (imageName.equals("Overview") || imageName.equals("Label")) {
+            imageName = imageName.toLowerCase();
+          }
+          if (res > 0) {
+            imageName += " resolution " + res;
+          }
+          store.setImageName(imageName, imageIndex);
+          store.setObjectiveSettingsID(MetadataTools.createLSID("Objective", 0, nextPyramid - 1), imageIndex);
+          store.setObjectiveSettingsRefractiveIndex(pyramid.refractiveIndex, imageIndex);
+
+          boolean pyramidBasePresent = expectETS && files.size() > 1;
+          if (pyramid.physicalSizeX > 0) {
+            Length sizeX = FormatTools.getPhysicalSizeX(pyramid.physicalSizeX);
+            if (pyramidBasePresent) {
+              sizeX = FormatTools.getScaledPhysicalSize(sizeX, pyramid.width, core.get(i + res).sizeX);
+            }
+            store.setPixelsPhysicalSizeX(sizeX, imageIndex);
+          }
+          if (pyramid.physicalSizeY > 0) {
+            Length sizeY = FormatTools.getPhysicalSizeY(pyramid.physicalSizeY);
+            if (pyramidBasePresent) {
+              sizeY = FormatTools.getScaledPhysicalSize(sizeY, pyramid.height, core.get(i + res).sizeY);
+            }
+            store.setPixelsPhysicalSizeY(sizeY, imageIndex);
+          }
+
+          if (pyramid.acquisitionTime != null) {
+            // acquisition time is stored in seconds
+            store.setImageAcquisitionDate(new Timestamp(DateTools.convertDate(
+              pyramid.acquisitionTime * 1000, DateTools.UNIX)), imageIndex);
           }
         }
-
-        if (!imageName.equals("Overview") && !imageName.equals("Label") && duplicate) {
-          imageName += " #" + ii;
+        else if (files.size() == 1 && ii > 0 && ii <= layerNames.size()) {
+          store.setImageName(layerNames.get(ii - 1), imageIndex);
         }
-        if (imageName.equals("Overview") || imageName.equals("Label")) {
-          imageName = imageName.toLowerCase();
+        else {
+          store.setImageName("macro image", imageIndex);
         }
-        store.setImageName(imageName, ii);
-        store.setObjectiveSettingsID(MetadataTools.createLSID("Objective", 0, nextPyramid - 1), ii);
-        store.setObjectiveSettingsRefractiveIndex(pyramid.refractiveIndex, ii);
-
-        if (pyramid.physicalSizeX > 0) {
-          store.setPixelsPhysicalSizeX(FormatTools.getPhysicalSizeX(pyramid.physicalSizeX), ii);
-        }
-        if (pyramid.physicalSizeY > 0) {
-          store.setPixelsPhysicalSizeY(FormatTools.getPhysicalSizeY(pyramid.physicalSizeY), ii);
-        }
-
-        if (pyramid.acquisitionTime != null) {
-          // acquisition time is stored in seconds
-          store.setImageAcquisitionDate(new Timestamp(DateTools.convertDate(
-            pyramid.acquisitionTime * 1000, DateTools.UNIX)), ii);
-        }
-      }
-      else {
-        store.setImageName("macro image", ii);
       }
 
       i += core.get(i).resolutionCount;
@@ -1787,6 +1851,10 @@ public class CellSensReader extends FormatReader {
                   if (pyramid != null && pyramid.name == null) {
                     pyramid.name = value;
                   }
+                  else if (imageCount > 0) {
+                    layerNames.add(value);
+                  }
+                  imageCount = 0;
                 }
                 break;
               case INT_2:
@@ -1825,6 +1893,7 @@ public class CellSensReader extends FormatReader {
                     pyramid.width = intValues[2];
                     pyramid.height = intValues[3];
                   }
+                  imageCount++;
                 }
                 else if (tag == TILE_ORIGIN) {
                   if (pyramid != null) {

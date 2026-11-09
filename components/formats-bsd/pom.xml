@@ -8,7 +8,7 @@
   <parent>
     <groupId>ome</groupId>
     <artifactId>pom-bio-formats</artifactId>
-    <version>8.6.0-SNAPSHOT</version>
+    <version>9.0.0-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
 
@@ -54,9 +54,9 @@
       <version>${ome-codecs.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>turbojpeg</artifactId>
-      <version>${project.version}</version>
+      <groupId>com.glencoesoftware</groupId>
+      <artifactId>libjpeg-turbo</artifactId>
+      <version>${turbojpeg.version}</version>
     </dependency>
     <dependency>
       <groupId>org.scijava</groupId>

@@ -305,6 +305,15 @@ public class LeicaReader extends FormatReader {
     return v.toArray(new String[v.size()]);
   }
 
+  /* @see loci.formats.IFormatReader#reopenFile() */
+  @Override
+  public void reopenFile() throws IOException {
+    super.reopenFile();
+    if (tiff != null && tiff.getCurrentFile() != null) {
+      tiff.reopenFile();
+    }
+  }
+
   /* @see loci.formats.IFormatReader#close(boolean) */
   @Override
   public void close(boolean fileOnly) throws IOException {
@@ -772,7 +781,11 @@ public class LeicaReader extends FormatReader {
 
       in = new RandomAccessInputStream(baseFile, 16);
       TiffParser tp = new TiffParser(in);
-      in.order(tp.checkHeader().booleanValue());
+      Boolean littleEndian = tp.checkHeader();
+      if (littleEndian == null) {
+        throw new FormatException("Invalid TIFF file");
+      }
+      in.order(littleEndian.booleanValue());
 
       in.seek(0);
 

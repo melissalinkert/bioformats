@@ -114,7 +114,10 @@ public class TiffParser implements Closeable {
     doCaching = true;
     try {
       long fp = in.getFilePointer();
-      checkHeader();
+      Boolean littleEndian = checkHeader();
+      if (littleEndian == null) {
+        LOGGER.debug("Endian check failed, this may be an invalid file");
+      }
       in.seek(fp);
     }
     catch (IOException e) { }
@@ -1061,10 +1064,14 @@ public class TiffParser implements Closeable {
           }
         }
       }
+      // buf may be larger than the actual image, so don't use buf.length
+      // to determine the number of bytes per channel
+      // since offset is updated after every tile copy, it reflects the
+      // actual number of bytes that were read and copied into buf
       if (effectiveChannels > 1) {
-        byte[][] split = new byte[effectiveChannels][buf.length / effectiveChannels];
+        byte[][] split = new byte[effectiveChannels][offset / effectiveChannels];
         for (int c=0; c<split.length; c++) {
-          split[c] = ImageTools.splitChannels(buf, c, effectiveChannels, bytes, false, true);
+          split[c] = ImageTools.splitChannels(buf, split[c], c, effectiveChannels, bytes, false, true, split[c].length);
         }
         for (int c=0; c<split.length; c++) {
           System.arraycopy(split[c], 0, buf, c * split[c].length, split[c].length);
